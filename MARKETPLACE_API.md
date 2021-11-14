@@ -2,12 +2,14 @@
 
 ## Types
 
+```
 AccountId: String
 Base58PublicKey: String
 Balance: String,
 Option<Type>: Type or null
 LotStatus: Enum(“ACTIVE”, “FINISHED_SUCCESS”, “FINISHED_FAIL”)
 WrappedTimestamp: String
+```
 
 ## Account lifecycle
 
