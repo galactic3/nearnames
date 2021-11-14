@@ -6,6 +6,9 @@ import './global.css'
 import getConfig from './config'
 const { networkId } = getConfig(process.env.NODE_ENV || 'development')
 
+console.log(process.env.NODE_ENV || 'development');
+console.log(networkId);
+
 export default function App() {
   // use React Hooks to store greeting in component state
   const [greeting, set_greeting] = React.useState()
