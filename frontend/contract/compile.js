@@ -10,6 +10,7 @@
 // makes it easy to use *NIX-style scripting (which works on Linux distros,
 // macOS, and Unix systems) on Windows as well.
 const sh = require('shelljs')
+const path = require('path')
 
 // Figure out which directory the user called this script from, which we'll use
 // later to set up the symlink.
@@ -17,7 +18,8 @@ const calledFromDir = sh.pwd().toString()
 
 // For the duration of this script, we want to operate from within the
 // Rust project's folder. Let's change into that directory.
-sh.cd(__dirname)
+const contractDir = path.join(__dirname, '/../../contract/')
+sh.cd(contractDir)
 
 // You can call this script with `node compile.js` or `node compile.js
 // --debug`. Let's set a variable to track whether `--debug` was used.
@@ -41,7 +43,7 @@ const { code } = sh.exec(buildCmd)
 if (code === 0 && calledFromDir !== __dirname) {
   const linkDir = `${calledFromDir}/out`
   const link = `${calledFromDir}/out/main.wasm`
-  const packageName = require('fs').readFileSync(`${__dirname}/Cargo.toml`).toString().match(/name = "([^"]+)"/)[1]
+  const packageName = require('fs').readFileSync(`${contractDir}/Cargo.toml`).toString().match(/name = "([^"]+)"/)[1]
   const outFile = `./target/wasm32-unknown-unknown/${debug ? 'debug' : 'release'}/${packageName}.wasm`
   sh.mkdir('-p', linkDir)
   sh.rm('-f', link)
