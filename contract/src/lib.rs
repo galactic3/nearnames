@@ -1,16 +1,33 @@
+
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::{env, near_bindgen, setup_alloc};
+use near_sdk::collections::{UnorderedMap};
+use near_sdk::{
+    env, near_bindgen, setup_alloc,
+    AccountId, Balance,
+};
+
+pub struct Profile {
+    pub available_rewards: Balance,
+    pub profit_received: Balance,
+}
+
+pub type LotId = AccountId;
+pub type ProfileId = AccountId;
+
+pub const PREFIX_PROFILES: &str = "u";
 
 setup_alloc!();
 
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize)]
 pub struct Contract {
+    pub profiles: UnorderedMap<ProfileId, Profile>,
 }
 
 impl Default for Contract {
     fn default() -> Self {
         Self {
+            profiles: UnorderedMap::new(PREFIX_PROFILES.as_bytes().to_vec()),
         }
     }
 }
