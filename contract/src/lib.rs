@@ -220,4 +220,14 @@ mod tests {
         assert_eq!(response.buy_now_price, to_yocto(10).into());
         assert_eq!(response.is_active, false);
     }
+
+    #[test]
+    fn lot_is_active() {
+        let lot_bob_sells_alice = create_lot_bob_sells_alice();
+        // we don't care about starting time, it's just for the record
+        assert_eq!(lot_bob_sells_alice.is_active(DAY_NANOSECONDS * 9), true);
+        assert_eq!(lot_bob_sells_alice.is_active(DAY_NANOSECONDS * 10), true);
+        assert_eq!(lot_bob_sells_alice.is_active(DAY_NANOSECONDS * 11), true);
+        assert_eq!(lot_bob_sells_alice.is_active(DAY_NANOSECONDS * 12), false);
+    }
 }
