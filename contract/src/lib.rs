@@ -1,17 +1,20 @@
+mod lot;
 mod profile;
 
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::UnorderedMap;
 use near_sdk::json_types::{ValidAccountId, WrappedBalance};
 use near_sdk::serde::{Deserialize, Serialize};
-use near_sdk::{env, near_bindgen, setup_alloc, AccountId, Balance};
+use near_sdk::{env, near_bindgen, setup_alloc, AccountId, Balance, Duration, Timestamp};
 
+use crate::lot::*;
 use crate::profile::*;
 
 pub type LotId = AccountId;
 pub type ProfileId = AccountId;
 
 pub const PREFIX_PROFILES: &str = "u";
+pub const PREFIX_LOTS: &str = "a";
 
 setup_alloc!();
 
@@ -19,12 +22,14 @@ setup_alloc!();
 #[derive(BorshDeserialize, BorshSerialize)]
 pub struct Contract {
     pub profiles: UnorderedMap<ProfileId, Profile>,
+    pub lots: UnorderedMap<LotId, Lot>,
 }
 
 impl Default for Contract {
     fn default() -> Self {
         Self {
             profiles: UnorderedMap::new(PREFIX_PROFILES.as_bytes().to_vec()),
+            lots: UnorderedMap::new(PREFIX_LOTS.as_bytes().to_vec()),
         }
     }
 }

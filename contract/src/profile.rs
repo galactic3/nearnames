@@ -32,7 +32,11 @@ impl Contract {
             })
     }
 
-    pub(crate) fn internal_profile_save_or_panic(&mut self, profile_id: &ProfileId, profile: &Profile) {
+    pub(crate) fn internal_profile_save_or_panic(
+        &mut self,
+        profile_id: &ProfileId,
+        profile: &Profile,
+    ) {
         assert!(self.profiles.insert(profile_id, profile).is_none());
     }
 }
