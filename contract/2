@@ -12,39 +12,7 @@ pub struct Lot {
     pub buy_now_price: Balance,
     pub start_timestamp: Timestamp,
     pub finish_timestamp: Timestamp,
-}
-
-impl Lot {
-    pub fn is_active(&self, now: Timestamp) -> bool {
-        now <= self.finish_timestamp
-    }
-}
-
-#[derive(Deserialize, Serialize, Debug)]
-#[serde(crate = "near_sdk::serde")]
-pub struct LotView {
-    pub lot_id: LotId,
-    pub seller_id: ProfileId,
-    pub reserve_price: WrappedBalance,
-    pub buy_now_price: WrappedBalance,
-    pub start_timestamp: WrappedTimestamp,
-    pub finish_timestamp: WrappedTimestamp,
-    pub is_active: bool,
-}
-
-impl From<(&Lot, Timestamp)> for LotView {
-    fn from(args: (&Lot, Timestamp)) -> Self {
-        let (lot, now) = args;
-        Self {
-            lot_id: lot.lot_id.clone(),
-            seller_id: lot.seller_id.clone(),
-            reserve_price: lot.reserve_price.into(),
-            buy_now_price: lot.buy_now_price.into(),
-            start_timestamp: lot.start_timestamp.into(),
-            finish_timestamp: lot.finish_timestamp.into(),
-            is_active: lot.is_active(now),
-        }
-    }
+    pub finalized: bool,
 }
 
 impl Contract {
@@ -70,6 +38,7 @@ impl Contract {
             buy_now_price,
             start_timestamp: time_now,
             finish_timestamp: time_now + duration,
+            finalized: false,
         }
     }
 
@@ -83,9 +52,8 @@ impl Contract {
 }
 
 #[near_bindgen]
-impl Contract {
-    pub fn lot_get(&self, lot_id: ValidAccountId) -> Option<LotView> {
-        let now = env::block_timestamp();
-        self.lots.get(lot_id.as_ref()).map(|p| (&p, now).into())
+impl(Contract) {
+    pub fn lot_get(&self, profile_id: ValidAccountId) -> Option<ProfileView> {
+        self.profiles.get(profile_id.as_ref()).map(|p| (&p).into())
     }
 }

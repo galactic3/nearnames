@@ -3,7 +3,7 @@ mod profile;
 
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::UnorderedMap;
-use near_sdk::json_types::{ValidAccountId, WrappedBalance};
+use near_sdk::json_types::{ValidAccountId, WrappedBalance, WrappedTimestamp};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{env, near_bindgen, setup_alloc, AccountId, Balance, Duration, Timestamp};
 
@@ -58,6 +58,7 @@ mod tests {
         VMContextBuilder::new()
             .signer_account_id("alice_near".try_into().unwrap())
             .is_view(is_view)
+            .block_timestamp(DAY_NANOSECONDS * 13)
             .build()
     }
 
@@ -187,5 +188,36 @@ mod tests {
         );
 
         assert_eq!(lot_found.lot_id, "alice", "{}", "expected lot_id == alice");
+    }
+
+    #[test]
+    fn lot_get_missing() {
+        let context = get_context_simple(false);
+        testing_env!(context);
+        let contract = Contract::default();
+
+        assert!(
+            contract.lot_get("alice".try_into().unwrap()).is_none(),
+            "Expected get_lot to return None",
+        );
+    }
+
+    #[test]
+    fn lot_get_present() {
+        let context = get_context_simple(false);
+        testing_env!(context);
+        let mut contract = Contract::default();
+        let lot_bob_sells_alice = create_lot_bob_sells_alice();
+        contract.internal_lot_save(&lot_bob_sells_alice);
+
+        let response: Option<LotView> = contract.lot_get("alice".try_into().unwrap());
+        assert!(response.is_some());
+        let response = response.unwrap();
+
+        assert_eq!(response.lot_id, "alice");
+        assert_eq!(response.seller_id, "bob");
+        assert_eq!(response.reserve_price, to_yocto(5).into());
+        assert_eq!(response.buy_now_price, to_yocto(10).into());
+        assert_eq!(response.is_active, false);
     }
 }
