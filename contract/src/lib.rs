@@ -79,14 +79,14 @@ mod tests {
         testing_env!(context);
         let mut contract = Contract::default();
 
-        let profile_id: AccountId = "alice".into();
         let available_rewards: u128 = to_yocto(2);
         let profit_received: u128 = to_yocto(3);
         let profile: Profile = Profile {
+            profile_id: "alice".into(),
             available_rewards,
             profit_received,
         };
-        contract.internal_profile_save_or_panic(&profile_id, &profile);
+        contract.internal_profile_save(&profile);
 
         let response: Option<ProfileView> = contract.profile_get("alice".try_into().unwrap());
         assert!(response.is_some());
@@ -135,10 +135,26 @@ mod tests {
         let lot = create_lot_bob_sells_alice();
         assert_eq!(lot.lot_id, "alice", "expected lot.lot_id = alice");
         assert_eq!(lot.seller_id, "bob", "expected lot.seller_id = bob");
-        assert_eq!(lot.reserve_price, to_yocto(5), "expected reserve price 5 yocto");
-        assert_eq!(lot.buy_now_price, to_yocto(10), "expected buy now price 10 yocto");
-        assert_eq!(lot.start_timestamp, DAY_NANOSECONDS * 10, "expected start day ten");
-        assert_eq!(lot.finish_timestamp, DAY_NANOSECONDS * 11, "expected finish day eleven");
+        assert_eq!(
+            lot.reserve_price,
+            to_yocto(5),
+            "expected reserve price 5 yocto"
+        );
+        assert_eq!(
+            lot.buy_now_price,
+            to_yocto(10),
+            "expected buy now price 10 yocto"
+        );
+        assert_eq!(
+            lot.start_timestamp,
+            DAY_NANOSECONDS * 10,
+            "expected start day ten"
+        );
+        assert_eq!(
+            lot.finish_timestamp,
+            DAY_NANOSECONDS * 11,
+            "expected finish day eleven"
+        );
     }
 
     #[test]
@@ -146,14 +162,29 @@ mod tests {
         let context = get_context_simple(false);
         testing_env!(context);
         let mut contract = Contract::default();
-        assert_eq!(contract.lots.len(), 0, "{}", "expected contract.lots.len() == 0 after extract");
+        assert_eq!(
+            contract.lots.len(),
+            0,
+            "{}",
+            "expected contract.lots.len() == 0 after extract"
+        );
 
         let lot_bob_sells_alice = create_lot_bob_sells_alice();
         contract.internal_lot_save(&lot_bob_sells_alice);
-        assert_eq!(contract.lots.len(), 1, "{}", "expected contract.lots.len() == 1");
+        assert_eq!(
+            contract.lots.len(),
+            1,
+            "{}",
+            "expected contract.lots.len() == 1"
+        );
 
         let lot_found: Lot = contract.internal_lot_extract(&lot_bob_sells_alice.lot_id);
-        assert_eq!(contract.lots.len(), 0, "{}", "expected contract.lots.len() == 0 after extract");
+        assert_eq!(
+            contract.lots.len(),
+            0,
+            "{}",
+            "expected contract.lots.len() == 0 after extract"
+        );
 
         assert_eq!(lot_found.lot_id, "alice", "{}", "expected lot_id == alice");
     }
