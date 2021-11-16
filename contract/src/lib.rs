@@ -111,13 +111,14 @@ mod tests {
         contract.internal_lot_extract(&AccountId::from("alice"));
     }
 
+    const DAY_NANOSECONDS: u64 = 10u64.pow(9) * 60 * 60 * 24;
+
     fn create_lot_bob_sells_alice() -> Lot {
         let reserve_price = to_yocto(5);
-        let buy_now_price = to_yoctro(10);
+        let buy_now_price = to_yocto(10);
 
-        let nanoseconds_in_second = 10u64.pow(9);
-        let time_now = nanoseconds_in_second * 100_000 * 10;
-        let duration = nanoseconds_in_second * 100_000 * 1;
+        let time_now = DAY_NANOSECONDS * 10;
+        let duration = DAY_NANOSECONDS * 1;
 
         Contract::internal_lot_create(
             "alice".into(),
@@ -136,8 +137,8 @@ mod tests {
         assert_eq!(lot.seller_id, "bob", "expected lot.seller_id = bob");
         assert_eq!(lot.reserve_price, to_yocto(5), "expected reserve price 5 yocto");
         assert_eq!(lot.buy_now_price, to_yocto(10), "expected buy now price 10 yocto");
-        assert_eq!(lot.start_timestamp, 10_00000_000000000, "expected start day ten");
-        assert_eq!(lot.finish_timestamp, 11_00000_000000000, "expected finish day eleven");
+        assert_eq!(lot.start_timestamp, DAY_NANOSECONDS * 10, "expected start day ten");
+        assert_eq!(lot.finish_timestamp, DAY_NANOSECONDS * 11, "expected finish day eleven");
     }
 
     #[test]
