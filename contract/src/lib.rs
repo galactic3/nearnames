@@ -197,8 +197,8 @@ mod tests {
         let contract = Contract::default();
 
         assert!(
-            contract.lot_get("alice".try_into().unwrap()).is_none(),
-            "Expected get_lot to return None",
+            contract.lot_list().is_empty(),
+            "Expected lot_list to be empty",
         );
     }
 
@@ -210,9 +210,9 @@ mod tests {
         let lot_bob_sells_alice = create_lot_bob_sells_alice();
         contract.internal_lot_save(&lot_bob_sells_alice);
 
-        let response: Option<LotView> = contract.lot_get("alice".try_into().unwrap());
-        assert!(response.is_some());
-        let response = response.unwrap();
+        let response: Vec<LotView> = contract.lot_list();
+        assert!(!response.is_empty());
+        let response: &LotView = &response[0];
 
         assert_eq!(response.lot_id, "alice");
         assert_eq!(response.seller_id, "bob");

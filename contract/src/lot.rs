@@ -84,8 +84,8 @@ impl Contract {
 
 #[near_bindgen]
 impl Contract {
-    pub fn lot_get(&self, lot_id: ValidAccountId) -> Option<LotView> {
+    pub fn lot_list(&self) -> Vec<LotView> {
         let now = env::block_timestamp();
-        self.lots.get(lot_id.as_ref()).map(|p| (&p, now).into())
+        self.lots.values().map(|v| (&v, now).into()).collect()
     }
 }
