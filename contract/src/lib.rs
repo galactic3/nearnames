@@ -45,6 +45,10 @@ impl Contract {
 mod tests {
     use std::convert::TryInto;
 
+    fn to_yocto(near_value: Balance) -> Balance {
+        near_value * 10u128.pow(24)
+    }
+
     use super::*;
     use near_sdk::test_utils::VMContextBuilder;
     use near_sdk::MockedBlockchain;
@@ -75,11 +79,9 @@ mod tests {
         testing_env!(context);
         let mut contract = Contract::default();
 
-        let yocto_in_near: u128 = 10u128.pow(24);
-
         let profile_id: AccountId = "alice".into();
-        let available_rewards: u128 = yocto_in_near * 2;
-        let profit_received: u128 = yocto_in_near * 3;
+        let available_rewards: u128 = to_yocto(2);
+        let profit_received: u128 = to_yocto(3);
         let profile: Profile = Profile {
             available_rewards,
             profit_received,
@@ -109,11 +111,9 @@ mod tests {
         contract.internal_lot_extract(&AccountId::from("alice"));
     }
 
-    const YOCTO_IN_NEAR: u128 = 10u128.pow(24);
-
     fn create_lot_bob_sells_alice() -> Lot {
-        let reserve_price = 5 * YOCTO_IN_NEAR;
-        let buy_now_price = 10 * YOCTO_IN_NEAR;
+        let reserve_price = to_yocto(5);
+        let buy_now_price = to_yoctro(10);
 
         let nanoseconds_in_second = 10u64.pow(9);
         let time_now = nanoseconds_in_second * 100_000 * 10;
@@ -134,8 +134,8 @@ mod tests {
         let lot = create_lot_bob_sells_alice();
         assert_eq!(lot.lot_id, "alice", "expected lot.lot_id = alice");
         assert_eq!(lot.seller_id, "bob", "expected lot.seller_id = bob");
-        assert_eq!(lot.reserve_price, 5 * YOCTO_IN_NEAR, "expected reserve price 5 yocto");
-        assert_eq!(lot.buy_now_price, 10 * YOCTO_IN_NEAR, "expected buy now price 10 yocto");
+        assert_eq!(lot.reserve_price, to_yocto(5), "expected reserve price 5 yocto");
+        assert_eq!(lot.buy_now_price, to_yocto(10), "expected buy now price 10 yocto");
         assert_eq!(lot.start_timestamp, 10_00000_000000000, "expected start day ten");
         assert_eq!(lot.finish_timestamp, 11_00000_000000000, "expected finish day eleven");
     }
