@@ -101,4 +101,59 @@ mod tests {
             "profit_received mismatch"
         );
     }
+
+    #[test]
+    #[should_panic]
+    fn internal_lot_extract_missing() {
+        let mut contract = Contract::default();
+        contract.internal_lot_extract(&AccountId::from("alice"));
+    }
+
+    const YOCTO_IN_NEAR: u128 = 10u128.pow(24);
+
+    fn create_lot_bob_sells_alice() -> Lot {
+        let reserve_price = 5 * YOCTO_IN_NEAR;
+        let buy_now_price = 10 * YOCTO_IN_NEAR;
+
+        let nanoseconds_in_second = 10u64.pow(9);
+        let time_now = nanoseconds_in_second * 100_000 * 10;
+        let duration = nanoseconds_in_second * 100_000 * 1;
+
+        Contract::internal_lot_create(
+            "alice".into(),
+            "bob".into(),
+            reserve_price,
+            buy_now_price,
+            time_now,
+            duration,
+        )
+    }
+
+    #[test]
+    fn internal_lot_create_fields() {
+        let lot = create_lot_bob_sells_alice();
+        assert_eq!(lot.lot_id, "alice", "expected lot.lot_id = alice");
+        assert_eq!(lot.seller_id, "bob", "expected lot.seller_id = bob");
+        assert_eq!(lot.reserve_price, 5 * YOCTO_IN_NEAR, "expected reserve price 5 yocto");
+        assert_eq!(lot.buy_now_price, 10 * YOCTO_IN_NEAR, "expected buy now price 10 yocto");
+        assert_eq!(lot.start_timestamp, 10_00000_000000000, "expected start day ten");
+        assert_eq!(lot.finish_timestamp, 11_00000_000000000, "expected finish day eleven");
+    }
+
+    #[test]
+    fn internal_lot_create_save_extract() {
+        let context = get_context_simple(false);
+        testing_env!(context);
+        let mut contract = Contract::default();
+        assert_eq!(contract.lots.len(), 0, "{}", "expected contract.lots.len() == 0 after extract");
+
+        let lot_bob_sells_alice = create_lot_bob_sells_alice();
+        contract.internal_lot_save(&lot_bob_sells_alice);
+        assert_eq!(contract.lots.len(), 1, "{}", "expected contract.lots.len() == 1");
+
+        let lot_found: Lot = contract.internal_lot_extract(&lot_bob_sells_alice.lot_id);
+        assert_eq!(contract.lots.len(), 0, "{}", "expected contract.lots.len() == 0 after extract");
+
+        assert_eq!(lot_found.lot_id, "alice", "{}", "expected lot_id == alice");
+    }
 }

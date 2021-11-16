@@ -17,7 +17,6 @@ pub struct Lot {
 
 impl Contract {
     pub(crate) fn internal_lot_create(
-        &mut self,
         lot_id: LotId,
         seller_id: ProfileId,
         reserve_price: Balance,
@@ -28,7 +27,8 @@ impl Contract {
         assert_ne!(lot_id, seller_id, "{}", ERR_LOT_SELLS_SELF);
         assert!(
             reserve_price <= buy_now_price,
-            ERR_LOT_PRICE_RESERVE_GREATER_THAN_BUY_NOW
+            "{}",
+            ERR_LOT_PRICE_RESERVE_GREATER_THAN_BUY_NOW,
         );
 
         Lot {
