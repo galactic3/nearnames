@@ -62,6 +62,14 @@ mod tests {
             .build()
     }
 
+    fn get_context_pred_alice(is_view: bool) -> VMContext {
+        VMContextBuilder::new()
+            .predecessor_account_id("alice".try_into().unwrap())
+            .is_view(is_view)
+            .block_timestamp(DAY_NANOSECONDS * 10)
+            .build()
+    }
+
     #[test]
     fn profile_get_missing() {
         let context = get_context_simple(false);
@@ -216,6 +224,8 @@ mod tests {
 
         assert_eq!(response.lot_id, "alice");
         assert_eq!(response.seller_id, "bob");
+        assert_eq!(response.start_timestamp, (DAY_NANOSECONDS * 10).into());
+        assert_eq!(response.finish_timestamp, (DAY_NANOSECONDS * 11).into());
         assert_eq!(response.reserve_price, to_yocto(5).into());
         assert_eq!(response.buy_now_price, to_yocto(10).into());
         assert_eq!(response.is_active, false);
@@ -229,5 +239,37 @@ mod tests {
         assert_eq!(lot_bob_sells_alice.is_active(DAY_NANOSECONDS * 10), true);
         assert_eq!(lot_bob_sells_alice.is_active(DAY_NANOSECONDS * 11), true);
         assert_eq!(lot_bob_sells_alice.is_active(DAY_NANOSECONDS * 12), false);
+    }
+
+    #[test]
+    fn lot_create_api() {
+        let context = get_context_pred_alice(false);
+        testing_env!(context);
+
+        let mut contract = Contract::default();
+        
+        let lot_id: ProfileId = "alice".into();
+        let seller_id: ProfileId = "bob".into();
+        let reserve_price = to_yocto(5);
+        let buy_now_price = to_yocto(10);
+        let duration = DAY_NANOSECONDS * 1;
+
+        contract.lot_offer(
+            seller_id.try_into().unwrap(),
+            reserve_price,
+            buy_now_price,
+            duration,
+        );
+
+        let result = contract.lots.get(&lot_id);
+        assert!(result.is_some(), "expected lot_saved is present");
+        let result = result.unwrap();
+
+        assert_eq!(result.lot_id, "alice");
+        assert_eq!(result.seller_id, "bob");
+        assert_eq!(result.start_timestamp, DAY_NANOSECONDS * 10, "expected start day ten");
+        assert_eq!(result.finish_timestamp, DAY_NANOSECONDS * 11, "expected finish day eleven");
+        assert_eq!(result.reserve_price, to_yocto(5).into());
+        assert_eq!(result.buy_now_price, to_yocto(10).into());
     }
 }

@@ -88,4 +88,26 @@ impl Contract {
         let now = env::block_timestamp();
         self.lots.values().map(|v| (&v, now).into()).collect()
     }
+
+    pub fn lot_offer(
+        &mut self,
+        seller_id: ValidAccountId,
+        reserve_price: Balance,
+        buy_now_price: Balance,
+        duration: Duration
+    ) -> bool {
+        let lot_id: LotId = env::predecessor_account_id();
+        let seller_id: ProfileId = seller_id.into();
+        let time_now = env::block_timestamp();
+        let lot = Contract::internal_lot_create(
+            lot_id,
+            seller_id,
+            reserve_price,
+            buy_now_price,
+            time_now,
+            duration,
+        );
+        self.internal_lot_save(&lot);
+        true
+    }
 }
