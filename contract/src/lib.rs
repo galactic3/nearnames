@@ -247,7 +247,7 @@ mod tests {
         testing_env!(context);
 
         let mut contract = Contract::default();
-        
+
         let lot_id: ProfileId = "alice".into();
         let seller_id: ProfileId = "bob".into();
         let reserve_price = to_yocto(5);
@@ -267,8 +267,16 @@ mod tests {
 
         assert_eq!(result.lot_id, "alice");
         assert_eq!(result.seller_id, "bob");
-        assert_eq!(result.start_timestamp, DAY_NANOSECONDS * 10, "expected start day ten");
-        assert_eq!(result.finish_timestamp, DAY_NANOSECONDS * 11, "expected finish day eleven");
+        assert_eq!(
+            result.start_timestamp,
+            DAY_NANOSECONDS * 10,
+            "expected start day ten"
+        );
+        assert_eq!(
+            result.finish_timestamp,
+            DAY_NANOSECONDS * 11,
+            "expected finish day eleven"
+        );
         assert_eq!(result.reserve_price, to_yocto(5).into());
         assert_eq!(result.buy_now_price, to_yocto(10).into());
     }

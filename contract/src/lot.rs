@@ -94,7 +94,7 @@ impl Contract {
         seller_id: ValidAccountId,
         reserve_price: Balance,
         buy_now_price: Balance,
-        duration: Duration
+        duration: Duration,
     ) -> bool {
         let lot_id: LotId = env::predecessor_account_id();
         let seller_id: ProfileId = seller_id.into();
