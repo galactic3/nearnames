@@ -3,24 +3,24 @@ use crate::*;
 #[derive(BorshDeserialize, BorshSerialize)]
 pub struct Profile {
     pub profile_id: ProfileId,
-    pub available_rewards: Balance,
-    pub profit_received: Balance,
+    pub rewards_available: Balance,
+    pub rewards_claimed: Balance,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
 #[serde(crate = "near_sdk::serde")]
 pub struct ProfileView {
     pub profile_id: ProfileId,
-    pub available_rewards: WrappedBalance,
-    pub profit_received: WrappedBalance,
+    pub rewards_available: WrappedBalance,
+    pub rewards_claimed: WrappedBalance,
 }
 
 impl From<&Profile> for ProfileView {
     fn from(p: &Profile) -> Self {
         Self {
             profile_id: p.profile_id.clone(),
-            available_rewards: p.available_rewards.into(),
-            profit_received: p.profit_received.into(),
+            rewards_available: p.rewards_available.into(),
+            rewards_claimed: p.rewards_claimed.into(),
         }
     }
 }
@@ -31,8 +31,8 @@ impl Contract {
             .remove(&profile_id)
             .unwrap_or_else(|| Profile {
                 profile_id: profile_id.clone(),
-                available_rewards: 0,
-                profit_received: 0,
+                rewards_available: 0,
+                rewards_claimed: 0,
             })
     }
 

@@ -88,12 +88,12 @@ mod tests {
         testing_env!(context);
         let mut contract = Contract::default();
 
-        let available_rewards: u128 = to_yocto(2);
-        let profit_received: u128 = to_yocto(3);
+        let rewards_available: u128 = to_yocto(2);
+        let rewards_claimed: u128 = to_yocto(3);
         let profile: Profile = Profile {
             profile_id: "alice".into(),
-            available_rewards,
-            profit_received,
+            rewards_available,
+            rewards_claimed,
         };
         contract.internal_profile_save(&profile);
 
@@ -102,14 +102,14 @@ mod tests {
         let response = response.unwrap();
 
         assert_eq!(
-            response.available_rewards,
-            available_rewards.into(),
-            "available_rewards mismatch"
+            response.rewards_available,
+            rewards_available.into(),
+            "rewards_available mismatch"
         );
         assert_eq!(
-            response.profit_received,
-            profit_received.into(),
-            "profit_received mismatch"
+            response.rewards_claimed,
+            rewards_claimed.into(),
+            "rewards_claimed mismatch"
         );
     }
 
