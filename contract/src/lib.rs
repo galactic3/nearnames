@@ -2,7 +2,7 @@ mod lot;
 mod profile;
 
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::collections::UnorderedMap;
+use near_sdk::collections::{Vector, UnorderedMap};
 use near_sdk::json_types::{ValidAccountId, WrappedBalance, WrappedTimestamp};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{env, near_bindgen, setup_alloc, AccountId, Balance, Duration, Timestamp};
@@ -15,6 +15,7 @@ pub type ProfileId = AccountId;
 
 pub const PREFIX_PROFILES: &str = "u";
 pub const PREFIX_LOTS: &str = "a";
+pub const PREFIX_LOTS_BIDS: &str = "y";
 
 setup_alloc!();
 

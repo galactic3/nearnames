@@ -5,6 +5,13 @@ pub const ERR_LOT_PRICE_RESERVE_GREATER_THAN_BUY_NOW: &str =
     "Expected reserve_price greater or equal buy_now_price";
 
 #[derive(BorshDeserialize, BorshSerialize)]
+pub struct Bid {
+    pub bidder_id: ProfileId,
+    pub amount: Balance,
+    pub timestamp: Timestamp,
+}
+
+#[derive(BorshDeserialize, BorshSerialize)]
 pub struct Lot {
     pub lot_id: LotId,
     pub seller_id: ProfileId,
@@ -12,6 +19,8 @@ pub struct Lot {
     pub buy_now_price: Balance,
     pub start_timestamp: Timestamp,
     pub finish_timestamp: Timestamp,
+
+    pub bids: Vector<Bid>,
 }
 
 impl Lot {
@@ -63,6 +72,11 @@ impl Contract {
             ERR_LOT_PRICE_RESERVE_GREATER_THAN_BUY_NOW,
         );
 
+        // TODO: do we still nid to hash the key
+        let mut prefix: Vec<u8> = Vec::with_capacity(33);
+        prefix.extend(PREFIX_LOTS_BIDS.as_bytes());
+        prefix.extend(env::sha256(lot_id.as_bytes()));
+
         Lot {
             lot_id,
             seller_id,
@@ -70,6 +84,7 @@ impl Contract {
             buy_now_price,
             start_timestamp: time_now,
             finish_timestamp: time_now + duration,
+            bids: Vector::new(prefix),
         }
     }
 
@@ -99,6 +114,7 @@ impl Contract {
         let lot_id: LotId = env::predecessor_account_id();
         let seller_id: ProfileId = seller_id.into();
         let time_now = env::block_timestamp();
+
         let lot = Contract::internal_lot_create(
             lot_id,
             seller_id,
