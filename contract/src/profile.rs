@@ -40,7 +40,11 @@ impl Contract {
         assert!(self.profiles.insert(&profile.profile_id, profile).is_none());
     }
 
-    pub(crate) fn internal_profile_rewards_transfer(&mut self, profile_id: &ProfileId, value: Balance) {
+    pub(crate) fn internal_profile_rewards_transfer(
+        &mut self,
+        profile_id: &ProfileId,
+        value: Balance,
+    ) {
         let mut profile = self.internal_profile_extract(profile_id);
         profile.rewards_available += value;
         self.internal_profile_save(&profile);

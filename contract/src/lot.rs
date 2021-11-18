@@ -3,6 +3,7 @@ use crate::*;
 pub const ERR_LOT_SELLS_SELF: &str = "Expected lot id not equal to seller id";
 pub const ERR_LOT_PRICE_RESERVE_GREATER_THAN_BUY_NOW: &str =
     "Expected reserve_price greater or equal buy_now_price";
+pub const ERR_LOT_BID_LOT_NOT_ACTIVE: &str = "Expected lot to be active, cannot bid";
 
 #[derive(BorshDeserialize, BorshSerialize)]
 pub struct Bid {
@@ -24,8 +25,36 @@ pub struct Lot {
 }
 
 impl Lot {
-    pub fn is_active(&self, now: Timestamp) -> bool {
-        now <= self.finish_timestamp
+    pub fn is_active(&self, time_now: Timestamp) -> bool {
+        if time_now >= self.finish_timestamp {
+            return false;
+        }
+        if let Some(last_bid_amount) = self.last_bid_amount() {
+            if last_bid_amount > self.buy_now_price {
+                return false;
+            }
+        }
+
+        true
+    }
+
+    pub fn last_bid_amount(&self) -> Option<Balance> {
+        if self.bids.is_empty() {
+            None
+        } else {
+            Some(self.bids.get(self.bids.len() - 1).unwrap().amount)
+        }
+    }
+
+    pub fn next_bid_amount(&self, time_now: Timestamp) -> Option<Balance> {
+        if !self.is_active(time_now) {
+            return None;
+        }
+        if let Some(last_bid_amount) = self.last_bid_amount() {
+            Some(std::cmp::max(self.reserve_price, last_bid_amount + 1))
+        } else {
+            Some(self.reserve_price)
+        }
     }
 }
 

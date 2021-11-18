@@ -2,7 +2,7 @@ mod lot;
 mod profile;
 
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::collections::{Vector, UnorderedMap};
+use near_sdk::collections::{UnorderedMap, Vector};
 use near_sdk::json_types::{ValidAccountId, WrappedBalance, WrappedTimestamp};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{env, near_bindgen, setup_alloc, AccountId, Balance, Duration, Timestamp};
@@ -142,6 +142,9 @@ mod tests {
 
     #[test]
     fn internal_lot_create_fields() {
+        let context = get_context_simple(false);
+        testing_env!(context);
+
         let lot = create_lot_bob_sells_alice();
         assert_eq!(lot.lot_id, "alice", "expected lot.lot_id = alice");
         assert_eq!(lot.seller_id, "bob", "expected lot.seller_id = bob");
@@ -234,11 +237,18 @@ mod tests {
 
     #[test]
     fn lot_is_active() {
+        let context = get_context_simple(false);
+        testing_env!(context);
+
         let lot_bob_sells_alice = create_lot_bob_sells_alice();
         // we don't care about starting time, it's just for the record
         assert_eq!(lot_bob_sells_alice.is_active(DAY_NANOSECONDS * 9), true);
         assert_eq!(lot_bob_sells_alice.is_active(DAY_NANOSECONDS * 10), true);
-        assert_eq!(lot_bob_sells_alice.is_active(DAY_NANOSECONDS * 11), true);
+        assert_eq!(
+            lot_bob_sells_alice.is_active(DAY_NANOSECONDS * 11 - 1),
+            true
+        );
+        assert_eq!(lot_bob_sells_alice.is_active(DAY_NANOSECONDS * 11), false);
         assert_eq!(lot_bob_sells_alice.is_active(DAY_NANOSECONDS * 12), false);
     }
 
@@ -306,5 +316,60 @@ mod tests {
             to_yocto(5),
             "expected balance 5 near after two transfers"
         );
+    }
+
+    #[test]
+    fn last_bid_amount() {
+        let context = get_context_simple(false);
+        testing_env!(context);
+        let mut lot = create_lot_bob_sells_alice();
+        assert!(
+            lot.last_bid_amount().is_none(),
+            "expected last_bid_amount to be None"
+        );
+
+        let bid = Bid {
+            bidder_id: "carol".to_string(),
+            timestamp: DAY_NANOSECONDS * 10,
+            amount: to_yocto(6),
+        };
+        lot.bids.push(&bid);
+        assert_eq!(lot.last_bid_amount().unwrap(), to_yocto(6));
+
+        let bid = Bid {
+            bidder_id: "carol".to_string(),
+            timestamp: DAY_NANOSECONDS * 10,
+            amount: to_yocto(7),
+        };
+        lot.bids.push(&bid);
+        assert_eq!(lot.last_bid_amount().unwrap(), to_yocto(7));
+    }
+
+    #[test]
+    fn next_bid_amount() {
+        let context = get_context_simple(false);
+        testing_env!(context);
+        let mut lot = create_lot_bob_sells_alice();
+        assert!(
+            lot.last_bid_amount().is_none(),
+            "expected last_bid_amount to be None"
+        );
+
+        let time_now: Timestamp = DAY_NANOSECONDS * 12;
+        assert!(
+            lot.next_bid_amount(time_now).is_none(),
+            "Expected next_bid_amount to be none for inactive lot",
+        );
+
+        let time_now: Timestamp = DAY_NANOSECONDS * 10;
+        assert_eq!(lot.next_bid_amount(time_now).unwrap(), to_yocto(5));
+
+        let bid = Bid {
+            bidder_id: "carol".to_string(),
+            timestamp: DAY_NANOSECONDS * 10,
+            amount: to_yocto(6),
+        };
+        lot.bids.push(&bid);
+        assert_eq!(lot.next_bid_amount(time_now).unwrap(), to_yocto(6) + 1);
     }
 }
