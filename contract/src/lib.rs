@@ -280,4 +280,30 @@ mod tests {
         assert_eq!(result.reserve_price, to_yocto(5).into());
         assert_eq!(result.buy_now_price, to_yocto(10).into());
     }
+
+    #[test]
+    fn internal_transfer() {
+        let context = get_context_simple(false);
+        testing_env!(context);
+        let mut contract = Contract::default();
+        let profile_id: ProfileId = "alice".to_string();
+        contract.internal_profile_rewards_transfer(&profile_id, to_yocto(3));
+        let profile = contract.profiles.get(&profile_id);
+        assert!(profile.is_some());
+        let profile = profile.unwrap();
+
+        assert_eq!(profile.rewards_available, to_yocto(3));
+
+        contract.internal_profile_rewards_transfer(&profile_id, to_yocto(2));
+        assert_eq!(contract.profiles.len(), 1);
+        let profile = contract.profiles.get(&profile_id);
+        assert!(profile.is_some());
+        let profile = profile.unwrap();
+
+        assert_eq!(
+            profile.rewards_available,
+            to_yocto(5),
+            "expected balance 5 near after two transfers"
+        );
+    }
 }
