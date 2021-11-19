@@ -71,6 +71,14 @@ mod tests {
             .build()
     }
 
+    fn get_context_pred_carol_change() -> VMContext {
+        VMContextBuilder::new()
+            .signer_account_id("alice_near".try_into().unwrap())
+            .is_view(false)
+            .block_timestamp(DAY_NANOSECONDS * 10)
+            .build()
+    }
+
     #[test]
     fn profile_get_missing() {
         let context = get_context_simple(false);
@@ -371,5 +379,36 @@ mod tests {
         };
         lot.bids.push(&bid);
         assert_eq!(lot.next_bid_amount(time_now).unwrap(), to_yocto(6) + 1);
+    }
+
+    #[test]
+    pub fn internal_lot_bid() {
+        // checks:
+        //   - seller cannot bid
+        //   - lot cannot bid
+        //   - lot is active
+        //   - bid amount is enough
+
+        // in this method we don't care bout predecessor, it's internal method
+        let context = get_context_simple(false);
+        testing_env!(context);
+        let mut contract = Contract::default();
+        {
+            let lot = create_lot_bob_sells_alice();
+            contract.internal_lot_save(&lot);
+        }
+        let bid: Bid = Bid {
+            bidder_id: "carol".to_string(),
+            amount: to_yocto(6),
+            timestamp: DAY_NANOSECONDS * 10,
+        };
+        contract.internal_lot_bid(&"alice".to_string(), &bid);
+        let lot = contract.internal_lot_extract(&"alice".to_string());
+        assert_eq!(lot.bids.len(), 1, "expected one bid for lot");
+
+        let last_bid = lot.bids.get(lot.bids.len() - 1).unwrap();
+        assert_eq!(last_bid.amount, to_yocto(6), "expected last bid to be 6 near");
+        assert_eq!(last_bid.bidder_id, "carol".to_string(), "expected carol as last bidder");
+        assert_eq!(last_bid.timestamp, DAY_NANOSECONDS * 10, "expected carol as last bidder");
     }
 }

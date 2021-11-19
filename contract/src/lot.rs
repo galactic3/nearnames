@@ -4,6 +4,8 @@ pub const ERR_LOT_SELLS_SELF: &str = "Expected lot id not equal to seller id";
 pub const ERR_LOT_PRICE_RESERVE_GREATER_THAN_BUY_NOW: &str =
     "Expected reserve_price greater or equal buy_now_price";
 pub const ERR_LOT_BID_LOT_NOT_ACTIVE: &str = "Expected lot to be active, cannot bid";
+pub const ERR_LOT_BID_BID_TOO_SMALL: &str = "Expected bigger bid, try again";
+pub const ERR_LOT_BID_SELLER_BIDS_SELF: &str = "Expected bidder_id is not equal to seller_id";
 
 #[derive(BorshDeserialize, BorshSerialize)]
 pub struct Bid {
@@ -123,6 +125,33 @@ impl Contract {
 
     pub(crate) fn internal_lot_save(&mut self, lot: &Lot) {
         assert!(self.lots.insert(&lot.lot_id, lot).is_none());
+    }
+
+    pub(crate) fn internal_lot_bid(&mut self, lot_id: &LotId, bid: &Bid) {
+        let mut lot = self.internal_lot_extract(lot_id);
+        assert!(
+            lot.is_active(bid.timestamp),
+            "{}",
+            ERR_LOT_BID_LOT_NOT_ACTIVE
+        );
+        assert!(
+            bid.amount >= lot.next_bid_amount(bid.timestamp).unwrap(),
+            "{}",
+            ERR_LOT_BID_BID_TOO_SMALL
+        );
+        assert_ne!(
+            lot.seller_id, bid.bidder_id,
+            "{}",
+            ERR_LOT_BID_SELLER_BIDS_SELF
+        );
+        assert_ne!(
+            lot.lot_id, bid.bidder_id,
+            "{}",
+            ERR_LOT_BID_SELLER_BIDS_SELF
+        );
+
+        lot.bids.push(bid);
+        self.internal_lot_save(&lot);
     }
 }
 
