@@ -381,15 +381,55 @@ mod tests {
         assert_eq!(lot.next_bid_amount(time_now).unwrap(), to_yocto(6) + 1);
     }
 
+    // checks:
+    //   - lot cannot bid
+    //   - seller cannot bid
+    //   - lot is active
+    //   - bid amount is enough
     #[test]
-    pub fn internal_lot_bid() {
-        // checks:
-        //   - seller cannot bid
-        //   - lot cannot bid
-        //   - lot is active
-        //   - bid amount is enough
-
+    pub fn internal_lot_bid_double() {
         // in this method we don't care bout predecessor, it's internal method
+        let context = get_context_simple(false);
+        testing_env!(context);
+        let mut contract = Contract::default();
+        {
+            let lot = create_lot_bob_sells_alice();
+            contract.internal_lot_save(&lot);
+        }
+
+        let bid: Bid = Bid {
+            bidder_id: "carol".to_string(),
+            amount: to_yocto(7),
+            timestamp: DAY_NANOSECONDS * 10,
+        };
+        contract.internal_lot_bid(&"alice".to_string(), &bid);
+        let lot = contract.lots.get(&"alice".to_string()).unwrap();
+        assert_eq!(lot.bids.len(), 1, "expected one bid for lot");
+
+        let last_bid = lot.bids.get(lot.bids.len() - 1).unwrap();
+        assert_eq!(last_bid.amount, to_yocto(7), "expected last bid to be 6 near");
+        assert_eq!(last_bid.bidder_id, "carol".to_string(), "expected carol as last bidder");
+        assert_eq!(last_bid.timestamp, DAY_NANOSECONDS * 10, "expected carol as last bidder");
+
+        let bid: Bid = Bid {
+            bidder_id: "carol".to_string(),
+            amount: to_yocto(8),
+            timestamp: DAY_NANOSECONDS * 10 + 1,
+        };
+        contract.internal_lot_bid(&"alice".to_string(), &bid);
+        let lot = contract.lots.get(&"alice".to_string()).unwrap();
+        assert_eq!(lot.bids.len(), 2, "expected one bid for lot");
+
+        let last_bid = lot.bids.get(lot.bids.len() - 1).unwrap();
+        assert_eq!(last_bid.amount, to_yocto(8), "expected last bid to be 6 near");
+        assert_eq!(last_bid.bidder_id, "carol".to_string(), "expected carol as last bidder");
+        assert_eq!(last_bid.timestamp, DAY_NANOSECONDS * 10 + 1, "expected carol as last bidder");
+    }
+
+    #[test]
+    #[should_panic(expected = "Expected lot to be active")]
+    pub fn internal_lot_bid_fail_after_finish() {
+        let foo = ERR_LOT_BID_LOT_NOT_ACTIVE;
         let context = get_context_simple(false);
         testing_env!(context);
         let mut contract = Contract::default();
@@ -400,15 +440,86 @@ mod tests {
         let bid: Bid = Bid {
             bidder_id: "carol".to_string(),
             amount: to_yocto(6),
+            timestamp: DAY_NANOSECONDS * 13,
+        };
+        contract.internal_lot_bid(&"alice".to_string(), &bid);
+    }
+
+    #[test]
+    #[should_panic(expected = "Expected bigger bid")]
+    pub fn internal_lot_bid_fail_bid_below_reserve() {
+        let context = get_context_simple(false);
+        testing_env!(context);
+        let mut contract = Contract::default();
+        {
+            let lot = create_lot_bob_sells_alice();
+            contract.internal_lot_save(&lot);
+        }
+        let bid: Bid = Bid {
+            bidder_id: "carol".to_string(),
+            amount: to_yocto(4),
             timestamp: DAY_NANOSECONDS * 10,
         };
         contract.internal_lot_bid(&"alice".to_string(), &bid);
-        let lot = contract.internal_lot_extract(&"alice".to_string());
-        assert_eq!(lot.bids.len(), 1, "expected one bid for lot");
+    }
 
-        let last_bid = lot.bids.get(lot.bids.len() - 1).unwrap();
-        assert_eq!(last_bid.amount, to_yocto(6), "expected last bid to be 6 near");
-        assert_eq!(last_bid.bidder_id, "carol".to_string(), "expected carol as last bidder");
-        assert_eq!(last_bid.timestamp, DAY_NANOSECONDS * 10, "expected carol as last bidder");
+    #[test]
+    #[should_panic(expected = "Expected bigger bid")]
+    pub fn internal_lot_bid_fail_bid_below_prev_bid() {
+        let context = get_context_simple(false);
+        testing_env!(context);
+        let mut contract = Contract::default();
+        {
+            let lot = create_lot_bob_sells_alice();
+            contract.internal_lot_save(&lot);
+        }
+
+        {
+            let bid: Bid = Bid {
+                bidder_id: "carol".to_string(),
+                amount: to_yocto(7),
+                timestamp: DAY_NANOSECONDS * 10,
+            };
+            contract.internal_lot_bid(&"alice".to_string(), &bid);
+        }
+
+        {
+            let bid: Bid = Bid {
+                bidder_id: "carol".to_string(),
+                amount: to_yocto(6),
+                timestamp: DAY_NANOSECONDS * 10 + 1,
+            };
+            contract.internal_lot_bid(&"alice".to_string(), &bid);
+        }
+    }
+
+    #[test]
+    #[should_panic(expected = "Expected lot to be active")]
+    pub fn internal_lot_bid_fail_bid_above_buy_now_price() {
+        let context = get_context_simple(false);
+        testing_env!(context);
+        let mut contract = Contract::default();
+        {
+            let lot = create_lot_bob_sells_alice();
+            contract.internal_lot_save(&lot);
+        }
+
+        {
+            let bid: Bid = Bid {
+                bidder_id: "carol".to_string(),
+                amount: to_yocto(10),
+                timestamp: DAY_NANOSECONDS * 10,
+            };
+            contract.internal_lot_bid(&"alice".to_string(), &bid);
+        }
+
+        {
+            let bid: Bid = Bid {
+                bidder_id: "carol".to_string(),
+                amount: to_yocto(11),
+                timestamp: DAY_NANOSECONDS * 10 + 1,
+            };
+            contract.internal_lot_bid(&"alice".to_string(), &bid);
+        }
     }
 }

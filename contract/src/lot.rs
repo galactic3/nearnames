@@ -32,7 +32,7 @@ impl Lot {
             return false;
         }
         if let Some(last_bid_amount) = self.last_bid_amount() {
-            if last_bid_amount > self.buy_now_price {
+            if last_bid_amount >= self.buy_now_price {
                 return false;
             }
         }
