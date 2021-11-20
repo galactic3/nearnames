@@ -616,4 +616,22 @@ mod tests {
             contract.lot_bid("alice".to_string().try_into().unwrap());
         }
     }
+
+    #[test]
+    #[should_panic(expected = "Expected lot to be active")]
+    pub fn api_lot_bid_fail_inactive() {
+        let context = get_context_simple(false);
+        testing_env!(context);
+        let mut contract = Contract::default();
+        {
+            let lot = create_lot_bob_sells_alice();
+            contract.internal_lot_save(&lot);
+        }
+
+        {
+            let context = get_context_with_payer(&"carol".to_string(), to_yocto(6), DAY_NANOSECONDS * 11);
+            testing_env!(context);
+            contract.lot_bid("alice".to_string().try_into().unwrap());
+        }
+    }
 }
