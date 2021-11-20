@@ -71,11 +71,16 @@ mod tests {
             .build()
     }
 
-    fn get_context_pred_carol_change() -> VMContext {
+    fn get_context_with_payer(
+        profile_id: &ProfileId,
+        attached_deposit: Balance,
+        timestamp: Timestamp,
+    ) -> VMContext {
         VMContextBuilder::new()
-            .signer_account_id("alice_near".try_into().unwrap())
+            .predecessor_account_id(profile_id.clone().try_into().unwrap())
             .is_view(false)
-            .block_timestamp(DAY_NANOSECONDS * 10)
+            .attached_deposit(attached_deposit)
+            .block_timestamp(timestamp)
             .build()
     }
 
@@ -429,7 +434,6 @@ mod tests {
     #[test]
     #[should_panic(expected = "Expected lot to be active")]
     pub fn internal_lot_bid_fail_after_finish() {
-        let foo = ERR_LOT_BID_LOT_NOT_ACTIVE;
         let context = get_context_simple(false);
         testing_env!(context);
         let mut contract = Contract::default();
@@ -520,6 +524,78 @@ mod tests {
                 timestamp: DAY_NANOSECONDS * 10 + 1,
             };
             contract.internal_lot_bid(&"alice".to_string(), &bid);
+        }
+    }
+
+    #[test]
+    pub fn api_lot_bid() {
+        let context = get_context_simple(false);
+        testing_env!(context);
+        let mut contract = Contract::default();
+        {
+            let lot = create_lot_bob_sells_alice();
+            contract.internal_lot_save(&lot);
+        }
+
+        {
+            let context = get_context_with_payer(&"carol".to_string(), to_yocto(7), DAY_NANOSECONDS * 10);
+            testing_env!(context);
+            contract.lot_bid("alice".to_string().try_into().unwrap());
+        }
+
+        let lot = contract.lots.get(&"alice".to_string()).unwrap();
+        assert_eq!(lot.bids.len(), 1, "expected one bid for lot");
+
+        let last_bid = lot.last_bid().unwrap();
+        assert_eq!(last_bid.amount, to_yocto(7), "expected last bid to be 7 near");
+        assert_eq!(last_bid.bidder_id, "carol".to_string(), "expected carol as last bidder");
+        assert_eq!(last_bid.timestamp, DAY_NANOSECONDS * 10, "expected start as timestamp");
+        {
+            let profile_alice = contract.internal_profile_extract(&"alice".to_string());
+            assert_eq!(profile_alice.rewards_available, 0, "lot profile should have zero balance");
+            contract.internal_profile_save(&profile_alice);
+        }
+        {
+            let profile_bob = contract.internal_profile_extract(&"bob".to_string());
+            assert_eq!(profile_bob.rewards_available, to_yocto(7), "seller profile should have bid balance");
+            contract.internal_profile_save(&profile_bob);
+        }
+        {
+            let profile_carol = contract.internal_profile_extract(&"carol".to_string());
+            assert_eq!(profile_carol.rewards_available, 0, "first bidder profile should have zero balance");
+            contract.internal_profile_save(&profile_carol);
+        }
+
+        {
+            let context = get_context_with_payer(&"dan".to_string(), to_yocto(8), DAY_NANOSECONDS * 10 + 1);
+            testing_env!(context);
+            contract.lot_bid("alice".to_string().try_into().unwrap());
+        }
+
+        let lot = contract.lots.get(&"alice".to_string()).unwrap();
+        let last_bid = lot.last_bid().unwrap();
+        assert_eq!(last_bid.amount, to_yocto(8), "expected last bid to be 8 near");
+        assert_eq!(last_bid.bidder_id, "dan".to_string(), "expected dan as last bidder");
+        assert_eq!(last_bid.timestamp, DAY_NANOSECONDS * 10 + 1, "expected start plus one timestamp");
+        {
+            let profile_alice = contract.internal_profile_extract(&"alice".to_string());
+            assert_eq!(profile_alice.rewards_available, 0, "lot profile should have zero balance");
+            contract.internal_profile_save(&profile_alice);
+        }
+        {
+            let profile_bob = contract.internal_profile_extract(&"bob".to_string());
+            assert_eq!(profile_bob.rewards_available, to_yocto(8), "lot profile should have bid balance");
+            contract.internal_profile_save(&profile_bob);
+        }
+        {
+            let profile_carol = contract.internal_profile_extract(&"carol".to_string());
+            assert_eq!(profile_carol.rewards_available, to_yocto(7), "first bidder profile should have prev bid balance");
+            contract.internal_profile_save(&profile_carol);
+        }
+        {
+            let profile_dan = contract.internal_profile_extract(&"dan".to_string());
+            assert_eq!(profile_dan.rewards_available, 0, "last bidder profile should have zero balance");
+            contract.internal_profile_save(&profile_dan);
         }
     }
 }

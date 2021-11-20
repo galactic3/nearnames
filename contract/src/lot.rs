@@ -204,6 +204,7 @@ impl Contract {
 
         let bid: Bid = Bid { bidder_id, amount, timestamp };
 
+        // TODO: rewrite to elliminate double read
         self.internal_lot_bid(&lot_id, &bid);
 
         // redistribute balances
