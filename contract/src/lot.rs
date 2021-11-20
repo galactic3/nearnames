@@ -27,6 +27,14 @@ pub struct Lot {
 }
 
 impl Lot {
+    pub fn last_bid(&self) -> Option<Bid> {
+        if self.bids.is_empty() {
+            None
+        } else {
+            Some(self.bids.get(self.bids.len() - 1).unwrap())
+        }
+    }
+
     pub fn is_active(&self, time_now: Timestamp) -> bool {
         if time_now >= self.finish_timestamp {
             return false;
@@ -41,11 +49,7 @@ impl Lot {
     }
 
     pub fn last_bid_amount(&self) -> Option<Balance> {
-        if self.bids.is_empty() {
-            None
-        } else {
-            Some(self.bids.get(self.bids.len() - 1).unwrap().amount)
-        }
+        self.last_bid().map(|x| x.amount)
     }
 
     pub fn next_bid_amount(&self, time_now: Timestamp) -> Option<Balance> {
@@ -182,6 +186,40 @@ impl Contract {
             duration,
         );
         self.internal_lot_save(&lot);
+        true
+    }
+
+    #[payable]
+    pub fn lot_bid(
+        &mut self,
+        lot_id: ValidAccountId,
+    ) -> bool {
+        let lot_id: ProfileId = lot_id.into();
+        let lot = self.lots.get(&lot_id).unwrap();
+        let last_bid: Option<Bid> = lot.last_bid();
+
+        let bidder_id: ProfileId = env::predecessor_account_id();
+        let amount: Balance = env::attached_deposit();
+        let timestamp = env::block_timestamp();
+
+        let bid: Bid = Bid { bidder_id, amount, timestamp };
+
+        self.internal_lot_bid(&lot_id, &bid);
+
+        // redistribute balances
+        match last_bid {
+            Some(last_bid) => {
+                let to_last_bid = last_bid.amount;
+                let to_seller = amount - to_last_bid;
+                self.internal_profile_rewards_transfer(&last_bid.bidder_id, to_last_bid);
+                self.internal_profile_rewards_transfer(&lot.seller_id, to_seller);
+            },
+            None => {
+                let to_seller = amount;
+                self.internal_profile_rewards_transfer(&lot.seller_id, to_seller)
+            },
+        }
+
         true
     }
 }
