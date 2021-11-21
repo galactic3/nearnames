@@ -53,7 +53,7 @@ impl Contract {
 
 #[near_bindgen]
 impl Contract {
-    pub fn profile_get(&self, profile_id: ValidAccountId) -> Option<ProfileView> {
-        self.profiles.get(profile_id.as_ref()).map(|p| (&p).into())
+    pub fn profile_get(&self, profile_id: AccountId) -> Option<ProfileView> {
+        self.profiles.get(&profile_id).map(|p| (&p).into())
     }
 }

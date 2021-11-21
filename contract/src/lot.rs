@@ -168,7 +168,7 @@ impl Contract {
 
     pub fn lot_offer(
         &mut self,
-        seller_id: ValidAccountId,
+        seller_id: AccountId,
         reserve_price: Balance,
         buy_now_price: Balance,
         duration: Duration,
@@ -192,7 +192,7 @@ impl Contract {
     #[payable]
     pub fn lot_bid(
         &mut self,
-        lot_id: ValidAccountId,
+        lot_id: AccountId,
     ) -> bool {
         let lot_id: ProfileId = lot_id.into();
         let lot = self.lots.get(&lot_id).unwrap();

@@ -31,7 +31,7 @@ const debug = process.argv.pop() === '--debug'
 // `--target option` in Cargo.toml.
 const buildCmd = debug
   ? 'cargo build --target wasm32-unknown-unknown'
-  : 'cargo build --target wasm32-unknown-unknown --release'
+  : 'env RUSTFLAGS="-C link-arg=-s" cargo build --target wasm32-unknown-unknown --release'
 
 // Execute the build command, storing exit code for later use
 const { code } = sh.exec(buildCmd)
