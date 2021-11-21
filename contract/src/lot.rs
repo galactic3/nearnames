@@ -3,6 +3,16 @@ use crate::*;
 pub const ERR_LOT_SELLS_SELF: &str = "Expected lot id not equal to seller id";
 pub const ERR_LOT_PRICE_RESERVE_GREATER_THAN_BUY_NOW: &str =
     "Expected reserve_price greater or equal buy_now_price";
+pub const ERR_LOT_BID_LOT_NOT_ACTIVE: &str = "Expected lot to be active, cannot bid";
+pub const ERR_LOT_BID_BID_TOO_SMALL: &str = "Expected bigger bid, try again";
+pub const ERR_LOT_BID_SELLER_BIDS_SELF: &str = "Expected bidder_id is not equal to seller_id";
+
+#[derive(BorshDeserialize, BorshSerialize)]
+pub struct Bid {
+    pub bidder_id: ProfileId,
+    pub amount: Balance,
+    pub timestamp: Timestamp,
+}
 
 #[derive(BorshDeserialize, BorshSerialize)]
 pub struct Lot {
@@ -12,11 +22,45 @@ pub struct Lot {
     pub buy_now_price: Balance,
     pub start_timestamp: Timestamp,
     pub finish_timestamp: Timestamp,
+
+    pub bids: Vector<Bid>,
 }
 
 impl Lot {
-    pub fn is_active(&self, now: Timestamp) -> bool {
-        now <= self.finish_timestamp
+    pub fn last_bid(&self) -> Option<Bid> {
+        if self.bids.is_empty() {
+            None
+        } else {
+            Some(self.bids.get(self.bids.len() - 1).unwrap())
+        }
+    }
+
+    pub fn is_active(&self, time_now: Timestamp) -> bool {
+        if time_now >= self.finish_timestamp {
+            return false;
+        }
+        if let Some(last_bid_amount) = self.last_bid_amount() {
+            if last_bid_amount >= self.buy_now_price {
+                return false;
+            }
+        }
+
+        true
+    }
+
+    pub fn last_bid_amount(&self) -> Option<Balance> {
+        self.last_bid().map(|x| x.amount)
+    }
+
+    pub fn next_bid_amount(&self, time_now: Timestamp) -> Option<Balance> {
+        if !self.is_active(time_now) {
+            return None;
+        }
+        if let Some(last_bid_amount) = self.last_bid_amount() {
+            Some(std::cmp::max(self.reserve_price, last_bid_amount + 1))
+        } else {
+            Some(self.reserve_price)
+        }
     }
 }
 
@@ -63,6 +107,11 @@ impl Contract {
             ERR_LOT_PRICE_RESERVE_GREATER_THAN_BUY_NOW,
         );
 
+        // TODO: do we still nid to hash the key
+        let mut prefix: Vec<u8> = Vec::with_capacity(33);
+        prefix.extend(PREFIX_LOTS_BIDS.as_bytes());
+        prefix.extend(env::sha256(lot_id.as_bytes()));
+
         Lot {
             lot_id,
             seller_id,
@@ -70,6 +119,7 @@ impl Contract {
             buy_now_price,
             start_timestamp: time_now,
             finish_timestamp: time_now + duration,
+            bids: Vector::new(prefix),
         }
     }
 
@@ -79,6 +129,33 @@ impl Contract {
 
     pub(crate) fn internal_lot_save(&mut self, lot: &Lot) {
         assert!(self.lots.insert(&lot.lot_id, lot).is_none());
+    }
+
+    pub(crate) fn internal_lot_bid(&mut self, lot_id: &LotId, bid: &Bid) {
+        let mut lot = self.internal_lot_extract(lot_id);
+        assert!(
+            lot.is_active(bid.timestamp),
+            "{}",
+            ERR_LOT_BID_LOT_NOT_ACTIVE
+        );
+        assert!(
+            bid.amount >= lot.next_bid_amount(bid.timestamp).unwrap(),
+            "{}",
+            ERR_LOT_BID_BID_TOO_SMALL
+        );
+        assert_ne!(
+            lot.seller_id, bid.bidder_id,
+            "{}",
+            ERR_LOT_BID_SELLER_BIDS_SELF
+        );
+        assert_ne!(
+            lot.lot_id, bid.bidder_id,
+            "{}",
+            ERR_LOT_BID_SELLER_BIDS_SELF
+        );
+
+        lot.bids.push(bid);
+        self.internal_lot_save(&lot);
     }
 }
 
@@ -99,6 +176,7 @@ impl Contract {
         let lot_id: LotId = env::predecessor_account_id();
         let seller_id: ProfileId = seller_id.into();
         let time_now = env::block_timestamp();
+
         let lot = Contract::internal_lot_create(
             lot_id,
             seller_id,
@@ -108,6 +186,41 @@ impl Contract {
             duration,
         );
         self.internal_lot_save(&lot);
+        true
+    }
+
+    #[payable]
+    pub fn lot_bid(
+        &mut self,
+        lot_id: ValidAccountId,
+    ) -> bool {
+        let lot_id: ProfileId = lot_id.into();
+        let lot = self.lots.get(&lot_id).unwrap();
+        let last_bid: Option<Bid> = lot.last_bid();
+
+        let bidder_id: ProfileId = env::predecessor_account_id();
+        let amount: Balance = env::attached_deposit();
+        let timestamp = env::block_timestamp();
+
+        let bid: Bid = Bid { bidder_id, amount, timestamp };
+
+        // TODO: rewrite to elliminate double read
+        self.internal_lot_bid(&lot_id, &bid);
+
+        // redistribute balances
+        match last_bid {
+            Some(last_bid) => {
+                let to_last_bid = last_bid.amount;
+                let to_seller = amount - to_last_bid;
+                self.internal_profile_rewards_transfer(&last_bid.bidder_id, to_last_bid);
+                self.internal_profile_rewards_transfer(&lot.seller_id, to_seller);
+            },
+            None => {
+                let to_seller = amount;
+                self.internal_profile_rewards_transfer(&lot.seller_id, to_seller)
+            },
+        }
+
         true
     }
 }
