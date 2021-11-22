@@ -169,11 +169,13 @@ impl Contract {
     pub fn lot_offer(
         &mut self,
         seller_id: AccountId,
-        reserve_price: Balance,
-        buy_now_price: Balance,
+        reserve_price: WrappedBalance,
+        buy_now_price: WrappedBalance,
         duration: Duration,
     ) -> bool {
         let lot_id: LotId = env::predecessor_account_id();
+        let reserve_price: Balance = reserve_price.into();
+        let buy_now_price: Balance = buy_now_price.into();
         let seller_id: ProfileId = seller_id.into();
         let time_now = env::block_timestamp();
 

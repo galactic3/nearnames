@@ -7,8 +7,8 @@ use near_sdk::json_types::{U128, U64};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{env, near_bindgen, AccountId, Balance, Duration, Timestamp};
 
-use crate::lot::*;
-use crate::profile::*;
+pub use crate::lot::*;
+pub use crate::profile::*;
 
 pub type LotId = AccountId;
 pub type ProfileId = AccountId;
@@ -279,8 +279,8 @@ mod tests {
 
         contract.lot_offer(
             seller_id.try_into().unwrap(),
-            reserve_price,
-            buy_now_price,
+            reserve_price.into(),
+            buy_now_price.into(),
             duration,
         );
 
