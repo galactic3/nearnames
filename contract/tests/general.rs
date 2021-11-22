@@ -1,5 +1,5 @@
-use near_sdk_sim::{call, view, to_yocto, deploy, init_simulator, ContractAccount, UserAccount};
-use near_sdk::{Balance, AccountId};
+use near_sdk::{AccountId, Balance};
+use near_sdk_sim::{call, deploy, init_simulator, to_yocto, view, ContractAccount, UserAccount};
 
 use marketplace::{ContractContract, LotView, WrappedBalance};
 
