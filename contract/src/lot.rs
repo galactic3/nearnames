@@ -169,11 +169,13 @@ impl Contract {
     pub fn lot_offer(
         &mut self,
         seller_id: AccountId,
-        reserve_price: Balance,
-        buy_now_price: Balance,
+        reserve_price: WrappedBalance,
+        buy_now_price: WrappedBalance,
         duration: Duration,
     ) -> bool {
         let lot_id: LotId = env::predecessor_account_id();
+        let reserve_price: Balance = reserve_price.into();
+        let buy_now_price: Balance = buy_now_price.into();
         let seller_id: ProfileId = seller_id.into();
         let time_now = env::block_timestamp();
 
@@ -190,10 +192,7 @@ impl Contract {
     }
 
     #[payable]
-    pub fn lot_bid(
-        &mut self,
-        lot_id: AccountId,
-    ) -> bool {
+    pub fn lot_bid(&mut self, lot_id: AccountId) -> bool {
         let lot_id: ProfileId = lot_id.into();
         let lot = self.lots.get(&lot_id).unwrap();
         let last_bid: Option<Bid> = lot.last_bid();
@@ -202,7 +201,11 @@ impl Contract {
         let amount: Balance = env::attached_deposit();
         let timestamp = env::block_timestamp();
 
-        let bid: Bid = Bid { bidder_id, amount, timestamp };
+        let bid: Bid = Bid {
+            bidder_id,
+            amount,
+            timestamp,
+        };
 
         // TODO: rewrite to elliminate double read
         self.internal_lot_bid(&lot_id, &bid);
@@ -214,11 +217,11 @@ impl Contract {
                 let to_seller = amount - to_last_bid;
                 self.internal_profile_rewards_transfer(&last_bid.bidder_id, to_last_bid);
                 self.internal_profile_rewards_transfer(&lot.seller_id, to_seller);
-            },
+            }
             None => {
                 let to_seller = amount;
                 self.internal_profile_rewards_transfer(&lot.seller_id, to_seller)
-            },
+            }
         }
 
         true
