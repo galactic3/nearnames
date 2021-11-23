@@ -13,7 +13,7 @@ pub const ERR_LOT_CLEAN_UP_UNLOCK_FAILED: &str = "Expected unlock promise to be 
 
 pub const NO_DEPOSIT: Balance = 0;
 pub const GAS_EXT_CALL_UNLOCK: u64 = 100_000_000_000_000;
-pub const GAS_EXT_CALL_AFTER_CLAIM_CLEAN_UP: u64 = 100_000_000_000_000;
+pub const GAS_EXT_CALL_CLEAN_UP: u64 = 100_000_000_000_000;
 
 #[derive(BorshDeserialize, BorshSerialize)]
 pub struct Bid {
@@ -274,7 +274,7 @@ impl Contract {
             lot_id.clone(),
             env::current_account_id(),
             NO_DEPOSIT,
-            GAS_EXT_CALL_AFTER_CLAIM_CLEAN_UP.into(),
+            GAS_EXT_CALL_CLEAN_UP.into(),
         ))
     }
 
