@@ -8,9 +8,12 @@ pub const ERR_LOT_BID_BID_TOO_SMALL: &str = "Expected bigger bid, try again";
 pub const ERR_LOT_BID_SELLER_BIDS_SELF: &str = "Expected bidder_id is not equal to seller_id";
 pub const ERR_LOT_CLAIM_LOT_STILL_ACTIVE: &str = "Expected lot to be not active";
 pub const ERR_LOT_CLAIM_WRONG_CLAIMER: &str = "This account cannot claim this lot";
+pub const ERR_LOT_CLEAN_UP_STILL_ACTIVE: &str = "UNREACHABLE: cannot clean up still active lot";
+pub const ERR_LOT_CLEAN_UP_UNLOCK_FAILED: &str = "Expected unlock promise to be successful";
 
 pub const NO_DEPOSIT: Balance = 0;
 pub const GAS_EXT_CALL_UNLOCK: u64 = 100_000_000_000_000;
+pub const GAS_EXT_CALL_AFTER_CLAIM_CLEAN_UP: u64 = 100_000_000_000_000;
 
 #[derive(BorshDeserialize, BorshSerialize)]
 pub struct Bid {
@@ -70,6 +73,10 @@ impl Lot {
 
     pub fn potential_claimer_id(&self) -> Option<ProfileId> {
         self.last_bid().map(|x| x.bidder_id)
+    }
+
+    pub fn clean_up(&mut self) {
+        self.bids.clear()
     }
 }
 
@@ -254,6 +261,32 @@ impl Contract {
             ERR_LOT_CLAIM_WRONG_CLAIMER,
         );
 
-        ext_lock_contract::unlock(public_key, lot_id, NO_DEPOSIT, GAS_EXT_CALL_UNLOCK.into())
+        ext_lock_contract::unlock(
+            public_key,
+            lot_id.clone(),
+            NO_DEPOSIT,
+            GAS_EXT_CALL_UNLOCK.into(),
+        )
+        .then(ext_self_contract::lot_after_claim_clean_up(
+            lot_id.clone(),
+            env::current_account_id(),
+            NO_DEPOSIT,
+            GAS_EXT_CALL_AFTER_CLAIM_CLEAN_UP.into(),
+        ))
+    }
+
+    #[private]
+    pub fn lot_after_claim_clean_up(&mut self, lot_id: LotId) -> bool {
+        assert!(is_promise_success(), "{}", ERR_LOT_CLEAN_UP_UNLOCK_FAILED);
+        let time_now = env::block_timestamp();
+        let mut lot: Lot = self.internal_lot_extract(&lot_id);
+        assert!(
+            !lot.is_active(time_now),
+            "{}",
+            ERR_LOT_CLEAN_UP_STILL_ACTIVE
+        );
+        lot.clean_up();
+        // lot is already deleted from lots storage, returning to persist changes
+        true
     }
 }

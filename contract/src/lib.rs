@@ -1,17 +1,19 @@
 mod lot;
 mod profile;
+mod utils;
 
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{UnorderedMap, Vector};
 use near_sdk::json_types::{U128, U64};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{
-    env, ext_contract, near_bindgen, AccountId, Balance, Duration, Gas, Promise, PublicKey,
-    Timestamp,
+    env, ext_contract, near_bindgen, AccountId, Balance, Duration, Promise, PromiseResult,
+    PublicKey, Timestamp,
 };
 
 pub use crate::lot::*;
 pub use crate::profile::*;
+pub use crate::utils::*;
 
 pub type LotId = AccountId;
 pub type ProfileId = AccountId;
@@ -25,6 +27,11 @@ pub const PREFIX_LOTS_BIDS: &str = "y";
 #[ext_contract]
 pub trait ExtLockContract {
     fn unlock(&mut self, public_key: PublicKey);
+}
+
+#[ext_contract]
+pub trait ExtSelfContract {
+    fn lot_after_claim_clean_up(&mut self, lot_id: LotId);
 }
 
 #[near_bindgen]
