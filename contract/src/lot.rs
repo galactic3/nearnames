@@ -6,6 +6,11 @@ pub const ERR_LOT_PRICE_RESERVE_GREATER_THAN_BUY_NOW: &str =
 pub const ERR_LOT_BID_LOT_NOT_ACTIVE: &str = "Expected lot to be active, cannot bid";
 pub const ERR_LOT_BID_BID_TOO_SMALL: &str = "Expected bigger bid, try again";
 pub const ERR_LOT_BID_SELLER_BIDS_SELF: &str = "Expected bidder_id is not equal to seller_id";
+pub const ERR_LOT_CLAIM_LOT_STILL_ACTIVE: &str = "Expected lot to be not active";
+pub const ERR_LOT_CLAIM_WRONG_CLAIMER: &str = "This account cannot claim this lot";
+
+pub const NO_DEPOSIT: Balance = 0;
+pub const GAS_EXT_CALL_UNLOCK: u64 = 100_000_000_000_000;
 
 #[derive(BorshDeserialize, BorshSerialize)]
 pub struct Bid {
@@ -61,6 +66,10 @@ impl Lot {
         } else {
             Some(self.reserve_price)
         }
+    }
+
+    pub fn potential_claimer_id(&self) -> Option<ProfileId> {
+        self.last_bid().map(|x| x.bidder_id)
     }
 }
 
@@ -225,5 +234,26 @@ impl Contract {
         }
 
         true
+    }
+
+    pub fn lot_claim(&mut self, lot_id: AccountId, public_key: PublicKey) -> Promise {
+        let claimer_id: ProfileId = env::predecessor_account_id();
+        let time_now = env::block_timestamp();
+        let lot: Lot = self.lots.get(&lot_id).unwrap();
+
+        // TODO: move into internal lot method
+        assert!(
+            !lot.is_active(time_now),
+            "{}",
+            ERR_LOT_CLAIM_LOT_STILL_ACTIVE,
+        );
+        assert_eq!(
+            lot.potential_claimer_id(),
+            Some(claimer_id),
+            "{}",
+            ERR_LOT_CLAIM_WRONG_CLAIMER,
+        );
+
+        ext_lock_contract::unlock(public_key, lot_id, NO_DEPOSIT, GAS_EXT_CALL_UNLOCK.into())
     }
 }
