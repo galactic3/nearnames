@@ -78,6 +78,20 @@ impl Lot {
     pub fn clean_up(&mut self) {
         self.bids.clear()
     }
+
+    pub fn validate_claim(&self, claimer_id: &ProfileId, time_now: Timestamp) {
+        assert!(
+            !self.is_active(time_now),
+            "{}",
+            ERR_LOT_CLAIM_LOT_STILL_ACTIVE,
+        );
+        assert_eq!(
+            self.potential_claimer_id().as_ref(),
+            Some(claimer_id),
+            "{}",
+            ERR_LOT_CLAIM_WRONG_CLAIMER,
+        );
+    }
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -248,18 +262,7 @@ impl Contract {
         let time_now = env::block_timestamp();
         let lot: Lot = self.lots.get(&lot_id).unwrap();
 
-        // TODO: move into internal lot method
-        assert!(
-            !lot.is_active(time_now),
-            "{}",
-            ERR_LOT_CLAIM_LOT_STILL_ACTIVE,
-        );
-        assert_eq!(
-            lot.potential_claimer_id(),
-            Some(claimer_id),
-            "{}",
-            ERR_LOT_CLAIM_WRONG_CLAIMER,
-        );
+        lot.validate_claim(&claimer_id, time_now);
 
         ext_lock_contract::unlock(
             public_key,
