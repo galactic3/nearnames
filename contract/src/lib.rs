@@ -1,14 +1,19 @@
 mod lot;
 mod profile;
+mod utils;
 
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{UnorderedMap, Vector};
 use near_sdk::json_types::{U128, U64};
 use near_sdk::serde::{Deserialize, Serialize};
-use near_sdk::{env, near_bindgen, AccountId, Balance, Duration, Timestamp};
+use near_sdk::{
+    env, ext_contract, near_bindgen, AccountId, Balance, Duration, Promise, PromiseResult,
+    PublicKey, Timestamp,
+};
 
 pub use crate::lot::*;
 pub use crate::profile::*;
+pub use crate::utils::*;
 
 pub type LotId = AccountId;
 pub type ProfileId = AccountId;
@@ -18,6 +23,16 @@ pub type WrappedTimestamp = U64;
 pub const PREFIX_PROFILES: &str = "u";
 pub const PREFIX_LOTS: &str = "a";
 pub const PREFIX_LOTS_BIDS: &str = "y";
+
+#[ext_contract]
+pub trait ExtLockContract {
+    fn unlock(&mut self, public_key: PublicKey);
+}
+
+#[ext_contract]
+pub trait ExtSelfContract {
+    fn lot_after_claim_clean_up(&mut self, lot_id: LotId);
+}
 
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize)]
@@ -732,6 +747,65 @@ mod tests {
             );
             testing_env!(context);
             contract.lot_bid("alice".to_string().try_into().unwrap());
+        }
+    }
+
+    // derived from empty string
+    const DEFAULT_PUBLIC_KEY: &str = "ed25519:Ga6C8S7jVG2inG88cos8UsdtGVWRFQasSdTdtHL7kBqL";
+
+    #[test]
+    pub fn api_lot_claim_success() {
+        let context = get_context_simple(false);
+        testing_env!(context);
+        let mut contract = Contract::default();
+        {
+            let lot = create_lot_bob_sells_alice();
+            contract.internal_lot_save(&lot);
+        }
+
+        {
+            let bid: Bid = Bid {
+                bidder_id: "carol".parse().unwrap(),
+                amount: to_yocto(7),
+                timestamp: DAY_NANOSECONDS * 10,
+            };
+            contract.internal_lot_bid(&"alice".parse().unwrap(), &bid);
+        }
+
+        {
+            let context = get_context_with_payer(
+                &"carol".parse().unwrap(),
+                to_yocto(0),
+                DAY_NANOSECONDS * 11,
+            );
+            testing_env!(context);
+            let public_key: PublicKey = DEFAULT_PUBLIC_KEY.parse().unwrap();
+
+            contract.lot_claim("alice".parse().unwrap(), public_key);
+        }
+    }
+
+    #[test]
+    #[should_panic(expected = "Expected lot to be not active")]
+    pub fn api_lot_claim_fail_still_active() {
+        let context = get_context_simple(false);
+        testing_env!(context);
+        let mut contract = Contract::default();
+        {
+            let lot = create_lot_bob_sells_alice();
+            contract.internal_lot_save(&lot);
+        }
+
+        {
+            let context = get_context_with_payer(
+                &"carol".parse().unwrap(),
+                to_yocto(0),
+                DAY_NANOSECONDS * 10,
+            );
+            testing_env!(context);
+            let public_key: PublicKey = DEFAULT_PUBLIC_KEY.parse().unwrap();
+
+            contract.lot_claim("alice".parse().unwrap(), public_key);
         }
     }
 }
