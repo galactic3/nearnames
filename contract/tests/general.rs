@@ -3,9 +3,12 @@ use near_sdk_sim::{call, deploy, init_simulator, to_yocto, view, ContractAccount
 
 use marketplace::{ContractContract, LotView, ERR_LOT_SELLS_SELF};
 
-near_sdk_sim::lazy_static_include::lazy_static_include_bytes! {
-    COUNTER_BYTES => "res/marketplace.wasm",
-}
+pub const CONTRACT_BYTES: &[u8] = include_bytes!("../res/marketplace.wasm");
+pub const BYTES: &[u8] = include_bytes!("../../lock_unlock_account_contract/res/lock_unlock_account.wasm");
+
+// near_sdk_sim::lazy_static_include::lazy_static_include_bytes! {
+//     COUNTER_BYTES => "res/marketplace.wasm",
+// }
 
 fn init() -> (UserAccount, ContractAccount<ContractContract>) {
     let root = init_simulator(None);
@@ -14,7 +17,7 @@ fn init() -> (UserAccount, ContractAccount<ContractContract>) {
     let counter: ContractAccount<ContractContract> = deploy!(
         contract: ContractContract,
         contract_id: "marketplace".to_string(),
-        bytes: &COUNTER_BYTES,
+        bytes: &CONTRACT_BYTES,
         signer_account: root
     );
 
