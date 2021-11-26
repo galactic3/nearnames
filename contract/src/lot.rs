@@ -103,6 +103,8 @@ pub struct LotView {
     pub buy_now_price: WrappedBalance,
     pub start_timestamp: WrappedTimestamp,
     pub finish_timestamp: WrappedTimestamp,
+    pub last_bid_amount: Option<WrappedBalance>,
+    pub next_bid_amount: Option<WrappedBalance>,
     pub is_active: bool,
 }
 
@@ -116,6 +118,8 @@ impl From<(&Lot, Timestamp)> for LotView {
             buy_now_price: lot.buy_now_price.into(),
             start_timestamp: lot.start_timestamp.into(),
             finish_timestamp: lot.finish_timestamp.into(),
+            last_bid_amount: lot.last_bid_amount().map(|x| x.into()),
+            next_bid_amount: lot.next_bid_amount(now).map(|x| x.into()),
             is_active: lot.is_active(now),
         }
     }

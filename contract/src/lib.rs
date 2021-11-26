@@ -255,7 +255,7 @@ mod tests {
     }
 
     #[test]
-    fn lot_get_present() {
+    fn lot_list_present() {
         let context = get_context_simple(false);
         testing_env!(context);
         let mut contract = Contract::default();
@@ -272,7 +272,42 @@ mod tests {
         assert_eq!(response.finish_timestamp, (DAY_NANOSECONDS * 11).into());
         assert_eq!(response.reserve_price, to_yocto(5).into());
         assert_eq!(response.buy_now_price, to_yocto(10).into());
+        assert_eq!(response.last_bid_amount, None);
+        assert_eq!(response.next_bid_amount, None, "expected none next price for inactive lot");
         assert_eq!(response.is_active, false);
+    }
+
+    #[test]
+    fn lot_list_present_active() {
+        let context = get_context_simple(false);
+        testing_env!(context);
+        let mut contract = Contract::default();
+        let lot_bob_sells_alice = create_lot_bob_sells_alice();
+        contract.internal_lot_save(&lot_bob_sells_alice);
+
+        let bid: Bid = Bid {
+            bidder_id: "carol".parse().unwrap(),
+            amount: to_yocto(7),
+            timestamp: DAY_NANOSECONDS * 10,
+        };
+        contract.internal_lot_bid(&"alice".parse().unwrap(), &bid);
+
+        let context = get_context_pred_alice(true);
+        testing_env!(context);
+
+        let response: Vec<LotView> = contract.lot_list();
+        assert!(!response.is_empty());
+        let response: &LotView = &response[0];
+
+        assert_eq!(response.lot_id, "alice".parse().unwrap());
+        assert_eq!(response.seller_id, "bob".parse().unwrap());
+        assert_eq!(response.start_timestamp, (DAY_NANOSECONDS * 10).into());
+        assert_eq!(response.finish_timestamp, (DAY_NANOSECONDS * 11).into());
+        assert_eq!(response.reserve_price, to_yocto(5).into());
+        assert_eq!(response.buy_now_price, to_yocto(10).into());
+        assert_eq!(response.last_bid_amount, Some((to_yocto(7)).into()), "expected present last price 7 near");
+        assert_eq!(response.next_bid_amount, Some((to_yocto(7) + 1).into()), "expected none next price for inactive lot");
+        assert_eq!(response.is_active, true);
     }
 
     #[test]
