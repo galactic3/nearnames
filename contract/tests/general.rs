@@ -6,7 +6,7 @@ use near_sdk_sim::{
     STORAGE_AMOUNT,
 };
 
-use marketplace::{ContractContract, LotView, ERR_LOT_SELLS_SELF};
+use marketplace::{ContractContract, LotView, ProfileView, ERR_LOT_SELLS_SELF};
 
 pub const CONTRACT_BYTES: &[u8] = include_bytes!("../res/marketplace.wasm");
 pub const LOCK_CONTRACT_BYTES: &[u8] =
@@ -131,6 +131,12 @@ fn simulate_lot_offer_buy_now() {
         result.is_empty(),
         "Expected empty lot list after cleanup callback"
     );
+
+    let result = view!(contract.profile_get(bob.account_id()));
+    assert!(result.is_ok());
+    let result: Option<ProfileView> = result.unwrap_json();
+    let result = result.unwrap();
+    assert_eq!(Balance::from(result.rewards_available), to_yocto("10"));
 }
 
 #[test]
