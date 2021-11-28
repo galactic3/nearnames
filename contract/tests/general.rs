@@ -1,4 +1,5 @@
 use near_sdk::serde_json::json;
+use near_sdk::utils::PendingContractTx;
 use near_sdk::{AccountId, Balance};
 use near_sdk_sim::{
     call, deploy, init_simulator, to_yocto, view, ContractAccount, UserAccount, DEFAULT_GAS,
@@ -50,30 +51,91 @@ fn init_locked() -> (UserAccount, UserAccount, UserAccount) {
 
 // useless for now, will be helpful later
 fn create_user(root: &UserAccount, name: &str) -> UserAccount {
-    root.create_user(name.parse().unwrap(), to_yocto("10"))
+    root.create_user(name.parse().unwrap(), to_yocto("100"))
 }
 
 const DAY_NANOSECONDS: u64 = 10u64.pow(9) * 60 * 60 * 24;
 
 #[test]
-fn simulate_lot_offer_self() {
+fn simulate_lot_offer_buy_now() {
     let (root, contract) = init();
     let alice: UserAccount = create_user(&root, "alice");
-    // let bob: UserAccount = create_user(&root, "bob");
-
-    let account_id: AccountId = alice.account_id.clone();
+    let bob: UserAccount = create_user(&root, "bob");
+    let carol: UserAccount = create_user(&root, "carol");
 
     let result = call!(
         alice,
         contract.lot_offer(
-            alice.account_id.clone(),
+            bob.account_id.clone(),
             to_yocto("3").into(),
             to_yocto("10").into(),
             DAY_NANOSECONDS * 10
         )
     );
-    assert!(format!("{:?}", result.status()).contains(ERR_LOT_SELLS_SELF));
-    assert!(!result.is_ok(), "Should panic");
+    assert!(result.is_ok());
+
+    let result = alice
+        .create_transaction(alice.account_id())
+        .delete_account(root.account_id())
+        .submit();
+    assert!(result.is_ok(), "expected successful account deletion");
+
+    // re-create alice account with lock contract since I couldn't find method that deploys to
+    // already existing one. TODO: we don't care what code is deployed to the contract when we call
+    // lot_offer. It's better to create alice account with lock contract out of the box
+    let alice = root.deploy(
+        &LOCK_CONTRACT_BYTES,
+        "alice".parse().unwrap(),
+        STORAGE_AMOUNT, // attached deposit
+    );
+    let result = alice.call(
+        alice.account_id(),
+        "lock",
+        &json!({ "owner_id": "marketplace".to_string() })
+            .to_string()
+            .into_bytes(),
+        DEFAULT_GAS,
+        0,
+    );
+    assert!(result.is_ok());
+
+    let result = call!(
+        carol,
+        contract.lot_bid(alice.account_id.clone()),
+        deposit = to_yocto("10")
+    );
+    assert!(result.is_ok());
+
+    let result = view!(contract.lot_list());
+    assert!(result.is_ok());
+
+    let result: Vec<LotView> = result.unwrap_json();
+    let result: &LotView = result.get(0).unwrap();
+
+    assert_eq!(
+        result.is_active, false,
+        "expected lot inactive after buy now bid"
+    );
+    assert_eq!(
+        result.last_bid_amount,
+        Some(to_yocto("10").into()),
+        "expected last bid 10 near"
+    );
+    assert_eq!(result.next_bid_amount, None, "expected next bid none");
+
+    let result = call!(
+        carol,
+        contract.lot_claim(alice.account_id(), DEFAULT_PUBLIC_KEY.parse().unwrap())
+    );
+    assert!(result.is_ok());
+
+    let result = view!(contract.lot_list());
+    assert!(result.is_ok());
+    let result: Vec<LotView> = result.unwrap_json();
+    assert!(
+        result.is_empty(),
+        "Expected empty lot list after cleanup callback"
+    );
 }
 
 #[test]
