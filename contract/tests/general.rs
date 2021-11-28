@@ -8,6 +8,7 @@ use near_sdk_sim::{
 
 use marketplace::{ContractContract, LotView, ProfileView, ERR_LOT_SELLS_SELF};
 
+// not using lazy static because it breaks my language server
 pub const CONTRACT_BYTES: &[u8] = include_bytes!("../res/marketplace.wasm");
 pub const LOCK_CONTRACT_BYTES: &[u8] =
     include_bytes!("../../lock_unlock_account_contract/res/lock_unlock_account.wasm");
