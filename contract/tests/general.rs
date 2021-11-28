@@ -54,35 +54,7 @@ fn create_user(root: &UserAccount, name: &str) -> UserAccount {
     root.create_user(name.parse().unwrap(), to_yocto("100"))
 }
 
-const DAY_NANOSECONDS: u64 = 10u64.pow(9) * 60 * 60 * 24;
-
-#[test]
-fn simulate_lot_offer_buy_now() {
-    let (root, contract) = init();
-    let alice: UserAccount = create_user(&root, "alice");
-    let bob: UserAccount = create_user(&root, "bob");
-    let carol: UserAccount = create_user(&root, "carol");
-
-    let result = call!(
-        alice,
-        contract.lot_offer(
-            bob.account_id.clone(),
-            to_yocto("3").into(),
-            to_yocto("10").into(),
-            DAY_NANOSECONDS * 10
-        )
-    );
-    assert!(result.is_ok());
-
-    let result = alice
-        .create_transaction(alice.account_id())
-        .delete_account(root.account_id())
-        .submit();
-    assert!(result.is_ok(), "expected successful account deletion");
-
-    // re-create alice account with lock contract since I couldn't find method that deploys to
-    // already existing one. TODO: we don't care what code is deployed to the contract when we call
-    // lot_offer. It's better to create alice account with lock contract out of the box
+fn create_user_locked(root: &UserAccount, name: &str) -> UserAccount {
     let alice = root.deploy(
         &LOCK_CONTRACT_BYTES,
         "alice".parse().unwrap(),
@@ -96,6 +68,29 @@ fn simulate_lot_offer_buy_now() {
             .into_bytes(),
         DEFAULT_GAS,
         0,
+    );
+    assert!(result.is_ok());
+
+    alice
+}
+
+const DAY_NANOSECONDS: u64 = 10u64.pow(9) * 60 * 60 * 24;
+
+#[test]
+fn simulate_lot_offer_buy_now() {
+    let (root, contract) = init();
+    let alice: UserAccount = create_user_locked(&root, "alice");
+    let bob: UserAccount = create_user(&root, "bob");
+    let carol: UserAccount = create_user(&root, "carol");
+
+    let result = call!(
+        alice,
+        contract.lot_offer(
+            bob.account_id.clone(),
+            to_yocto("3").into(),
+            to_yocto("10").into(),
+            DAY_NANOSECONDS * 10
+        )
     );
     assert!(result.is_ok());
 
