@@ -32,6 +32,7 @@ pub trait ExtLockContract {
 #[ext_contract]
 pub trait ExtSelfContract {
     fn lot_after_claim_clean_up(&mut self, lot_id: LotId);
+    fn profile_after_rewards_claim(&mut self, profile_id: ProfileId, rewards: Balance);
 }
 
 #[near_bindgen]
@@ -853,5 +854,39 @@ mod tests {
 
             contract.lot_claim("alice".parse().unwrap(), public_key);
         }
+    }
+
+    #[test]
+    #[should_panic(expected = "Not enough rewards for transfer")]
+    pub fn profile_rewards_claim_fail_below_threshold() {
+        let context = get_context_simple(false);
+        testing_env!(context);
+        let mut contract = Contract::default();
+        let account_id: AccountId = "alice".parse().unwrap();
+        let amount = MIN_PROFILE_REWARDS_CLAIM_AMOUNT - 1;
+
+        contract.internal_profile_rewards_transfer(&account_id, amount);
+
+        let context = get_context_pred_alice(false);
+        testing_env!(context);
+
+        contract.profile_rewards_claim();
+    }
+
+    #[test]
+    pub fn profile_rewards_claim_success() {
+        let context = get_context_simple(false);
+        testing_env!(context);
+        let mut contract = Contract::default();
+        let account_id: AccountId = "alice".parse().unwrap();
+        let amount = MIN_PROFILE_REWARDS_CLAIM_AMOUNT;
+        contract.internal_profile_rewards_transfer(&account_id, amount);
+
+        let context = get_context_pred_alice(false);
+        testing_env!(context);
+        contract.profile_rewards_claim();
+        let result = contract.profile_get(account_id.clone()).unwrap();
+        assert_eq!(result.rewards_available.0, to_yocto(0), "Expected rewards_available 0 after claim");
+        assert_eq!(result.rewards_claimed.0, amount, "Expected rewards_claimed amount after claim");
     }
 }

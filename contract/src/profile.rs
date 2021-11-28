@@ -1,5 +1,9 @@
 use crate::*;
 
+pub const ERR_PROFILE_REWARDS_CLAIM_NOT_ENOUGH: &str = "Not enough rewards for transfer";
+pub const MIN_PROFILE_REWARDS_CLAIM_AMOUNT: Balance = 200 * 10u128.pow(21);
+pub const GAS_EXT_CALL_AFTER_REWARDS_COLLECT: u64 = 100_000_000_000_000;
+
 #[derive(BorshDeserialize, BorshSerialize)]
 pub struct Profile {
     pub profile_id: ProfileId,
@@ -55,5 +59,48 @@ impl Contract {
 impl Contract {
     pub fn profile_get(&self, profile_id: AccountId) -> Option<ProfileView> {
         self.profiles.get(&profile_id).map(|p| (&p).into())
+    }
+
+    pub fn profile_rewards_claim(&mut self) -> Promise {
+        let profile_id: ProfileId = env::predecessor_account_id();
+        let mut profile = self.internal_profile_extract(&profile_id.clone());
+
+        let rewards = profile.rewards_available;
+        assert!(
+            rewards >= MIN_PROFILE_REWARDS_CLAIM_AMOUNT,
+            "{}",
+            ERR_PROFILE_REWARDS_CLAIM_NOT_ENOUGH,
+        );
+
+        profile.rewards_available = 0;
+        profile.rewards_claimed += rewards;
+        self.internal_profile_save(&profile);
+
+        Promise::new(profile_id.clone())
+            .transfer(rewards)
+            .then(ext_self_contract::profile_after_rewards_claim(
+                profile_id.clone(),
+                rewards,
+                env::current_account_id(),
+                NO_DEPOSIT,
+                GAS_EXT_CALL_AFTER_REWARDS_COLLECT.into(),
+            ))
+    }
+
+    #[private]
+    pub fn profile_after_rewards_claim(
+        &mut self,
+        profile_id: ProfileId,
+        rewards: Balance,
+    ) -> bool {
+        let rewards_transferred = is_promise_success();
+        if !rewards_transferred {
+            // In case of failure, put the amount back
+            let mut profile = self.internal_profile_extract(&profile_id);
+            profile.rewards_available = rewards;
+            profile.rewards_claimed -= rewards;
+            self.internal_profile_save(&profile);
+        }
+        rewards_transferred
     }
 }
