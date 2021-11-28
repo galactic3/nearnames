@@ -1,11 +1,15 @@
 use near_sdk::serde_json::json;
 use near_sdk::{AccountId, Balance};
-use near_sdk_sim::{call, deploy, init_simulator, to_yocto, view, ContractAccount, UserAccount, STORAGE_AMOUNT, DEFAULT_GAS};
+use near_sdk_sim::{
+    call, deploy, init_simulator, to_yocto, view, ContractAccount, UserAccount, DEFAULT_GAS,
+    STORAGE_AMOUNT,
+};
 
 use marketplace::{ContractContract, LotView, ERR_LOT_SELLS_SELF};
 
 pub const CONTRACT_BYTES: &[u8] = include_bytes!("../res/marketplace.wasm");
-pub const LOCK_CONTRACT_BYTES: &[u8] = include_bytes!("../../lock_unlock_account_contract/res/lock_unlock_account.wasm");
+pub const LOCK_CONTRACT_BYTES: &[u8] =
+    include_bytes!("../../lock_unlock_account_contract/res/lock_unlock_account.wasm");
 const DEFAULT_PUBLIC_KEY: &str = "ed25519:Ga6C8S7jVG2inG88cos8UsdtGVWRFQasSdTdtHL7kBqL";
 
 // near_sdk_sim::lazy_static_include::lazy_static_include_bytes! {
@@ -33,12 +37,12 @@ fn init_locked() -> (UserAccount, UserAccount, UserAccount) {
     let contract = root.deploy(
         &LOCK_CONTRACT_BYTES,
         "locked".parse().unwrap(),
-        STORAGE_AMOUNT // attached deposit
+        STORAGE_AMOUNT, // attached deposit
     );
 
     let alice = root.create_user(
         "alice".parse().unwrap(),
-        to_yocto("100") // initial balance
+        to_yocto("100"), // initial balance
     );
 
     (root, contract, alice)
@@ -81,17 +85,21 @@ fn simulate_lock_unlock() {
         "lock",
         &json!({
             "owner_id": "alice".to_string(),
-        }).to_string().into_bytes(),
+        })
+        .to_string()
+        .into_bytes(),
         DEFAULT_GAS,
         0,
     );
     assert!(result.is_ok());
 
-    let result: String = root.view(
-        contract.account_id(),
-        "get_owner",
-        &json!({}).to_string().into_bytes(),
-    ).unwrap_json();
+    let result: String = root
+        .view(
+            contract.account_id(),
+            "get_owner",
+            &json!({}).to_string().into_bytes(),
+        )
+        .unwrap_json();
     assert_eq!(result, "alice".to_string(), "expected owner alice");
 
     let result = alice.call(
@@ -99,7 +107,9 @@ fn simulate_lock_unlock() {
         "unlock",
         &json!({
             "public_key": DEFAULT_PUBLIC_KEY.to_string(),
-        }).to_string().into_bytes(),
+        })
+        .to_string()
+        .into_bytes(),
         DEFAULT_GAS,
         0,
     );

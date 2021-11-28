@@ -273,7 +273,10 @@ mod tests {
         assert_eq!(response.reserve_price, to_yocto(5).into());
         assert_eq!(response.buy_now_price, to_yocto(10).into());
         assert_eq!(response.last_bid_amount, None);
-        assert_eq!(response.next_bid_amount, None, "expected none next price for inactive lot");
+        assert_eq!(
+            response.next_bid_amount, None,
+            "expected none next price for inactive lot"
+        );
         assert_eq!(response.is_active, false);
     }
 
@@ -305,8 +308,16 @@ mod tests {
         assert_eq!(response.finish_timestamp, (DAY_NANOSECONDS * 11).into());
         assert_eq!(response.reserve_price, to_yocto(5).into());
         assert_eq!(response.buy_now_price, to_yocto(10).into());
-        assert_eq!(response.last_bid_amount, Some((to_yocto(7)).into()), "expected present last price 7 near");
-        assert_eq!(response.next_bid_amount, Some((to_yocto(7) + 1).into()), "expected none next price for inactive lot");
+        assert_eq!(
+            response.last_bid_amount,
+            Some((to_yocto(7)).into()),
+            "expected present last price 7 near"
+        );
+        assert_eq!(
+            response.next_bid_amount,
+            Some((to_yocto(7) + 1).into()),
+            "expected none next price for inactive lot"
+        );
         assert_eq!(response.is_active, true);
     }
 
