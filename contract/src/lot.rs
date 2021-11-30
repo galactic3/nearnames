@@ -10,8 +10,9 @@ pub const ERR_LOT_CLAIM_LOT_STILL_ACTIVE: &str = "Expected lot to be not active"
 pub const ERR_LOT_CLAIM_WRONG_CLAIMER: &str = "This account cannot claim this lot";
 pub const ERR_LOT_CLEAN_UP_STILL_ACTIVE: &str = "UNREACHABLE: cannot clean up still active lot";
 pub const ERR_LOT_CLEAN_UP_UNLOCK_FAILED: &str = "Expected unlock promise to be successful";
-pub const ERR_LOT_WITHDRAW_HAS_BID: &str = "Expected no bids to be able to withdraw";
-
+pub const ERR_LOT_WITHDRAW_HAS_BID: &str = "Bid exists, cannot withdraw";
+pub const ERR_LOT_WITHDRAW_ALREADY_WITHDRAWN: &str = "Lot already withdrawn";
+pub const ERR_LOT_WITHDRAW_NOT_SELLER: &str = "Only seller can withdraw";
 pub const NO_DEPOSIT: Balance = 0;
 pub const GAS_EXT_CALL_UNLOCK: u64 = 40_000_000_000_000;
 pub const GAS_EXT_CALL_CLEAN_UP: u64 = 40_000_000_000_000;
@@ -98,13 +99,24 @@ impl Lot {
         );
     }
 
-//     pub fn validate_withdraw(&self, withdrawer_id: &ProfileId, time_now: Timestamp) {
-//         assert!(
-//             self.last_bid().is_none(),
-//             "{}",
-//             ERR_LOT_WITHDRAW_HAS_BID,
-//         );
-//     }
+    pub fn validate_withdraw(&self, withdrawer_id: &ProfileId) {
+        assert_eq!(
+            &self.seller_id,
+            withdrawer_id,
+            "{}",
+            ERR_LOT_WITHDRAW_NOT_SELLER,
+        );
+        assert!(
+            self.last_bid().is_none(),
+            "{}",
+            ERR_LOT_WITHDRAW_HAS_BID,
+        );
+        assert!(
+            !self.is_withdrawn,
+            "{}",
+            ERR_LOT_WITHDRAW_ALREADY_WITHDRAWN,
+        );
+    }
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -205,6 +217,13 @@ impl Contract {
         );
 
         lot.bids.push(bid);
+        self.internal_lot_save(&lot);
+    }
+
+    pub(crate) fn internal_lot_withdraw(&mut self, lot_id: &LotId, withdrawer_id: &ProfileId) {
+        let mut lot = self.internal_lot_extract(lot_id);
+        lot.validate_withdraw(withdrawer_id);
+        lot.is_withdrawn = true;
         self.internal_lot_save(&lot);
     }
 }
@@ -313,22 +332,10 @@ impl Contract {
         true
     }
 
-//     pub fn lot_withdraw(&mut self, lot_id: AccountId, public_key: PublicKey) -> Promise {
-//         let withdrawer_id: ProfileId = env::predecessor_account_id();
-//         let time_now = env::block_timestamp();
-//         let lot: Lot = self.lots.get(&lot_id).unwrap();
-//         lot.validate_withdraw(&withdrawer_id, time_now);
-//         ext_lock_contract::unlock(
-//             public_key,
-//             lot_id.clone(),
-//             NO_DEPOSIT,
-//             GAS_EXT_CALL_UNLOCK.into(),
-//         )
-//         .then(ext_self_contract::lot_after_claim_clean_up(
-//             lot_id.clone(),
-//             env::current_account_id(),
-//             NO_DEPOSIT,
-//             GAS_EXT_CALL_CLEAN_UP.into(),
-//         ))
-//     }
+    pub fn lot_withdraw(&mut self, lot_id: AccountId) -> bool {
+        let lot_id: ProfileId = lot_id.into();
+        let withdrawer_id: ProfileId = env::predecessor_account_id();
+        self.internal_lot_withdraw(&lot_id, &withdrawer_id);
+        true
+    }
 }

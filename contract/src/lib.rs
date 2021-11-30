@@ -871,6 +871,93 @@ mod tests {
         }
     }
 
+    #[test]
+    pub fn api_lot_withdraw_success() {
+        let context = get_context_simple(false);
+        testing_env!(context);
+        let mut contract = Contract::default();
+        {
+            let lot = create_lot_bob_sells_alice();
+            contract.internal_lot_save(&lot);
+        }
+
+        let context = get_context_with_payer(
+            &"bob".parse().unwrap(),
+            0,
+            DAY_NANOSECONDS * 13,
+        );
+        testing_env!(context);
+        contract.lot_withdraw("alice".to_string().try_into().unwrap());
+    }
+
+    #[test]
+    #[should_panic(expected = "Only seller can withdraw")]
+    pub fn api_lot_withdraw_fail_not_seller() {
+        let context = get_context_simple(false);
+        testing_env!(context);
+        let mut contract = Contract::default();
+        {
+            let lot = create_lot_bob_sells_alice();
+            contract.internal_lot_save(&lot);
+        }
+
+        let context = get_context_with_payer(
+            &"carol".parse().unwrap(),
+            0,
+            DAY_NANOSECONDS * 13,
+        );
+        testing_env!(context);
+        contract.lot_withdraw("alice".to_string().try_into().unwrap());
+    }
+
+    #[test]
+    #[should_panic(expected = "Bid exists, cannot withdraw")]
+    pub fn api_lot_withdraw_fail_has_bids() {
+        let context = get_context_simple(false);
+        testing_env!(context);
+        let mut contract = Contract::default();
+        {
+            let lot = create_lot_bob_sells_alice();
+            contract.internal_lot_save(&lot);
+        }
+
+        let bid: Bid = Bid {
+            bidder_id: "carol".parse().unwrap(),
+            amount: to_yocto(7),
+            timestamp: DAY_NANOSECONDS * 10,
+        };
+        contract.internal_lot_bid(&"alice".parse().unwrap(), &bid);
+
+        let context = get_context_with_payer(
+            &"bob".parse().unwrap(),
+            0,
+            DAY_NANOSECONDS * 13,
+        );
+        testing_env!(context);
+        contract.lot_withdraw("alice".to_string().try_into().unwrap());
+    }
+
+    #[test]
+    #[should_panic(expected = "Lot already withdrawn")]
+    pub fn api_lot_withdraw_fail_double() {
+        let context = get_context_simple(false);
+        testing_env!(context);
+        let mut contract = Contract::default();
+        {
+            let lot = create_lot_bob_sells_alice();
+            contract.internal_lot_save(&lot);
+        }
+
+        let context = get_context_with_payer(
+            &"bob".parse().unwrap(),
+            0,
+            DAY_NANOSECONDS * 13,
+        );
+        testing_env!(context);
+        contract.lot_withdraw("alice".to_string().try_into().unwrap());
+        contract.lot_withdraw("alice".to_string().try_into().unwrap());
+    }
+
     // derived from empty string
     const DEFAULT_PUBLIC_KEY: &str = "ed25519:Ga6C8S7jVG2inG88cos8UsdtGVWRFQasSdTdtHL7kBqL";
 
