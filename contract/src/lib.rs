@@ -279,6 +279,7 @@ mod tests {
             "expected none next price for inactive lot"
         );
         assert_eq!(response.is_active, false);
+        assert_eq!(response.is_withdrawn, false);
     }
 
     #[test]
@@ -320,6 +321,26 @@ mod tests {
             "expected none next price for inactive lot"
         );
         assert_eq!(response.is_active, true);
+        assert_eq!(response.is_withdrawn, false);
+    }
+
+    #[test]
+    fn lot_list_present_withdrawn() {
+        let context = get_context_simple(false);
+        testing_env!(context);
+        let mut contract = Contract::default();
+        let mut lot = create_lot_bob_sells_alice();
+        lot.is_withdrawn = true;
+        contract.internal_lot_save(&lot);
+
+        let context = get_context_pred_alice(true);
+        testing_env!(context);
+
+        let response: Vec<LotView> = contract.lot_list();
+        assert!(!response.is_empty());
+        let response: &LotView = &response[0];
+
+        assert_eq!(response.is_withdrawn, true);
     }
 
     #[test]
