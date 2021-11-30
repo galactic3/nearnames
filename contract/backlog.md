@@ -11,3 +11,5 @@ ensure every method has at least one positive and negative case
 standartize bash scripts, use ones from sdk examples if possible
 profile gas and storage limits
 check borrowing is used everywhere possible
+define sources of truth for frontend
+fix tests not linked to actual code

@@ -323,7 +323,7 @@ mod tests {
     }
 
     #[test]
-    fn lot_is_active() {
+    fn lot_is_active_by_tm() {
         let context = get_context_simple(false);
         testing_env!(context);
 
@@ -337,6 +337,59 @@ mod tests {
         );
         assert_eq!(lot_bob_sells_alice.is_active(DAY_NANOSECONDS * 11), false);
         assert_eq!(lot_bob_sells_alice.is_active(DAY_NANOSECONDS * 12), false);
+    }
+
+    #[test]
+    fn lot_is_active_buy_now() {
+        let context = get_context_simple(false);
+        testing_env!(context);
+        let mut contract = Contract::default();
+        {
+            let lot = create_lot_bob_sells_alice();
+            contract.internal_lot_save(&lot);
+        }
+        let lot = contract.lots.get(&"alice".parse().unwrap()).unwrap();
+        assert!(
+            lot.is_active(DAY_NANOSECONDS * 10),
+            "must be active with no bids",
+        );
+
+        let bid: Bid = Bid {
+            bidder_id: "carol".parse().unwrap(),
+            amount: to_yocto(10),
+            timestamp: DAY_NANOSECONDS * 10,
+        };
+        contract.internal_lot_bid(&"alice".parse().unwrap(), &bid);
+        let lot = contract.lots.get(&"alice".parse().unwrap()).unwrap();
+
+        assert!(
+            !lot.is_active(DAY_NANOSECONDS * 10 + 1),
+            "must be inactive with buy now bid",
+        );
+    }
+
+    #[test]
+    fn lot_is_active_withdrawn() {
+        let context = get_context_simple(false);
+        testing_env!(context);
+        let mut contract = Contract::default();
+        {
+            let lot = create_lot_bob_sells_alice();
+            contract.internal_lot_save(&lot);
+        }
+        let mut lot = contract.lots.get(&"alice".parse().unwrap()).unwrap();
+        assert!(
+            lot.is_active(DAY_NANOSECONDS * 10),
+            "must be active with no bids",
+        );
+
+        lot.is_withdrawn = true;
+
+        assert_eq!(
+            lot.is_active(DAY_NANOSECONDS * 10 + 1),
+            false,
+            "must be inactive with buy now bid",
+        );
     }
 
     #[test]

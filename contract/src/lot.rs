@@ -10,6 +10,7 @@ pub const ERR_LOT_CLAIM_LOT_STILL_ACTIVE: &str = "Expected lot to be not active"
 pub const ERR_LOT_CLAIM_WRONG_CLAIMER: &str = "This account cannot claim this lot";
 pub const ERR_LOT_CLEAN_UP_STILL_ACTIVE: &str = "UNREACHABLE: cannot clean up still active lot";
 pub const ERR_LOT_CLEAN_UP_UNLOCK_FAILED: &str = "Expected unlock promise to be successful";
+pub const ERR_LOT_WITHDRAW_HAS_BID: &str = "Expected no bids to be able to withdraw";
 
 pub const NO_DEPOSIT: Balance = 0;
 pub const GAS_EXT_CALL_UNLOCK: u64 = 40_000_000_000_000;
@@ -30,6 +31,7 @@ pub struct Lot {
     pub buy_now_price: Balance,
     pub start_timestamp: Timestamp,
     pub finish_timestamp: Timestamp,
+    pub is_withdrawn: bool,
 
     pub bids: Vector<Bid>,
 }
@@ -51,6 +53,9 @@ impl Lot {
             if last_bid_amount >= self.buy_now_price {
                 return false;
             }
+        }
+        if self.is_withdrawn {
+            return false;
         }
 
         true
@@ -92,6 +97,14 @@ impl Lot {
             ERR_LOT_CLAIM_WRONG_CLAIMER,
         );
     }
+
+//     pub fn validate_withdraw(&self, withdrawer_id: &ProfileId, time_now: Timestamp) {
+//         assert!(
+//             self.last_bid().is_none(),
+//             "{}",
+//             ERR_LOT_WITHDRAW_HAS_BID,
+//         );
+//     }
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -153,6 +166,7 @@ impl Contract {
             buy_now_price,
             start_timestamp: time_now,
             finish_timestamp: time_now + duration,
+            is_withdrawn: false,
             bids: Vector::new(prefix),
         }
     }
@@ -296,4 +310,23 @@ impl Contract {
         // lot is already deleted from lots storage, returning to persist changes
         true
     }
+
+//     pub fn lot_withdraw(&mut self, lot_id: AccountId, public_key: PublicKey) -> Promise {
+//         let withdrawer_id: ProfileId = env::predecessor_account_id();
+//         let time_now = env::block_timestamp();
+//         let lot: Lot = self.lots.get(&lot_id).unwrap();
+//         lot.validate_withdraw(&withdrawer_id, time_now);
+//         ext_lock_contract::unlock(
+//             public_key,
+//             lot_id.clone(),
+//             NO_DEPOSIT,
+//             GAS_EXT_CALL_UNLOCK.into(),
+//         )
+//         .then(ext_self_contract::lot_after_claim_clean_up(
+//             lot_id.clone(),
+//             env::current_account_id(),
+//             NO_DEPOSIT,
+//             GAS_EXT_CALL_CLEAN_UP.into(),
+//         ))
+//     }
 }
