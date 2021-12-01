@@ -13,6 +13,8 @@ pub const ERR_LOT_CLEAN_UP_UNLOCK_FAILED: &str = "Expected unlock promise to be 
 pub const ERR_LOT_WITHDRAW_HAS_BID: &str = "Bid exists, cannot withdraw";
 pub const ERR_LOT_WITHDRAW_ALREADY_WITHDRAWN: &str = "Lot already withdrawn";
 pub const ERR_LOT_WITHDRAW_NOT_SELLER: &str = "Only seller can withdraw";
+pub const ERR_LOT_CLAIM_BY_SELLER_NOT_WITHDRAWN: &str = "Seller cannot claim not withdrwn lot";
+
 pub const NO_DEPOSIT: Balance = 0;
 pub const GAS_EXT_CALL_UNLOCK: u64 = 40_000_000_000_000;
 pub const GAS_EXT_CALL_CLEAN_UP: u64 = 40_000_000_000_000;
@@ -84,8 +86,8 @@ impl Lot {
     pub fn clean_up(&mut self) {
         self.bids.clear()
     }
-
-    pub fn validate_claim(&self, claimer_id: &ProfileId, time_now: Timestamp) {
+    
+    pub fn validate_claim_by_buyer(&self, claimer_id: &ProfileId, time_now: Timestamp) {
         assert!(
             !self.is_active(time_now),
             "{}",
@@ -97,6 +99,28 @@ impl Lot {
             "{}",
             ERR_LOT_CLAIM_WRONG_CLAIMER,
         );
+    }
+
+    pub fn validate_claim_by_seller(&self, claimer_id: &ProfileId) {
+        assert!(
+            self.is_withdrawn,
+            "{}",
+            ERR_LOT_CLAIM_BY_SELLER_NOT_WITHDRAWN,
+        );
+        assert_eq!(
+            &self.seller_id,
+            claimer_id,
+            "{}",
+            ERR_LOT_CLAIM_WRONG_CLAIMER,
+        );
+    }
+
+    pub fn validate_claim(&self, claimer_id: &ProfileId, time_now: Timestamp) {
+        if claimer_id == &self.seller_id {
+            self.validate_claim_by_seller(claimer_id)
+        } else {
+            self.validate_claim_by_buyer(claimer_id, time_now)
+        }
     }
 
     pub fn validate_withdraw(&self, withdrawer_id: &ProfileId) {
@@ -301,6 +325,8 @@ impl Contract {
         let time_now = env::block_timestamp();
         let lot: Lot = self.lots.get(&lot_id).unwrap();
 
+        println!("{}", &claimer_id);
+
         lot.validate_claim(&claimer_id, time_now);
 
         ext_lock_contract::unlock(
@@ -335,6 +361,7 @@ impl Contract {
     pub fn lot_withdraw(&mut self, lot_id: AccountId) -> bool {
         let lot_id: ProfileId = lot_id.into();
         let withdrawer_id: ProfileId = env::predecessor_account_id();
+        println!("{}", &withdrawer_id);
         self.internal_lot_withdraw(&lot_id, &withdrawer_id);
         true
     }

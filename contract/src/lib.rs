@@ -994,6 +994,27 @@ mod tests {
     }
 
     #[test]
+    pub fn api_lot_claim_by_seller_success_withdraw_after_finish() {
+        let context = get_context_simple(false);
+        testing_env!(context);
+        let mut contract = Contract::default();
+        {
+            let lot = create_lot_bob_sells_alice();
+            contract.internal_lot_save(&lot);
+        }
+
+        let context = get_context_with_payer(
+            &"bob".parse().unwrap(),
+            to_yocto(0),
+            DAY_NANOSECONDS * 13,
+        );
+        testing_env!(context);
+        contract.lot_withdraw("alice".to_string().try_into().unwrap());
+        let public_key: PublicKey = DEFAULT_PUBLIC_KEY.parse().unwrap();
+        contract.lot_claim("alice".parse().unwrap(), public_key);
+    }
+
+    #[test]
     #[should_panic(expected = "Expected lot to be not active")]
     pub fn api_lot_claim_fail_still_active() {
         let context = get_context_simple(false);
