@@ -1,12 +1,11 @@
 use near_sdk::serde_json::json;
-use near_sdk::utils::PendingContractTx;
-use near_sdk::{AccountId, Balance};
+use near_sdk::Balance;
 use near_sdk_sim::{
     call, deploy, init_simulator, to_yocto, view, ContractAccount, UserAccount, DEFAULT_GAS,
     STORAGE_AMOUNT,
 };
 
-use marketplace::{ContractContract, LotView, ProfileView, ERR_LOT_SELLS_SELF};
+use marketplace::{ContractContract, LotView, ProfileView};
 
 // not using lazy static because it breaks my language server
 pub const CONTRACT_BYTES: &[u8] = include_bytes!("../res/marketplace.wasm");
@@ -58,7 +57,7 @@ fn create_user(root: &UserAccount, name: &str) -> UserAccount {
 fn create_user_locked(root: &UserAccount, name: &str) -> UserAccount {
     let alice = root.deploy(
         &LOCK_CONTRACT_BYTES,
-        "alice".parse().unwrap(),
+        name.parse().unwrap(),
         STORAGE_AMOUNT, // attached deposit
     );
     let result = alice.call(
@@ -158,7 +157,6 @@ fn simulate_lot_offer_revoke() {
     let (root, contract) = init();
     let alice: UserAccount = create_user_locked(&root, "alice");
     let bob: UserAccount = create_user(&root, "bob");
-    let carol: UserAccount = create_user(&root, "carol");
 
     let balance_to_reserve = to_yocto("0.002");
     root.transfer(bob.account_id(), balance_to_reserve); // storage and future gas

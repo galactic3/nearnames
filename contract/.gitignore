@@ -1,4 +1,5 @@
 # build dir
-/target
+/.idea
 /res
+/target
 /tmp

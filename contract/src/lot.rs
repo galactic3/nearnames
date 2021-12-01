@@ -176,6 +176,32 @@ impl From<(&Lot, Timestamp)> for LotView {
     }
 }
 
+#[derive(Deserialize, Serialize, Debug)]
+#[serde(crate = "near_sdk::serde")]
+pub struct BidView {
+    pub bidder_id: ProfileId,
+    pub amount: WrappedBalance,
+    pub timestamp: WrappedTimestamp,
+}
+
+impl PartialEq for BidView {
+    fn eq(&self, other: &Self) -> bool {
+        self.bidder_id == other.bidder_id && self.amount.0 == other.amount.0 && self.timestamp.0 == other.timestamp.0
+    }
+}
+
+impl Eq for BidView {}
+
+impl From<Bid> for BidView {
+    fn from(bid: Bid) -> Self {
+        Self {
+            bidder_id: bid.bidder_id.clone(),
+            amount: bid.amount.into(),
+            timestamp: bid.timestamp.into(),
+        }
+    }
+}
+
 impl Contract {
     pub(crate) fn internal_lot_create(
         lot_id: LotId,
@@ -254,6 +280,12 @@ impl Contract {
 
 #[near_bindgen]
 impl Contract {
+    pub fn lot_bid_list(&self, lot_id: AccountId) -> Vec<BidView> {
+        let lot: Lot = self.lots.get(&lot_id).unwrap();
+
+        lot.bids.iter().map(|v| v.into()).collect()
+    }
+
     pub fn lot_list(&self) -> Vec<LotView> {
         let now = env::block_timestamp();
         self.lots.values().map(|v| (&v, now).into()).collect()
