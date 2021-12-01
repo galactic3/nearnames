@@ -279,6 +279,7 @@ mod tests {
             "expected none next price for inactive lot"
         );
         assert_eq!(response.is_active, false);
+        assert_eq!(response.is_withdrawn, false);
     }
 
     #[test]
@@ -320,10 +321,30 @@ mod tests {
             "expected none next price for inactive lot"
         );
         assert_eq!(response.is_active, true);
+        assert_eq!(response.is_withdrawn, false);
     }
 
     #[test]
-    fn lot_is_active() {
+    fn lot_list_present_withdrawn() {
+        let context = get_context_simple(false);
+        testing_env!(context);
+        let mut contract = Contract::default();
+        let mut lot = create_lot_bob_sells_alice();
+        lot.is_withdrawn = true;
+        contract.internal_lot_save(&lot);
+
+        let context = get_context_pred_alice(true);
+        testing_env!(context);
+
+        let response: Vec<LotView> = contract.lot_list();
+        assert!(!response.is_empty());
+        let response: &LotView = &response[0];
+
+        assert_eq!(response.is_withdrawn, true);
+    }
+
+    #[test]
+    fn lot_is_active_by_tm() {
         let context = get_context_simple(false);
         testing_env!(context);
 
@@ -337,6 +358,59 @@ mod tests {
         );
         assert_eq!(lot_bob_sells_alice.is_active(DAY_NANOSECONDS * 11), false);
         assert_eq!(lot_bob_sells_alice.is_active(DAY_NANOSECONDS * 12), false);
+    }
+
+    #[test]
+    fn lot_is_active_buy_now() {
+        let context = get_context_simple(false);
+        testing_env!(context);
+        let mut contract = Contract::default();
+        {
+            let lot = create_lot_bob_sells_alice();
+            contract.internal_lot_save(&lot);
+        }
+        let lot = contract.lots.get(&"alice".parse().unwrap()).unwrap();
+        assert!(
+            lot.is_active(DAY_NANOSECONDS * 10),
+            "must be active with no bids",
+        );
+
+        let bid: Bid = Bid {
+            bidder_id: "carol".parse().unwrap(),
+            amount: to_yocto(10),
+            timestamp: DAY_NANOSECONDS * 10,
+        };
+        contract.internal_lot_bid(&"alice".parse().unwrap(), &bid);
+        let lot = contract.lots.get(&"alice".parse().unwrap()).unwrap();
+
+        assert!(
+            !lot.is_active(DAY_NANOSECONDS * 10 + 1),
+            "must be inactive with buy now bid",
+        );
+    }
+
+    #[test]
+    fn lot_is_active_withdrawn() {
+        let context = get_context_simple(false);
+        testing_env!(context);
+        let mut contract = Contract::default();
+        {
+            let lot = create_lot_bob_sells_alice();
+            contract.internal_lot_save(&lot);
+        }
+        let mut lot = contract.lots.get(&"alice".parse().unwrap()).unwrap();
+        assert!(
+            lot.is_active(DAY_NANOSECONDS * 10),
+            "must be active with no bids",
+        );
+
+        lot.is_withdrawn = true;
+
+        assert_eq!(
+            lot.is_active(DAY_NANOSECONDS * 10 + 1),
+            false,
+            "must be inactive with buy now bid",
+        );
     }
 
     #[test]
@@ -797,6 +871,93 @@ mod tests {
         }
     }
 
+    #[test]
+    pub fn api_lot_withdraw_success() {
+        let context = get_context_simple(false);
+        testing_env!(context);
+        let mut contract = Contract::default();
+        {
+            let lot = create_lot_bob_sells_alice();
+            contract.internal_lot_save(&lot);
+        }
+
+        let context = get_context_with_payer(
+            &"bob".parse().unwrap(),
+            0,
+            DAY_NANOSECONDS * 13,
+        );
+        testing_env!(context);
+        contract.lot_withdraw("alice".to_string().try_into().unwrap());
+    }
+
+    #[test]
+    #[should_panic(expected = "Only seller can withdraw")]
+    pub fn api_lot_withdraw_fail_not_seller() {
+        let context = get_context_simple(false);
+        testing_env!(context);
+        let mut contract = Contract::default();
+        {
+            let lot = create_lot_bob_sells_alice();
+            contract.internal_lot_save(&lot);
+        }
+
+        let context = get_context_with_payer(
+            &"carol".parse().unwrap(),
+            0,
+            DAY_NANOSECONDS * 13,
+        );
+        testing_env!(context);
+        contract.lot_withdraw("alice".to_string().try_into().unwrap());
+    }
+
+    #[test]
+    #[should_panic(expected = "Bid exists, cannot withdraw")]
+    pub fn api_lot_withdraw_fail_has_bids() {
+        let context = get_context_simple(false);
+        testing_env!(context);
+        let mut contract = Contract::default();
+        {
+            let lot = create_lot_bob_sells_alice();
+            contract.internal_lot_save(&lot);
+        }
+
+        let bid: Bid = Bid {
+            bidder_id: "carol".parse().unwrap(),
+            amount: to_yocto(7),
+            timestamp: DAY_NANOSECONDS * 10,
+        };
+        contract.internal_lot_bid(&"alice".parse().unwrap(), &bid);
+
+        let context = get_context_with_payer(
+            &"bob".parse().unwrap(),
+            0,
+            DAY_NANOSECONDS * 13,
+        );
+        testing_env!(context);
+        contract.lot_withdraw("alice".to_string().try_into().unwrap());
+    }
+
+    #[test]
+    #[should_panic(expected = "Lot already withdrawn")]
+    pub fn api_lot_withdraw_fail_double() {
+        let context = get_context_simple(false);
+        testing_env!(context);
+        let mut contract = Contract::default();
+        {
+            let lot = create_lot_bob_sells_alice();
+            contract.internal_lot_save(&lot);
+        }
+
+        let context = get_context_with_payer(
+            &"bob".parse().unwrap(),
+            0,
+            DAY_NANOSECONDS * 13,
+        );
+        testing_env!(context);
+        contract.lot_withdraw("alice".to_string().try_into().unwrap());
+        contract.lot_withdraw("alice".to_string().try_into().unwrap());
+    }
+
     // derived from empty string
     const DEFAULT_PUBLIC_KEY: &str = "ed25519:Ga6C8S7jVG2inG88cos8UsdtGVWRFQasSdTdtHL7kBqL";
 
@@ -830,6 +991,27 @@ mod tests {
 
             contract.lot_claim("alice".parse().unwrap(), public_key);
         }
+    }
+
+    #[test]
+    pub fn api_lot_claim_by_seller_success_withdraw_after_finish() {
+        let context = get_context_simple(false);
+        testing_env!(context);
+        let mut contract = Contract::default();
+        {
+            let lot = create_lot_bob_sells_alice();
+            contract.internal_lot_save(&lot);
+        }
+
+        let context = get_context_with_payer(
+            &"bob".parse().unwrap(),
+            to_yocto(0),
+            DAY_NANOSECONDS * 13,
+        );
+        testing_env!(context);
+        contract.lot_withdraw("alice".to_string().try_into().unwrap());
+        let public_key: PublicKey = DEFAULT_PUBLIC_KEY.parse().unwrap();
+        contract.lot_claim("alice".parse().unwrap(), public_key);
     }
 
     #[test]

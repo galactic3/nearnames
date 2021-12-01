@@ -10,6 +10,10 @@ pub const ERR_LOT_CLAIM_LOT_STILL_ACTIVE: &str = "Expected lot to be not active"
 pub const ERR_LOT_CLAIM_WRONG_CLAIMER: &str = "This account cannot claim this lot";
 pub const ERR_LOT_CLEAN_UP_STILL_ACTIVE: &str = "UNREACHABLE: cannot clean up still active lot";
 pub const ERR_LOT_CLEAN_UP_UNLOCK_FAILED: &str = "Expected unlock promise to be successful";
+pub const ERR_LOT_WITHDRAW_HAS_BID: &str = "Bid exists, cannot withdraw";
+pub const ERR_LOT_WITHDRAW_ALREADY_WITHDRAWN: &str = "Lot already withdrawn";
+pub const ERR_LOT_WITHDRAW_NOT_SELLER: &str = "Only seller can withdraw";
+pub const ERR_LOT_CLAIM_BY_SELLER_NOT_WITHDRAWN: &str = "Seller cannot claim not withdrwn lot";
 
 pub const NO_DEPOSIT: Balance = 0;
 pub const GAS_EXT_CALL_UNLOCK: u64 = 40_000_000_000_000;
@@ -30,6 +34,7 @@ pub struct Lot {
     pub buy_now_price: Balance,
     pub start_timestamp: Timestamp,
     pub finish_timestamp: Timestamp,
+    pub is_withdrawn: bool,
 
     pub bids: Vector<Bid>,
 }
@@ -51,6 +56,9 @@ impl Lot {
             if last_bid_amount >= self.buy_now_price {
                 return false;
             }
+        }
+        if self.is_withdrawn {
+            return false;
         }
 
         true
@@ -78,8 +86,8 @@ impl Lot {
     pub fn clean_up(&mut self) {
         self.bids.clear()
     }
-
-    pub fn validate_claim(&self, claimer_id: &ProfileId, time_now: Timestamp) {
+    
+    pub fn validate_claim_by_buyer(&self, claimer_id: &ProfileId, time_now: Timestamp) {
         assert!(
             !self.is_active(time_now),
             "{}",
@@ -90,6 +98,47 @@ impl Lot {
             Some(claimer_id),
             "{}",
             ERR_LOT_CLAIM_WRONG_CLAIMER,
+        );
+    }
+
+    pub fn validate_claim_by_seller(&self, claimer_id: &ProfileId) {
+        assert!(
+            self.is_withdrawn,
+            "{}",
+            ERR_LOT_CLAIM_BY_SELLER_NOT_WITHDRAWN,
+        );
+        assert_eq!(
+            &self.seller_id,
+            claimer_id,
+            "{}",
+            ERR_LOT_CLAIM_WRONG_CLAIMER,
+        );
+    }
+
+    pub fn validate_claim(&self, claimer_id: &ProfileId, time_now: Timestamp) {
+        if claimer_id == &self.seller_id {
+            self.validate_claim_by_seller(claimer_id)
+        } else {
+            self.validate_claim_by_buyer(claimer_id, time_now)
+        }
+    }
+
+    pub fn validate_withdraw(&self, withdrawer_id: &ProfileId) {
+        assert_eq!(
+            &self.seller_id,
+            withdrawer_id,
+            "{}",
+            ERR_LOT_WITHDRAW_NOT_SELLER,
+        );
+        assert!(
+            self.last_bid().is_none(),
+            "{}",
+            ERR_LOT_WITHDRAW_HAS_BID,
+        );
+        assert!(
+            !self.is_withdrawn,
+            "{}",
+            ERR_LOT_WITHDRAW_ALREADY_WITHDRAWN,
         );
     }
 }
@@ -106,6 +155,7 @@ pub struct LotView {
     pub last_bid_amount: Option<WrappedBalance>,
     pub next_bid_amount: Option<WrappedBalance>,
     pub is_active: bool,
+    pub is_withdrawn: bool,
 }
 
 impl From<(&Lot, Timestamp)> for LotView {
@@ -121,6 +171,7 @@ impl From<(&Lot, Timestamp)> for LotView {
             last_bid_amount: lot.last_bid_amount().map(|x| x.into()),
             next_bid_amount: lot.next_bid_amount(now).map(|x| x.into()),
             is_active: lot.is_active(now),
+            is_withdrawn: lot.is_withdrawn,
         }
     }
 }
@@ -153,6 +204,7 @@ impl Contract {
             buy_now_price,
             start_timestamp: time_now,
             finish_timestamp: time_now + duration,
+            is_withdrawn: false,
             bids: Vector::new(prefix),
         }
     }
@@ -189,6 +241,13 @@ impl Contract {
         );
 
         lot.bids.push(bid);
+        self.internal_lot_save(&lot);
+    }
+
+    pub(crate) fn internal_lot_withdraw(&mut self, lot_id: &LotId, withdrawer_id: &ProfileId) {
+        let mut lot = self.internal_lot_extract(lot_id);
+        lot.validate_withdraw(withdrawer_id);
+        lot.is_withdrawn = true;
         self.internal_lot_save(&lot);
     }
 }
@@ -266,6 +325,8 @@ impl Contract {
         let time_now = env::block_timestamp();
         let lot: Lot = self.lots.get(&lot_id).unwrap();
 
+        println!("{}", &claimer_id);
+
         lot.validate_claim(&claimer_id, time_now);
 
         ext_lock_contract::unlock(
@@ -294,6 +355,14 @@ impl Contract {
         );
         lot.clean_up();
         // lot is already deleted from lots storage, returning to persist changes
+        true
+    }
+
+    pub fn lot_withdraw(&mut self, lot_id: AccountId) -> bool {
+        let lot_id: ProfileId = lot_id.into();
+        let withdrawer_id: ProfileId = env::predecessor_account_id();
+        println!("{}", &withdrawer_id);
+        self.internal_lot_withdraw(&lot_id, &withdrawer_id);
         true
     }
 }
