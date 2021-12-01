@@ -13,3 +13,4 @@ profile gas and storage limits
 check borrowing is used everywhere possible
 define sources of truth for frontend
 fix tests not linked to actual code
+how to check balance in unit tests

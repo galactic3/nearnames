@@ -154,6 +154,72 @@ fn simulate_lot_offer_buy_now() {
 }
 
 #[test]
+fn simulate_lot_offer_revoke() {
+    let (root, contract) = init();
+    let alice: UserAccount = create_user_locked(&root, "alice");
+    let bob: UserAccount = create_user(&root, "bob");
+    let carol: UserAccount = create_user(&root, "carol");
+
+    let balance_to_reserve = to_yocto("0.002");
+    root.transfer(bob.account_id(), balance_to_reserve); // storage and future gas
+    bob.transfer(root.account_id(), to_yocto("100")); // storage and future gas
+
+    let result = call!(
+        alice,
+        contract.lot_offer(
+            bob.account_id.clone(),
+            to_yocto("3").into(),
+            to_yocto("10").into(),
+            DAY_NANOSECONDS * 10
+        )
+    );
+    assert!(result.is_ok());
+
+    let balance_to_reserve = to_yocto("0.2");
+    root.transfer(bob.account_id(), balance_to_reserve); // storage and future gas
+    let result = call!(
+        bob,
+        contract.lot_withdraw(alice.account_id.clone())
+    );
+    assert!(result.is_ok());
+
+    let result = view!(contract.lot_list());
+    assert!(result.is_ok());
+
+    let result: Vec<LotView> = result.unwrap_json();
+    let result: &LotView = result.get(0).unwrap();
+
+    assert_eq!(
+        result.is_active, false,
+        "expected lot inactive after withdraw"
+    );
+    assert_eq!(
+        result.is_withdrawn,
+        true,
+        "expected lot to be withdrawn",
+    );
+
+    let result = call!(
+        bob,
+        contract.lot_claim(alice.account_id(), DEFAULT_PUBLIC_KEY.parse().unwrap())
+    );
+    assert!(result.is_ok());
+
+    let result = view!(contract.lot_list());
+    assert!(result.is_ok());
+    let result: Vec<LotView> = result.unwrap_json();
+    assert!(
+        result.is_empty(),
+        "Expected empty lot list after cleanup callback"
+    );
+
+    let result = view!(contract.profile_get(bob.account_id()));
+    assert!(result.is_ok());
+    let result: Option<ProfileView> = result.unwrap_json();
+    assert!(result.is_none(), "profile should not be created, no rewards given");
+}
+
+#[test]
 fn simulate_lock_unlock() {
     let (root, contract, alice) = init_locked();
 
