@@ -283,6 +283,45 @@ mod tests {
     }
 
     #[test]
+    fn lot_bid_list() {
+        let context = get_context_simple(false);
+        testing_env!(context);
+        let mut contract = Contract::default();
+        let lot_bob_sells_alice = create_lot_bob_sells_alice();
+        contract.internal_lot_save(&lot_bob_sells_alice);
+
+        let bid: Bid = Bid {
+            bidder_id: "carol".parse().unwrap(),
+            amount: to_yocto(7),
+            timestamp: DAY_NANOSECONDS * 10,
+        };
+        contract.internal_lot_bid(&"alice".parse().unwrap(), &bid);
+
+        let bid: Bid = Bid {
+            bidder_id: "dan".parse().unwrap(),
+            amount: to_yocto(9),
+            timestamp: DAY_NANOSECONDS * 10 + 1,
+        };
+        contract.internal_lot_bid(&"alice".parse().unwrap(), &bid);
+
+        let response: Vec<BidView> = contract.lot_bid_list("alice".parse().unwrap());
+        let expected: Vec<BidView> = vec![
+            BidView {
+                bidder_id: "carol".parse().unwrap(),
+                amount: WrappedBalance::from(to_yocto(7)),
+                timestamp: WrappedTimestamp::from(DAY_NANOSECONDS * 10),
+            },
+            BidView {
+                bidder_id: "dan".parse().unwrap(),
+                amount: WrappedBalance::from(to_yocto(9)),
+                timestamp: WrappedTimestamp::from(DAY_NANOSECONDS * 10 + 1),
+            },
+        ];
+
+        assert_eq!(response, expected, "wrong bids list");
+    }
+
+    #[test]
     fn lot_list_present_active() {
         let context = get_context_simple(false);
         testing_env!(context);

@@ -1,5 +1,4 @@
 use near_sdk::serde_json::json;
-use near_sdk::utils::PendingContractTx;
 use near_sdk::{AccountId, Balance};
 use near_sdk_sim::{
     call, deploy, init_simulator, to_yocto, view, ContractAccount, UserAccount, DEFAULT_GAS,
