@@ -93,7 +93,7 @@ fn simulate_lot_offer_buy_now() {
             bob.account_id.clone(),
             to_yocto("3").into(),
             to_yocto("10").into(),
-            DAY_NANOSECONDS * 10
+            (DAY_NANOSECONDS * 10).into()
         )
     );
     assert!(result.is_ok());
@@ -168,7 +168,7 @@ fn simulate_lot_offer_revoke() {
             bob.account_id.clone(),
             to_yocto("3").into(),
             to_yocto("10").into(),
-            DAY_NANOSECONDS * 10
+            (DAY_NANOSECONDS * 10).into()
         )
     );
     assert!(result.is_ok());

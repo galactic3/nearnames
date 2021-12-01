@@ -19,6 +19,7 @@ pub type LotId = AccountId;
 pub type ProfileId = AccountId;
 pub type WrappedBalance = U128;
 pub type WrappedTimestamp = U64;
+pub type WrappedDuration = U64;
 
 pub const PREFIX_PROFILES: &str = "u";
 pub const PREFIX_LOTS: &str = "a";
@@ -469,7 +470,7 @@ mod tests {
             seller_id.try_into().unwrap(),
             reserve_price.into(),
             buy_now_price.into(),
-            duration,
+            WrappedDuration::from(duration),
         );
 
         let result = contract.lots.get(&lot_id);
