@@ -221,7 +221,10 @@ fn simulate_lot_offer_withdraw() {
     let result = view!(contract.profile_get(bob.account_id()));
     assert!(result.is_ok());
     let result: Option<ProfileView> = result.unwrap_json();
-    assert!(result.is_none(), "profile should not be created, no rewards given");
+    assert!(result.is_some(), "profile not created, but should be, because of associations");
+    let result = result.unwrap();
+
+    assert_eq!(Balance::from(result.rewards_available), 0, "no rewards should be given on withdraw");
 
     println!("{}", from_yocto(bob.account().unwrap().amount));
 }

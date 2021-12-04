@@ -307,14 +307,22 @@ impl Contract {
         let duration: Duration = duration.into();
 
         let lot = self.internal_lot_create(
-            lot_id,
-            seller_id,
+            lot_id.clone(),
+            seller_id.clone(),
             reserve_price,
             buy_now_price,
             time_now,
             duration,
         );
         self.internal_lot_save(&lot);
+
+        // update associations
+        {
+            let mut profile = self.internal_profile_extract(&seller_id);
+            profile.lots_offering.insert(&lot_id);
+            self.internal_profile_save(&profile);
+        }
+
         true
     }
 
