@@ -70,26 +70,18 @@ impl Contract {
     }
 }
 
-#[derive(Deserialize, Serialize, Debug)]
-#[serde(crate = "near_sdk::serde")]
-pub struct ProfileLotOfferingView {
-    pub lot_id: LotId,
-}
-
-impl From<&LotId> for ProfileLotOfferingView {
-    fn from(lot_id: &LotId) -> Self {
-        Self {
-            lot_id: lot_id.clone(),
-        }
-    }
-}
-
 #[near_bindgen]
 impl Contract {
-    pub fn profile_lots_offering_list(&self, profile_id: ProfileId) -> Vec<ProfileLotOfferingView> {
+    pub fn profile_lots_offering_list(&self, profile_id: ProfileId) -> Vec<LotView> {
         let profile = self.profiles.get(&profile_id).unwrap();
+        let time_now = env::block_timestamp();
 
-        profile.lots_offering.iter().map(|x| ProfileLotOfferingView::from(&x)).collect()
+        profile.lots_offering.iter().map(|lot_id| {
+            let lot = self.lots.get(&lot_id).unwrap();
+            let lot_view: LotView = (&lot, time_now).into();
+
+            lot_view
+        }).collect()
     }
 
     pub fn profile_get(&self, profile_id: AccountId) -> Option<ProfileView> {
