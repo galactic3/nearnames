@@ -394,7 +394,6 @@ impl Contract {
     pub fn lot_withdraw(&mut self, lot_id: AccountId) -> bool {
         let lot_id: ProfileId = lot_id.into();
         let withdrawer_id: ProfileId = env::predecessor_account_id();
-        println!("{}", &withdrawer_id);
         self.internal_lot_withdraw(&lot_id, &withdrawer_id);
         true
     }

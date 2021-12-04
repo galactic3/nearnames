@@ -13,6 +13,13 @@ pub const LOCK_CONTRACT_BYTES: &[u8] =
     include_bytes!("../../lock_unlock_account_contract/res/lock_unlock_account.wasm");
 const DEFAULT_PUBLIC_KEY: &str = "ed25519:Ga6C8S7jVG2inG88cos8UsdtGVWRFQasSdTdtHL7kBqL";
 
+fn from_yocto(amount: Balance) -> String {
+    let yocto_in_near: Balance = 10u128.pow(24);
+    let fraction = amount % yocto_in_near;
+    let whole = amount / yocto_in_near;
+    format!("{}.{:024}", whole, fraction)
+}
+
 // near_sdk_sim::lazy_static_include::lazy_static_include_bytes! {
 //     COUNTER_BYTES => "res/marketplace.wasm",
 // }
@@ -153,7 +160,7 @@ fn simulate_lot_offer_buy_now() {
 }
 
 #[test]
-fn simulate_lot_offer_revoke() {
+fn simulate_lot_offer_withdraw() {
     let (root, contract) = init();
     let alice: UserAccount = create_user_locked(&root, "alice");
     let bob: UserAccount = create_user(&root, "bob");
