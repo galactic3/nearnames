@@ -1185,15 +1185,42 @@ mod tests {
         testing_env!(context);
         let mut contract = Contract::default();
 
+        create_lot_bob_sells_alice_api(&mut contract);
 
-        let mut profile = contract.internal_profile_extract(&"alice".parse().unwrap());
-        let offer_a_id = &"offer_a".parse().unwrap();
-        profile.lots_offering.insert(&offer_a_id);
-        contract.internal_profile_save(&profile);
+        let context = get_context_with_payer(
+            &"carol".parse().unwrap(),
+            to_yocto(7),
+            DAY_NANOSECONDS * 10,
+        );
+        testing_env!(context);
+        contract.lot_bid("alice".to_string().try_into().unwrap());
 
-        let result = contract.profile_lots_offering_list("alice".parse().unwrap());
+        {
+            let profile = contract.profiles.get(&"bob".parse().unwrap()).unwrap();
+            let expected_lots_offering: Vec<LotId> = vec!["alice".parse().unwrap()];
+            assert_eq!(
+                profile.lots_offering.to_vec(), expected_lots_offering,
+                "must be present after offer",
+            );
+            assert!(profile.lots_bidding.is_empty(), "must be empty for seller");
+        }
+
+        {
+            let profile = contract.profiles.get(&"carol".parse().unwrap()).unwrap();
+            let expected_lots_bidding: Vec<LotId> = vec!["alice".parse().unwrap()];
+            assert_eq!(
+                profile.lots_bidding.to_vec(), expected_lots_bidding,
+                "alice must be present after lot bid",
+            );
+            assert_eq!(
+                profile.lots_offering.to_vec(), vec![],
+                "must be empty for bidder"
+            );
+        }
+
+        let result = contract.profile_lots_offering_list("bob".parse().unwrap());
         assert_eq!(result.len(), 1, "lot_offering must contain 1 lot");
         let result = result.get(0).unwrap();
-        assert_eq!(&result.lot_id, offer_a_id, "expected offer_a in offer lot list");
+        assert_eq!(&result.lot_id, &"alice".parse().unwrap(), "expected offer_a in offer lot list");
     }
 }
