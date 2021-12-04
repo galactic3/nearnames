@@ -1178,4 +1178,22 @@ mod tests {
             );
         }
     }
+
+    #[test]
+    pub fn test_profile_lots_offering_list() {
+        let context = get_context_simple(false);
+        testing_env!(context);
+        let mut contract = Contract::default();
+
+
+        let mut profile = contract.internal_profile_extract(&"alice".parse().unwrap());
+        let offer_a_id = &"offer_a".parse().unwrap();
+        profile.lots_offering.insert(&offer_a_id);
+        contract.internal_profile_save(&profile);
+
+        let result = contract.profile_lots_offering_list("alice".parse().unwrap());
+        assert_eq!(result.len(), 1, "lot_offering must contain 1 lot");
+        let result = result.get(0).unwrap();
+        assert_eq!(&result.lot_id, offer_a_id, "expected offer_a in offer lot list");
+    }
 }
