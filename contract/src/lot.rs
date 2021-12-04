@@ -337,13 +337,20 @@ impl Contract {
         let timestamp = env::block_timestamp();
 
         let bid: Bid = Bid {
-            bidder_id,
+            bidder_id: bidder_id.clone(),
             amount,
             timestamp,
         };
 
         // TODO: rewrite to elliminate double read
         self.internal_lot_bid(&lot_id, &bid);
+
+        // update associations
+        {
+            let mut bidder = self.internal_profile_extract(&bidder_id);
+            bidder.lots_bidding.insert(&lot_id);
+            self.internal_profile_save(&bidder);
+        }
 
         // redistribute balances
         match last_bid {

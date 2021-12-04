@@ -1143,31 +1143,39 @@ mod tests {
         testing_env!(context);
         let mut contract = Contract::default();
 
-        let _lot = create_lot_bob_sells_alice_api(&mut contract);
-        let profile = contract.profiles.get(&"bob".parse().unwrap()).unwrap();
+        create_lot_bob_sells_alice_api(&mut contract);
 
-        let lots_offering: Vec<LotId> = profile.lots_offering.to_vec();
-        let expected_lots_offering: Vec<LotId> = vec!["alice".parse().unwrap()];
-        assert_eq!(lots_offering, expected_lots_offering, "alice must be present after lot offer");
+        {
+            let profile = contract.profiles.get(&"bob".parse().unwrap()).unwrap();
+            let expected_lots_offering: Vec<LotId> = vec!["alice".parse().unwrap()];
+            assert_eq!(
+                profile.lots_offering.to_vec(), expected_lots_offering,
+                "must be present after offer",
+            );
+            assert!(profile.lots_bidding.is_empty(), "must be empty for seller");
+        }
 
-        // println!("{:#?}", profile.lots_offering.to_vec());
-        // println!("{:#?}", profile.lots_bidding.to_vec());
+        {
+            let context = get_context_with_payer(
+                &"carol".parse().unwrap(),
+                to_yocto(7),
+                DAY_NANOSECONDS * 10,
+            );
+            testing_env!(context);
+            contract.lot_bid("alice".to_string().try_into().unwrap());
+        }
 
-        // let bid: Bid = Bid {
-        //     bidder_id: "carol".parse().unwrap(),
-        //     amount: to_yocto(7),
-        //     timestamp: DAY_NANOSECONDS * 10,
-        // };
-        // contract.internal_lot_bid(&"alice".parse().unwrap(), &bid);
-
-        // let bid: Bid = Bid {
-        //     bidder_id: "dan".parse().unwrap(),
-        //     amount: to_yocto(9),
-        //     timestamp: DAY_NANOSECONDS * 10 + 1,
-        // };
-        // contract.internal_lot_bid(&"alice".parse().unwrap(), &bid);
-
-        
-        // ...
+        {
+            let profile = contract.profiles.get(&"carol".parse().unwrap()).unwrap();
+            let expected_lots_bidding: Vec<LotId> = vec!["alice".parse().unwrap()];
+            assert_eq!(
+                profile.lots_bidding.to_vec(), expected_lots_bidding,
+                "alice must be present after lot bid",
+            );
+            assert_eq!(
+                profile.lots_offering.to_vec(), vec![],
+                "must be empty for bidder"
+            );
+        }
     }
 }
