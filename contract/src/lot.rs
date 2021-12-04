@@ -204,6 +204,7 @@ impl From<Bid> for BidView {
 
 impl Contract {
     pub(crate) fn internal_lot_create(
+        &mut self,
         lot_id: LotId,
         seller_id: ProfileId,
         reserve_price: Balance,
@@ -305,7 +306,7 @@ impl Contract {
         let time_now = env::block_timestamp();
         let duration: Duration = duration.into();
 
-        let lot = Contract::internal_lot_create(
+        let lot = self.internal_lot_create(
             lot_id,
             seller_id,
             reserve_price,
