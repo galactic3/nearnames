@@ -1218,7 +1218,7 @@ mod tests {
             );
         }
 
-        let result = contract.profile_lots_offering_list("bob".parse().unwrap());
+        let result = contract.lot_list_offered_by("bob".parse().unwrap());
         assert_eq!(result.len(), 1, "lot_offering must contain 1 lot");
         let result = result.get(0).unwrap();
         assert_eq!(&result.lot_id, &"alice".parse().unwrap(), "expected offer_a in offer lot list");

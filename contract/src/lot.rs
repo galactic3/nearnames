@@ -292,6 +292,18 @@ impl Contract {
         self.lots.values().map(|v| (&v, now).into()).collect()
     }
 
+    pub fn lot_list_offered_by(&self, profile_id: ProfileId) -> Vec<LotView> {
+        let profile = self.profiles.get(&profile_id).unwrap();
+        let time_now = env::block_timestamp();
+
+        profile.lots_offering.iter().map(|lot_id| {
+            let lot = self.lots.get(&lot_id).unwrap();
+            let lot_view: LotView = (&lot, time_now).into();
+
+            lot_view
+        }).collect()
+    }
+
     pub fn lot_offer(
         &mut self,
         seller_id: AccountId,
