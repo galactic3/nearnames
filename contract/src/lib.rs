@@ -3,7 +3,7 @@ mod profile;
 mod utils;
 
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::collections::{UnorderedMap, Vector};
+use near_sdk::collections::{UnorderedMap, Vector, UnorderedSet};
 use near_sdk::json_types::{U128, U64};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{
@@ -24,6 +24,8 @@ pub type WrappedDuration = U64;
 pub const PREFIX_PROFILES: &str = "u";
 pub const PREFIX_LOTS: &str = "a";
 pub const PREFIX_LOTS_BIDS: &str = "y";
+pub const PREFIX_PROFILE_LOTS_BIDDING: &str = "b";
+pub const PREFIX_PROFILE_LOTS_OFFERING: &str = "f";
 
 #[ext_contract]
 pub trait ExtLockContract {
@@ -120,11 +122,10 @@ mod tests {
 
         let rewards_available: u128 = to_yocto(2);
         let rewards_claimed: u128 = to_yocto(3);
-        let profile: Profile = Profile {
-            profile_id: "alice".parse().unwrap(),
-            rewards_available,
-            rewards_claimed,
-        };
+        // TODO: make params constructor private
+        let mut profile: Profile = contract.internal_profile_extract(&"alice".parse().unwrap());
+        profile.rewards_available = rewards_available;
+        profile.rewards_claimed = rewards_claimed;
         contract.internal_profile_save(&profile);
 
         let response: Option<ProfileView> = contract.profile_get("alice".parse().unwrap());

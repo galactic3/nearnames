@@ -222,6 +222,8 @@ fn simulate_lot_offer_withdraw() {
     assert!(result.is_ok());
     let result: Option<ProfileView> = result.unwrap_json();
     assert!(result.is_none(), "profile should not be created, no rewards given");
+
+    println!("{}", from_yocto(bob.account().unwrap().amount));
 }
 
 #[test]
