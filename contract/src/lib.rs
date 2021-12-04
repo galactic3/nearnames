@@ -170,6 +170,26 @@ mod tests {
         )
     }
 
+    fn create_lot_bob_sells_alice_api(contract: &mut Contract) -> Lot {
+        let context = get_context_pred_alice(false);
+        testing_env!(context);
+
+        let lot_id: ProfileId = "alice".parse().unwrap();
+        let seller_id: ProfileId = "bob".parse().unwrap();
+        let reserve_price = to_yocto(5);
+        let buy_now_price = to_yocto(10);
+        let duration = DAY_NANOSECONDS * 1;
+
+        contract.lot_offer(
+            seller_id.try_into().unwrap(),
+            reserve_price.into(),
+            buy_now_price.into(),
+            WrappedDuration::from(duration),
+        );
+
+        contract.lots.get(&lot_id).unwrap()
+    }
+
     #[test]
     fn internal_lot_create_fields() {
         let context = get_context_simple(false);
@@ -1119,13 +1139,16 @@ mod tests {
 
     #[test]
     pub fn test_profile_lots_offering_bidding() {
-        // let context = get_context_simple(false);
-        // testing_env!(context);
-        // let mut contract = Contract::default();
-        // let lot_bob_sells_alice = create_lot_bob_sells_alice(&mut contract);
-        // contract.internal_lot_save(&lot_bob_sells_alice);
+        let context = get_context_simple(false);
+        testing_env!(context);
+        let mut contract = Contract::default();
 
-        // let profile = contract.profiles.get(&"bob".parse().unwrap()).unwrap();
+        let _lot = create_lot_bob_sells_alice_api(&mut contract);
+        let profile = contract.profiles.get(&"bob".parse().unwrap()).unwrap();
+
+        let lots_offering: Vec<LotId> = profile.lots_offering.to_vec();
+        let expected_lots_offering: Vec<LotId> = vec!["alice".parse().unwrap()];
+        assert_eq!(lots_offering, expected_lots_offering, "alice must be present after lot offer");
 
         // println!("{:#?}", profile.lots_offering.to_vec());
         // println!("{:#?}", profile.lots_bidding.to_vec());
