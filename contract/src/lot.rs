@@ -176,17 +176,12 @@ pub struct LotView {
     pub is_active: bool,
     pub is_withdrawn: bool,
     pub status: String,
-    pub profile_had_bid: bool,
 }
 
-impl From<(&Lot, Timestamp, Option<&Profile>)> for LotView {
-    fn from(args: (&Lot, Timestamp, Option<&Profile>)) -> Self {
-        let (lot, now, profile) = args;
+impl From<(&Lot, Timestamp)> for LotView {
+    fn from(args: (&Lot, Timestamp)) -> Self {
+        let (lot, now) = args;
         let last_bid = lot.last_bid();
-
-        let profile_had_bid = profile
-            .map(|x| x.lots_bidding.contains(&lot.lot_id))
-            .unwrap_or(false);
 
         Self {
             lot_id: lot.lot_id.clone(),
@@ -201,7 +196,6 @@ impl From<(&Lot, Timestamp, Option<&Profile>)> for LotView {
             is_active: lot.is_active(now),
             is_withdrawn: lot.is_withdrawn,
             status: lot.status(now).to_string(),
-            profile_had_bid,
         }
     }
 }
@@ -321,7 +315,7 @@ impl Contract {
 
     pub fn lot_list(&self) -> Vec<LotView> {
         let now = env::block_timestamp();
-        self.lots.values().map(|v| (&v, now, None).into()).collect()
+        self.lots.values().map(|v| (&v, now).into()).collect()
     }
 
     pub fn lot_list_offered_by(&self, profile_id: ProfileId) -> Vec<LotView> {
@@ -333,7 +327,7 @@ impl Contract {
             .iter()
             .map(|lot_id| {
                 let lot = self.lots.get(&lot_id).unwrap();
-                let lot_view: LotView = (&lot, time_now, Some(&profile)).into();
+                let lot_view: LotView = (&lot, time_now).into();
 
                 lot_view
             })

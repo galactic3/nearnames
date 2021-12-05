@@ -1248,10 +1248,5 @@ mod tests {
             "OnSale".to_string(),
             "expected status on sale",
         );
-        assert_eq!(
-            result.profile_had_bid,
-            false,
-            "expected bob to have bid on this lot",
-        );
     }
 }
