@@ -146,14 +146,12 @@ pub struct LotView {
     pub next_bid_amount: Option<WrappedBalance>,
     pub is_active: bool,
     pub is_withdrawn: bool,
-    pub profile_id: Option<ProfileId>,
     pub profile_role: Option<String>,
     pub profile_status: Option<String>,
     pub profile_action: Option<String>,
 }
 
 struct LotProfileRelationInfo {
-    pub profile_id: Option<ProfileId>,
     pub profile_role: Option<String>,
     pub profile_status: Option<String>,
     pub profile_action: Option<String>,
@@ -174,7 +172,6 @@ impl LotProfileRelationInfo {
 
     pub fn new_none(profile_id: Option<&ProfileId>) -> Self {
         Self {
-            profile_id: profile_id.map(|x| x.clone()),
             profile_role: None,
             profile_status: None,
             profile_action: None,
@@ -202,7 +199,6 @@ impl LotProfileRelationInfo {
         };
 
         Self {
-            profile_id: Some(profile_id.clone()),
             profile_role: Some("seller".to_string()),
             profile_status: Some(profile_status.to_string()),
             profile_action: Some(profile_action.to_string()),
@@ -231,7 +227,6 @@ impl From<(&Lot, Timestamp, Option<&ProfileId>)> for LotView {
             next_bid_amount: lot.next_bid_amount(now).map(|x| x.into()),
             is_active: lot.is_active(now),
             is_withdrawn: lot.is_withdrawn,
-            profile_id: profile_info.profile_id,
             profile_role: profile_info.profile_role,
             profile_status: profile_info.profile_status,
             profile_action: profile_info.profile_action,

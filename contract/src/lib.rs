@@ -1237,11 +1237,6 @@ mod tests {
             "expected offer_a in offer lot list"
         );
         assert_eq!(
-            result.profile_id,
-            Some("bob".parse().unwrap()),
-            "expected bob as profile_id"
-        );
-        assert_eq!(
             result.profile_role,
             Some("seller".to_string()),
             "expected bob as profile_role"
