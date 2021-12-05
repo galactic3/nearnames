@@ -1186,7 +1186,7 @@ mod tests {
     }
 
     #[test]
-    pub fn test_profile_lots_bidding() {
+    pub fn test_profile_lots_bidding_api() {
         let context = get_context_simple(false);
         testing_env!(context);
         let mut contract = Contract::default();
@@ -1230,23 +1230,52 @@ mod tests {
             );
         }
 
-        let result = contract.lot_list_offered_by("bob".parse().unwrap());
-        assert_eq!(result.len(), 1, "lot_offering must contain 1 lot");
-        let result = result.get(0).unwrap();
-        assert_eq!(
-            &result.lot_id,
-            &"alice".parse().unwrap(),
-            "expected offer_a in offer lot list"
-        );
-        assert_eq!(
-            result.last_bidder_id,
-            Some("carol".parse().unwrap()),
-            "expected bob as profile_role"
-        );
-        assert_eq!(
-            result.status,
-            "OnSale".to_string(),
-            "expected status on sale",
-        );
+        {
+            let result = contract.lot_list_offering_by("bob".parse().unwrap());
+            assert_eq!(result.len(), 1, "lot_offering must contain 1 lot");
+            let result = result.get(0).unwrap();
+            assert_eq!(
+                &result.lot_id,
+                &"alice".parse().unwrap(),
+                "expected alice in offering lot list"
+            );
+            assert_eq!(
+                result.last_bidder_id,
+                Some("carol".parse().unwrap()),
+                "expected carol last_bidder",
+            );
+            assert_eq!(
+                result.status,
+                "OnSale".to_string(),
+                "expected status on sale",
+            );
+
+            let result = contract.lot_list_offering_by("carol".parse().unwrap());
+            assert!(result.is_empty(), "lot_offering for carol must be empty");
+        }
+
+        {
+            let result = contract.lot_list_bidding_by("carol".parse().unwrap());
+            assert_eq!(result.len(), 1, "lot_bidding must contain 1 lot");
+            let result = result.get(0).unwrap();
+            assert_eq!(
+                &result.lot_id,
+                &"alice".parse().unwrap(),
+                "expected alice in bidding lot list"
+            );
+            assert_eq!(
+                result.last_bidder_id,
+                Some("carol".parse().unwrap()),
+                "expected bob as profile_role"
+            );
+            assert_eq!(
+                result.status,
+                "OnSale".to_string(),
+                "expected status on sale",
+            );
+
+            let result = contract.lot_list_bidding_by("bob".parse().unwrap());
+            assert!(result.is_empty(), "lot_bidding for bob must be empty");
+        }
     }
 }
