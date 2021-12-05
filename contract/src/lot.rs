@@ -152,23 +152,73 @@ pub struct LotView {
     pub profile_action: Option<String>,
 }
 
+struct LotProfileRelationInfo {
+    pub profile_id: Option<ProfileId>,
+    pub profile_role: Option<String>,
+    pub profile_status: Option<String>,
+    pub profile_action: Option<String>,
+}
+
+impl LotProfileRelationInfo {
+    pub fn new(lot: &Lot, time_now: Timestamp, profile_id: Option<&ProfileId>) -> Self {
+        if let Some(profile_id) = profile_id {
+            if &lot.seller_id == profile_id {
+                Self::new_offering(lot, time_now, profile_id)
+            } else {
+                unreachable!();
+            }
+        } else {
+            Self::new_none(profile_id)
+        }
+    }
+
+    pub fn new_none(profile_id: Option<&ProfileId>) -> Self {
+        Self {
+            profile_id: profile_id.map(|x| x.clone()),
+            profile_role: None,
+            profile_status: None,
+            profile_action: None,
+        }
+    }
+
+    pub fn new_offering(lot: &Lot, time_now: Timestamp, profile_id: &ProfileId) -> Self {
+        let profile_status = if lot.is_active(time_now) {
+            "on_sale"
+        } else if lot.is_withdrawn {
+            "withdrawn"
+        } else {
+            match lot.last_bid() {
+                Some(_) => "sale_success",
+                None => "sale_fail",
+            }
+        };
+
+        let profile_action = match profile_status {
+            "on_sale" => "withdraw",
+            "withdrawn" => "claim",
+            "sale_success" => "",
+            "sale_fail" => "withdraw",
+            _ => unreachable!(),
+        };
+
+        Self {
+            profile_id: Some(profile_id.clone()),
+            profile_role: Some("seller".to_string()),
+            profile_status: Some(profile_status.to_string()),
+            profile_action: Some(profile_action.to_string()),
+        }
+    }
+}
+
+// impl LotView {
+//     fn add_profile_info(&mut self, profile_id: Option<&ProfileId>) {
+//     }
+// }
+
 impl From<(&Lot, Timestamp, Option<&ProfileId>)> for LotView {
     fn from(args: (&Lot, Timestamp, Option<&ProfileId>)) -> Self {
         let (lot, now, profile_id) = args;
-
-        let profile_id_view: Option<ProfileId> = match profile_id {
-            Some(profile_id) => Some(profile_id.clone()),
-            None => None,
-        };
-
-        let profile_role: Option<String> = match profile_id {
-            Some(profile_id) => Some(if &lot.seller_id == profile_id {
-                "seller".to_string()
-            } else {
-                "bidder".to_string()
-            }),
-            None => None,
-        };
+        let profile_info = LotProfileRelationInfo::new(lot, now, profile_id);
 
         Self {
             lot_id: lot.lot_id.clone(),
@@ -181,10 +231,10 @@ impl From<(&Lot, Timestamp, Option<&ProfileId>)> for LotView {
             next_bid_amount: lot.next_bid_amount(now).map(|x| x.into()),
             is_active: lot.is_active(now),
             is_withdrawn: lot.is_withdrawn,
-            profile_id: profile_id_view,
-            profile_role: profile_role,
-            profile_status: None,
-            profile_action: None,
+            profile_id: profile_info.profile_id,
+            profile_role: profile_info.profile_role,
+            profile_status: profile_info.profile_status,
+            profile_action: profile_info.profile_action,
         }
     }
 }

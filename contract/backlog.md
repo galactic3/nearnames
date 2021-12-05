@@ -16,3 +16,4 @@ fix tests not linked to actual code
 how to check balance in unit tests
 make duration string serialized
 think through contract structures upgrades
+clarify if it's ok that lot disappears after successful sale

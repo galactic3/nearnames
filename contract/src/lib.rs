@@ -1246,5 +1246,15 @@ mod tests {
             Some("seller".to_string()),
             "expected bob as profile_role"
         );
+        assert_eq!(
+            result.profile_status,
+            Some("on_sale".to_string()),
+            "expected profile on sale",
+        );
+        assert_eq!(
+            result.profile_action,
+            Some("withdraw".to_string()),
+            "expected profile on sale",
+        );
     }
 }
