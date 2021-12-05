@@ -156,11 +156,32 @@ pub struct LotView {
     pub next_bid_amount: Option<WrappedBalance>,
     pub is_active: bool,
     pub is_withdrawn: bool,
+    pub profile_id: Option<ProfileId>,
+    pub profile_role: Option<String>,
+    pub profile_status: Option<String>,
+    pub profile_action: Option<String>,
 }
 
-impl From<(&Lot, Timestamp)> for LotView {
-    fn from(args: (&Lot, Timestamp)) -> Self {
-        let (lot, now) = args;
+impl From<(&Lot, Timestamp, Option<&ProfileId>)> for LotView {
+    fn from(args: (&Lot, Timestamp, Option<&ProfileId>)) -> Self {
+        let (lot, now, profile_id) = args;
+
+        let profile_id_view: Option<ProfileId> = match profile_id {
+            Some(profile_id) => Some(profile_id.clone()),
+            None => None,
+        };
+
+        let profile_role: Option<String> = match profile_id {
+            Some(profile_id) => {
+                Some(if &lot.seller_id == profile_id {
+                    "seller".to_string()
+                } else {
+                    "bidder".to_string()
+                })
+            },
+            None => None,
+        };
+
         Self {
             lot_id: lot.lot_id.clone(),
             seller_id: lot.seller_id.clone(),
@@ -172,6 +193,10 @@ impl From<(&Lot, Timestamp)> for LotView {
             next_bid_amount: lot.next_bid_amount(now).map(|x| x.into()),
             is_active: lot.is_active(now),
             is_withdrawn: lot.is_withdrawn,
+            profile_id: profile_id_view,
+            profile_role: profile_role,
+            profile_status: None,
+            profile_action: None,
         }
     }
 }
@@ -289,7 +314,7 @@ impl Contract {
 
     pub fn lot_list(&self) -> Vec<LotView> {
         let now = env::block_timestamp();
-        self.lots.values().map(|v| (&v, now).into()).collect()
+        self.lots.values().map(|v| (&v, now, None).into()).collect()
     }
 
     pub fn lot_list_offered_by(&self, profile_id: ProfileId) -> Vec<LotView> {
@@ -298,7 +323,7 @@ impl Contract {
 
         profile.lots_offering.iter().map(|lot_id| {
             let lot = self.lots.get(&lot_id).unwrap();
-            let lot_view: LotView = (&lot, time_now).into();
+            let lot_view: LotView = (&lot, time_now, Some(&profile_id)).into();
 
             lot_view
         }).collect()

@@ -81,12 +81,16 @@ mod tests {
             .build()
     }
 
-    fn get_context_pred_alice(is_view: bool) -> VMContext {
+    fn get_context_pred_x(profile_id: &ProfileId, is_view: bool) -> VMContext {
         VMContextBuilder::new()
-            .predecessor_account_id("alice".parse().unwrap())
+            .predecessor_account_id(profile_id.clone())
             .is_view(is_view)
             .block_timestamp(DAY_NANOSECONDS * 10)
             .build()
+    }
+
+    fn get_context_pred_alice(is_view: bool) -> VMContext {
+        get_context_pred_x(&"alice".parse().unwrap(), is_view)
     }
 
     fn get_context_with_payer(
@@ -170,24 +174,29 @@ mod tests {
         )
     }
 
-    fn create_lot_bob_sells_alice_api(contract: &mut Contract) -> Lot {
-        let context = get_context_pred_alice(false);
+    fn create_lot_x_sells_y_api(contract: &mut Contract, seller_id: &ProfileId, lot_id: &LotId) -> Lot {
+        let context = get_context_pred_x(&lot_id, false);
         testing_env!(context);
 
-        let lot_id: ProfileId = "alice".parse().unwrap();
-        let seller_id: ProfileId = "bob".parse().unwrap();
         let reserve_price = to_yocto(5);
         let buy_now_price = to_yocto(10);
         let duration = DAY_NANOSECONDS * 1;
 
         contract.lot_offer(
-            seller_id.try_into().unwrap(),
+            seller_id.clone(),
             reserve_price.into(),
             buy_now_price.into(),
             WrappedDuration::from(duration),
         );
 
         contract.lots.get(&lot_id).unwrap()
+    }
+
+    fn create_lot_bob_sells_alice_api(contract: &mut Contract) -> Lot {
+        let lot_id: ProfileId = "alice".parse().unwrap();
+        let seller_id: ProfileId = "bob".parse().unwrap();
+
+        create_lot_x_sells_y_api(contract, &seller_id, &lot_id)
     }
 
     #[test]
@@ -1186,6 +1195,12 @@ mod tests {
         let mut contract = Contract::default();
 
         create_lot_bob_sells_alice_api(&mut contract);
+        // create another lot to be filtered out
+        create_lot_x_sells_y_api(
+            &mut contract,
+            &"seller_1".parse().unwrap(),
+            &"lot_1".parse().unwrap()
+        );
 
         let context = get_context_with_payer(
             &"carol".parse().unwrap(),
@@ -1222,5 +1237,7 @@ mod tests {
         assert_eq!(result.len(), 1, "lot_offering must contain 1 lot");
         let result = result.get(0).unwrap();
         assert_eq!(&result.lot_id, &"alice".parse().unwrap(), "expected offer_a in offer lot list");
+        assert_eq!(result.profile_id, Some("bob".parse().unwrap()), "expected bob as profile_id");
+        assert_eq!(result.profile_role, Some("seller".to_string()), "expected bob as profile_role");
     }
 }
