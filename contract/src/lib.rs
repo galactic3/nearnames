@@ -1242,9 +1242,9 @@ mod tests {
             "expected bob as profile_role"
         );
         assert_eq!(
-            result.profile_status,
-            Some("on_sale".to_string()),
-            "expected profile on sale",
+            result.status,
+            "on_sale".to_string(),
+            "expected status on sale",
         );
         assert_eq!(
             result.profile_action,

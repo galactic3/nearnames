@@ -84,6 +84,22 @@ impl Lot {
         self.last_bid().map(|x| x.bidder_id)
     }
 
+    // TODO: convert to enum
+    pub fn status(&self, time_now: Timestamp) -> String {
+        let result = if self.is_active(time_now) {
+            "on_sale"
+        } else if self.is_withdrawn {
+            "withdrawn"
+        } else {
+            match self.last_bid() {
+                Some(_) => "sale_success",
+                None => "sale_fail",
+            }
+        };
+
+        result.to_string()
+    }
+
     pub fn clean_up(&mut self) {
         self.bids.clear()
     }
@@ -148,12 +164,11 @@ pub struct LotView {
     pub next_bid_amount: Option<WrappedBalance>,
     pub is_active: bool,
     pub is_withdrawn: bool,
-    pub profile_status: Option<String>,
+    pub status: String,
     pub profile_action: Option<String>,
 }
 
 struct LotProfileRelationInfo {
-    pub profile_status: Option<String>,
     pub profile_action: Option<String>,
 }
 
@@ -170,26 +185,16 @@ impl LotProfileRelationInfo {
         }
     }
 
-    pub fn new_none(profile_id: Option<&ProfileId>) -> Self {
+    pub fn new_none(_profile_id: Option<&ProfileId>) -> Self {
         Self {
-            profile_status: None,
             profile_action: None,
         }
     }
 
-    pub fn new_offering(lot: &Lot, time_now: Timestamp, profile_id: &ProfileId) -> Self {
-        let profile_status = if lot.is_active(time_now) {
-            "on_sale"
-        } else if lot.is_withdrawn {
-            "withdrawn"
-        } else {
-            match lot.last_bid() {
-                Some(_) => "sale_success",
-                None => "sale_fail",
-            }
-        };
+    pub fn new_offering(lot: &Lot, time_now: Timestamp, _profile_id: &ProfileId) -> Self {
+        let status = lot.status(time_now);
 
-        let profile_action = match profile_status {
+        let profile_action = match &status[..] {
             "on_sale" => "withdraw",
             "withdrawn" => "claim",
             "sale_success" => "",
@@ -198,7 +203,6 @@ impl LotProfileRelationInfo {
         };
 
         Self {
-            profile_status: Some(profile_status.to_string()),
             profile_action: Some(profile_action.to_string()),
         }
     }
@@ -228,7 +232,7 @@ impl From<(&Lot, Timestamp, Option<&ProfileId>)> for LotView {
             next_bid_amount: lot.next_bid_amount(now).map(|x| x.into()),
             is_active: lot.is_active(now),
             is_withdrawn: lot.is_withdrawn,
-            profile_status: profile_info.profile_status,
+            status: lot.status(now),
             profile_action: profile_info.profile_action,
         }
     }
