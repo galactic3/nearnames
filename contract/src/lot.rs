@@ -176,59 +176,17 @@ pub struct LotView {
     pub is_active: bool,
     pub is_withdrawn: bool,
     pub status: String,
-    pub profile_action: Option<String>,
+    pub profile_had_bid: bool,
 }
 
-struct LotProfileRelationInfo {
-    pub profile_action: Option<String>,
-}
-
-impl LotProfileRelationInfo {
-    pub fn new(lot: &Lot, time_now: Timestamp, profile_id: Option<&ProfileId>) -> Self {
-        if let Some(profile_id) = profile_id {
-            if &lot.seller_id == profile_id {
-                Self::new_offering(lot, time_now, profile_id)
-            } else {
-                unreachable!();
-            }
-        } else {
-            Self::new_none(profile_id)
-        }
-    }
-
-    pub fn new_none(_profile_id: Option<&ProfileId>) -> Self {
-        Self {
-            profile_action: None,
-        }
-    }
-
-    pub fn new_offering(lot: &Lot, time_now: Timestamp, _profile_id: &ProfileId) -> Self {
-        let status = lot.status(time_now);
-
-        let profile_action = match status {
-            LotStatus::OnSale => "withdraw",
-            LotStatus::Withdrawn => "claim",
-            LotStatus::SaleSuccess => "",
-            LotStatus::SaleFailure => "withdraw",
-        };
-
-        Self {
-            profile_action: Some(profile_action.to_string()),
-        }
-    }
-}
-
-// impl LotView {
-//     fn add_profile_info(&mut self, profile_id: Option<&ProfileId>) {
-//     }
-// }
-
-impl From<(&Lot, Timestamp, Option<&ProfileId>)> for LotView {
-    fn from(args: (&Lot, Timestamp, Option<&ProfileId>)) -> Self {
-        let (lot, now, profile_id) = args;
-        let profile_info = LotProfileRelationInfo::new(lot, now, profile_id);
-
+impl From<(&Lot, Timestamp, Option<&Profile>)> for LotView {
+    fn from(args: (&Lot, Timestamp, Option<&Profile>)) -> Self {
+        let (lot, now, profile) = args;
         let last_bid = lot.last_bid();
+
+        let profile_had_bid = profile
+            .map(|x| x.lots_bidding.contains(&lot.lot_id))
+            .unwrap_or(false);
 
         Self {
             lot_id: lot.lot_id.clone(),
@@ -243,7 +201,7 @@ impl From<(&Lot, Timestamp, Option<&ProfileId>)> for LotView {
             is_active: lot.is_active(now),
             is_withdrawn: lot.is_withdrawn,
             status: lot.status(now).to_string(),
-            profile_action: profile_info.profile_action,
+            profile_had_bid,
         }
     }
 }
@@ -375,7 +333,7 @@ impl Contract {
             .iter()
             .map(|lot_id| {
                 let lot = self.lots.get(&lot_id).unwrap();
-                let lot_view: LotView = (&lot, time_now, Some(&profile_id)).into();
+                let lot_view: LotView = (&lot, time_now, Some(&profile)).into();
 
                 lot_view
             })

@@ -17,3 +17,5 @@ how to check balance in unit tests
 make duration string serialized
 think through contract structures upgrades
 clarify if it's ok that lot disappears after successful sale
+apply oop to lot, profile
+write checklist and put in readme

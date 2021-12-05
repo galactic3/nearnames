@@ -1186,7 +1186,7 @@ mod tests {
     }
 
     #[test]
-    pub fn test_profile_lots_offering_list() {
+    pub fn test_profile_lots_bidding() {
         let context = get_context_simple(false);
         testing_env!(context);
         let mut contract = Contract::default();
@@ -1249,9 +1249,9 @@ mod tests {
             "expected status on sale",
         );
         assert_eq!(
-            result.profile_action,
-            Some("withdraw".to_string()),
-            "expected profile on sale",
+            result.profile_had_bid,
+            false,
+            "expected bob to have bid on this lot",
         );
     }
 }
