@@ -1237,8 +1237,8 @@ mod tests {
             "expected offer_a in offer lot list"
         );
         assert_eq!(
-            result.profile_role,
-            Some("seller".to_string()),
+            result.last_bidder_id,
+            Some("carol".parse().unwrap()),
             "expected bob as profile_role"
         );
         assert_eq!(

@@ -73,6 +73,7 @@ impl Lot {
             return None;
         }
         if let Some(last_bid_amount) = self.last_bid_amount() {
+            // TODO: remove max, unreachable branch
             Some(std::cmp::max(self.reserve_price, last_bid_amount + 1))
         } else {
             Some(self.reserve_price)
@@ -138,6 +139,7 @@ impl Lot {
 pub struct LotView {
     pub lot_id: LotId,
     pub seller_id: ProfileId,
+    pub last_bidder_id: Option<ProfileId>,
     pub reserve_price: WrappedBalance,
     pub buy_now_price: WrappedBalance,
     pub start_timestamp: WrappedTimestamp,
@@ -146,13 +148,11 @@ pub struct LotView {
     pub next_bid_amount: Option<WrappedBalance>,
     pub is_active: bool,
     pub is_withdrawn: bool,
-    pub profile_role: Option<String>,
     pub profile_status: Option<String>,
     pub profile_action: Option<String>,
 }
 
 struct LotProfileRelationInfo {
-    pub profile_role: Option<String>,
     pub profile_status: Option<String>,
     pub profile_action: Option<String>,
 }
@@ -172,7 +172,6 @@ impl LotProfileRelationInfo {
 
     pub fn new_none(profile_id: Option<&ProfileId>) -> Self {
         Self {
-            profile_role: None,
             profile_status: None,
             profile_action: None,
         }
@@ -199,7 +198,6 @@ impl LotProfileRelationInfo {
         };
 
         Self {
-            profile_role: Some("seller".to_string()),
             profile_status: Some(profile_status.to_string()),
             profile_action: Some(profile_action.to_string()),
         }
@@ -216,18 +214,20 @@ impl From<(&Lot, Timestamp, Option<&ProfileId>)> for LotView {
         let (lot, now, profile_id) = args;
         let profile_info = LotProfileRelationInfo::new(lot, now, profile_id);
 
+        let last_bid = lot.last_bid();
+
         Self {
             lot_id: lot.lot_id.clone(),
             seller_id: lot.seller_id.clone(),
+            last_bidder_id: last_bid.as_ref().map(|x| x.bidder_id.clone()),
             reserve_price: lot.reserve_price.into(),
             buy_now_price: lot.buy_now_price.into(),
             start_timestamp: lot.start_timestamp.into(),
             finish_timestamp: lot.finish_timestamp.into(),
-            last_bid_amount: lot.last_bid_amount().map(|x| x.into()),
+            last_bid_amount: last_bid.as_ref().map(|x| x.amount.into()),
             next_bid_amount: lot.next_bid_amount(now).map(|x| x.into()),
             is_active: lot.is_active(now),
             is_withdrawn: lot.is_withdrawn,
-            profile_role: profile_info.profile_role,
             profile_status: profile_info.profile_status,
             profile_action: profile_info.profile_action,
         }
