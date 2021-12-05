@@ -150,10 +150,7 @@ fn simulate_lot_offer_buy_now() {
     assert_eq!(Balance::from(result.rewards_available), to_yocto("10"));
 
     root.transfer(bob.account_id(), to_yocto("0.2")); // storage and future gas
-    let result = call!(
-        bob,
-        contract.profile_rewards_claim()
-    );
+    let result = call!(bob, contract.profile_rewards_claim());
     assert!(result.is_ok());
 
     bob.transfer(root.account_id(), to_yocto("10")); // storage and future gas
@@ -182,10 +179,7 @@ fn simulate_lot_offer_withdraw() {
 
     let balance_to_reserve = to_yocto("0.2");
     root.transfer(bob.account_id(), balance_to_reserve); // storage and future gas
-    let result = call!(
-        bob,
-        contract.lot_withdraw(alice.account_id.clone())
-    );
+    let result = call!(bob, contract.lot_withdraw(alice.account_id.clone()));
     assert!(result.is_ok());
 
     let result = view!(contract.lot_list());
@@ -198,11 +192,7 @@ fn simulate_lot_offer_withdraw() {
         result.is_active, false,
         "expected lot inactive after withdraw"
     );
-    assert_eq!(
-        result.is_withdrawn,
-        true,
-        "expected lot to be withdrawn",
-    );
+    assert_eq!(result.is_withdrawn, true, "expected lot to be withdrawn",);
 
     let result = call!(
         bob,
@@ -221,10 +211,17 @@ fn simulate_lot_offer_withdraw() {
     let result = view!(contract.profile_get(bob.account_id()));
     assert!(result.is_ok());
     let result: Option<ProfileView> = result.unwrap_json();
-    assert!(result.is_some(), "profile not created, but should be, because of associations");
+    assert!(
+        result.is_some(),
+        "profile not created, but should be, because of associations"
+    );
     let result = result.unwrap();
 
-    assert_eq!(Balance::from(result.rewards_available), 0, "no rewards should be given on withdraw");
+    assert_eq!(
+        Balance::from(result.rewards_available),
+        0,
+        "no rewards should be given on withdraw"
+    );
 
     println!("{}", from_yocto(bob.account().unwrap().amount));
 }

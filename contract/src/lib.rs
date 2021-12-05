@@ -3,7 +3,7 @@ mod profile;
 mod utils;
 
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::collections::{UnorderedMap, Vector, UnorderedSet};
+use near_sdk::collections::{UnorderedMap, UnorderedSet, Vector};
 use near_sdk::json_types::{U128, U64};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{
@@ -174,7 +174,11 @@ mod tests {
         )
     }
 
-    fn create_lot_x_sells_y_api(contract: &mut Contract, seller_id: &ProfileId, lot_id: &LotId) -> Lot {
+    fn create_lot_x_sells_y_api(
+        contract: &mut Contract,
+        seller_id: &ProfileId,
+        lot_id: &LotId,
+    ) -> Lot {
         let context = get_context_pred_x(&lot_id, false);
         testing_env!(context);
 
@@ -955,11 +959,7 @@ mod tests {
             contract.internal_lot_save(&lot);
         }
 
-        let context = get_context_with_payer(
-            &"bob".parse().unwrap(),
-            0,
-            DAY_NANOSECONDS * 13,
-        );
+        let context = get_context_with_payer(&"bob".parse().unwrap(), 0, DAY_NANOSECONDS * 13);
         testing_env!(context);
         contract.lot_withdraw("alice".to_string().try_into().unwrap());
     }
@@ -975,11 +975,7 @@ mod tests {
             contract.internal_lot_save(&lot);
         }
 
-        let context = get_context_with_payer(
-            &"carol".parse().unwrap(),
-            0,
-            DAY_NANOSECONDS * 13,
-        );
+        let context = get_context_with_payer(&"carol".parse().unwrap(), 0, DAY_NANOSECONDS * 13);
         testing_env!(context);
         contract.lot_withdraw("alice".to_string().try_into().unwrap());
     }
@@ -1002,11 +998,7 @@ mod tests {
         };
         contract.internal_lot_bid(&"alice".parse().unwrap(), &bid);
 
-        let context = get_context_with_payer(
-            &"bob".parse().unwrap(),
-            0,
-            DAY_NANOSECONDS * 13,
-        );
+        let context = get_context_with_payer(&"bob".parse().unwrap(), 0, DAY_NANOSECONDS * 13);
         testing_env!(context);
         contract.lot_withdraw("alice".to_string().try_into().unwrap());
     }
@@ -1022,11 +1014,7 @@ mod tests {
             contract.internal_lot_save(&lot);
         }
 
-        let context = get_context_with_payer(
-            &"bob".parse().unwrap(),
-            0,
-            DAY_NANOSECONDS * 13,
-        );
+        let context = get_context_with_payer(&"bob".parse().unwrap(), 0, DAY_NANOSECONDS * 13);
         testing_env!(context);
         contract.lot_withdraw("alice".to_string().try_into().unwrap());
         contract.lot_withdraw("alice".to_string().try_into().unwrap());
@@ -1077,11 +1065,8 @@ mod tests {
             contract.internal_lot_save(&lot);
         }
 
-        let context = get_context_with_payer(
-            &"bob".parse().unwrap(),
-            to_yocto(0),
-            DAY_NANOSECONDS * 13,
-        );
+        let context =
+            get_context_with_payer(&"bob".parse().unwrap(), to_yocto(0), DAY_NANOSECONDS * 13);
         testing_env!(context);
         contract.lot_withdraw("alice".to_string().try_into().unwrap());
         let public_key: PublicKey = DEFAULT_PUBLIC_KEY.parse().unwrap();
@@ -1142,8 +1127,15 @@ mod tests {
         testing_env!(context);
         contract.profile_rewards_claim();
         let result = contract.profile_get(account_id.clone()).unwrap();
-        assert_eq!(result.rewards_available.0, to_yocto(0), "Expected rewards_available 0 after claim");
-        assert_eq!(result.rewards_claimed.0, amount, "Expected rewards_claimed amount after claim");
+        assert_eq!(
+            result.rewards_available.0,
+            to_yocto(0),
+            "Expected rewards_available 0 after claim"
+        );
+        assert_eq!(
+            result.rewards_claimed.0, amount,
+            "Expected rewards_claimed amount after claim"
+        );
     }
 
     #[test]
@@ -1158,7 +1150,8 @@ mod tests {
             let profile = contract.profiles.get(&"bob".parse().unwrap()).unwrap();
             let expected_lots_offering: Vec<LotId> = vec!["alice".parse().unwrap()];
             assert_eq!(
-                profile.lots_offering.to_vec(), expected_lots_offering,
+                profile.lots_offering.to_vec(),
+                expected_lots_offering,
                 "must be present after offer",
             );
             assert!(profile.lots_bidding.is_empty(), "must be empty for seller");
@@ -1178,11 +1171,13 @@ mod tests {
             let profile = contract.profiles.get(&"carol".parse().unwrap()).unwrap();
             let expected_lots_bidding: Vec<LotId> = vec!["alice".parse().unwrap()];
             assert_eq!(
-                profile.lots_bidding.to_vec(), expected_lots_bidding,
+                profile.lots_bidding.to_vec(),
+                expected_lots_bidding,
                 "alice must be present after lot bid",
             );
             assert_eq!(
-                profile.lots_offering.to_vec(), vec![],
+                profile.lots_offering.to_vec(),
+                vec![],
                 "must be empty for bidder"
             );
         }
@@ -1199,14 +1194,11 @@ mod tests {
         create_lot_x_sells_y_api(
             &mut contract,
             &"seller_1".parse().unwrap(),
-            &"lot_1".parse().unwrap()
+            &"lot_1".parse().unwrap(),
         );
 
-        let context = get_context_with_payer(
-            &"carol".parse().unwrap(),
-            to_yocto(7),
-            DAY_NANOSECONDS * 10,
-        );
+        let context =
+            get_context_with_payer(&"carol".parse().unwrap(), to_yocto(7), DAY_NANOSECONDS * 10);
         testing_env!(context);
         contract.lot_bid("alice".to_string().try_into().unwrap());
 
@@ -1214,7 +1206,8 @@ mod tests {
             let profile = contract.profiles.get(&"bob".parse().unwrap()).unwrap();
             let expected_lots_offering: Vec<LotId> = vec!["alice".parse().unwrap()];
             assert_eq!(
-                profile.lots_offering.to_vec(), expected_lots_offering,
+                profile.lots_offering.to_vec(),
+                expected_lots_offering,
                 "must be present after offer",
             );
             assert!(profile.lots_bidding.is_empty(), "must be empty for seller");
@@ -1224,11 +1217,13 @@ mod tests {
             let profile = contract.profiles.get(&"carol".parse().unwrap()).unwrap();
             let expected_lots_bidding: Vec<LotId> = vec!["alice".parse().unwrap()];
             assert_eq!(
-                profile.lots_bidding.to_vec(), expected_lots_bidding,
+                profile.lots_bidding.to_vec(),
+                expected_lots_bidding,
                 "alice must be present after lot bid",
             );
             assert_eq!(
-                profile.lots_offering.to_vec(), vec![],
+                profile.lots_offering.to_vec(),
+                vec![],
                 "must be empty for bidder"
             );
         }
@@ -1236,8 +1231,20 @@ mod tests {
         let result = contract.lot_list_offered_by("bob".parse().unwrap());
         assert_eq!(result.len(), 1, "lot_offering must contain 1 lot");
         let result = result.get(0).unwrap();
-        assert_eq!(&result.lot_id, &"alice".parse().unwrap(), "expected offer_a in offer lot list");
-        assert_eq!(result.profile_id, Some("bob".parse().unwrap()), "expected bob as profile_id");
-        assert_eq!(result.profile_role, Some("seller".to_string()), "expected bob as profile_role");
+        assert_eq!(
+            &result.lot_id,
+            &"alice".parse().unwrap(),
+            "expected offer_a in offer lot list"
+        );
+        assert_eq!(
+            result.profile_id,
+            Some("bob".parse().unwrap()),
+            "expected bob as profile_id"
+        );
+        assert_eq!(
+            result.profile_role,
+            Some("seller".to_string()),
+            "expected bob as profile_role"
+        );
     }
 }

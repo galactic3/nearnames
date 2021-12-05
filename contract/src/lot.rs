@@ -86,7 +86,7 @@ impl Lot {
     pub fn clean_up(&mut self) {
         self.bids.clear()
     }
-    
+
     pub fn validate_claim_by_buyer(&self, claimer_id: &ProfileId, time_now: Timestamp) {
         assert!(
             !self.is_active(time_now),
@@ -108,8 +108,7 @@ impl Lot {
             ERR_LOT_CLAIM_BY_SELLER_NOT_WITHDRAWN,
         );
         assert_eq!(
-            &self.seller_id,
-            claimer_id,
+            &self.seller_id, claimer_id,
             "{}",
             ERR_LOT_CLAIM_WRONG_CLAIMER,
         );
@@ -125,21 +124,12 @@ impl Lot {
 
     pub fn validate_withdraw(&self, withdrawer_id: &ProfileId) {
         assert_eq!(
-            &self.seller_id,
-            withdrawer_id,
+            &self.seller_id, withdrawer_id,
             "{}",
             ERR_LOT_WITHDRAW_NOT_SELLER,
         );
-        assert!(
-            self.last_bid().is_none(),
-            "{}",
-            ERR_LOT_WITHDRAW_HAS_BID,
-        );
-        assert!(
-            !self.is_withdrawn,
-            "{}",
-            ERR_LOT_WITHDRAW_ALREADY_WITHDRAWN,
-        );
+        assert!(self.last_bid().is_none(), "{}", ERR_LOT_WITHDRAW_HAS_BID,);
+        assert!(!self.is_withdrawn, "{}", ERR_LOT_WITHDRAW_ALREADY_WITHDRAWN,);
     }
 }
 
@@ -172,13 +162,11 @@ impl From<(&Lot, Timestamp, Option<&ProfileId>)> for LotView {
         };
 
         let profile_role: Option<String> = match profile_id {
-            Some(profile_id) => {
-                Some(if &lot.seller_id == profile_id {
-                    "seller".to_string()
-                } else {
-                    "bidder".to_string()
-                })
-            },
+            Some(profile_id) => Some(if &lot.seller_id == profile_id {
+                "seller".to_string()
+            } else {
+                "bidder".to_string()
+            }),
             None => None,
         };
 
@@ -211,7 +199,9 @@ pub struct BidView {
 
 impl PartialEq for BidView {
     fn eq(&self, other: &Self) -> bool {
-        self.bidder_id == other.bidder_id && self.amount.0 == other.amount.0 && self.timestamp.0 == other.timestamp.0
+        self.bidder_id == other.bidder_id
+            && self.amount.0 == other.amount.0
+            && self.timestamp.0 == other.timestamp.0
     }
 }
 
@@ -321,12 +311,16 @@ impl Contract {
         let profile = self.profiles.get(&profile_id).unwrap();
         let time_now = env::block_timestamp();
 
-        profile.lots_offering.iter().map(|lot_id| {
-            let lot = self.lots.get(&lot_id).unwrap();
-            let lot_view: LotView = (&lot, time_now, Some(&profile_id)).into();
+        profile
+            .lots_offering
+            .iter()
+            .map(|lot_id| {
+                let lot = self.lots.get(&lot_id).unwrap();
+                let lot_view: LotView = (&lot, time_now, Some(&profile_id)).into();
 
-            lot_view
-        }).collect()
+                lot_view
+            })
+            .collect()
     }
 
     pub fn lot_offer(
