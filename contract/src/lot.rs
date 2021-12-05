@@ -19,6 +19,20 @@ pub const NO_DEPOSIT: Balance = 0;
 pub const GAS_EXT_CALL_UNLOCK: u64 = 40_000_000_000_000;
 pub const GAS_EXT_CALL_CLEAN_UP: u64 = 40_000_000_000_000;
 
+#[derive(Debug)]
+pub enum LotStatus {
+    OnSale,
+    Withdrawn,
+    SaleSuccess,
+    SaleFailure,
+}
+
+impl fmt::Display for LotStatus {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
 #[derive(BorshDeserialize, BorshSerialize)]
 pub struct Bid {
     pub bidder_id: ProfileId,
@@ -84,20 +98,17 @@ impl Lot {
         self.last_bid().map(|x| x.bidder_id)
     }
 
-    // TODO: convert to enum
-    pub fn status(&self, time_now: Timestamp) -> String {
-        let result = if self.is_active(time_now) {
-            "on_sale"
+    pub fn status(&self, time_now: Timestamp) -> LotStatus {
+        if self.is_active(time_now) {
+            LotStatus::OnSale
         } else if self.is_withdrawn {
-            "withdrawn"
+            LotStatus::Withdrawn
         } else {
             match self.last_bid() {
-                Some(_) => "sale_success",
-                None => "sale_fail",
+                Some(_) => LotStatus::SaleSuccess,
+                None => LotStatus::SaleFailure,
             }
-        };
-
-        result.to_string()
+        }
     }
 
     pub fn clean_up(&mut self) {
@@ -194,12 +205,11 @@ impl LotProfileRelationInfo {
     pub fn new_offering(lot: &Lot, time_now: Timestamp, _profile_id: &ProfileId) -> Self {
         let status = lot.status(time_now);
 
-        let profile_action = match &status[..] {
-            "on_sale" => "withdraw",
-            "withdrawn" => "claim",
-            "sale_success" => "",
-            "sale_fail" => "withdraw",
-            _ => unreachable!(),
+        let profile_action = match status {
+            LotStatus::OnSale => "withdraw",
+            LotStatus::Withdrawn => "claim",
+            LotStatus::SaleSuccess => "",
+            LotStatus::SaleFailure => "withdraw",
         };
 
         Self {
@@ -232,7 +242,7 @@ impl From<(&Lot, Timestamp, Option<&ProfileId>)> for LotView {
             next_bid_amount: lot.next_bid_amount(now).map(|x| x.into()),
             is_active: lot.is_active(now),
             is_withdrawn: lot.is_withdrawn,
-            status: lot.status(now),
+            status: lot.status(now).to_string(),
             profile_action: profile_info.profile_action,
         }
     }

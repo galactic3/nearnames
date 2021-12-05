@@ -2,6 +2,8 @@ mod lot;
 mod profile;
 mod utils;
 
+use std::fmt;
+
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{UnorderedMap, UnorderedSet, Vector};
 use near_sdk::json_types::{U128, U64};
@@ -1243,7 +1245,7 @@ mod tests {
         );
         assert_eq!(
             result.status,
-            "on_sale".to_string(),
+            "OnSale".to_string(),
             "expected status on sale",
         );
         assert_eq!(
