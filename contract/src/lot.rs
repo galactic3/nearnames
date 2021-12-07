@@ -458,13 +458,12 @@ impl Contract {
             ERR_LOT_CLEAN_UP_STILL_ACTIVE
         );
         // TODO: iter by uniq
-        lot.bids.iter()
-            .for_each(|bid| {
-                // TODO: validate bid exists
-                let mut profile = self.internal_profile_extract(&bid.bidder_id);
-                profile.lots_bidding.remove(&lot_id);
-                self.internal_profile_save(&profile);
-            });
+        lot.bids.iter().for_each(|bid| {
+            // TODO: validate bid exists
+            let mut profile = self.internal_profile_extract(&bid.bidder_id);
+            profile.lots_bidding.remove(&lot_id);
+            self.internal_profile_save(&profile);
+        });
         {
             let mut seller = self.internal_profile_extract(&lot.seller_id);
             seller.lots_offering.remove(&lot_id);
