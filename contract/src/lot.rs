@@ -19,6 +19,20 @@ pub const NO_DEPOSIT: Balance = 0;
 pub const GAS_EXT_CALL_UNLOCK: u64 = 40_000_000_000_000;
 pub const GAS_EXT_CALL_CLEAN_UP: u64 = 40_000_000_000_000;
 
+#[derive(Debug)]
+pub enum LotStatus {
+    OnSale,
+    Withdrawn,
+    SaleSuccess,
+    SaleFailure,
+}
+
+impl fmt::Display for LotStatus {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
 #[derive(BorshDeserialize, BorshSerialize)]
 pub struct Bid {
     pub bidder_id: ProfileId,
@@ -73,6 +87,7 @@ impl Lot {
             return None;
         }
         if let Some(last_bid_amount) = self.last_bid_amount() {
+            // TODO: remove max, unreachable branch
             Some(std::cmp::max(self.reserve_price, last_bid_amount + 1))
         } else {
             Some(self.reserve_price)
@@ -83,10 +98,23 @@ impl Lot {
         self.last_bid().map(|x| x.bidder_id)
     }
 
+    pub fn status(&self, time_now: Timestamp) -> LotStatus {
+        if self.is_active(time_now) {
+            LotStatus::OnSale
+        } else if self.is_withdrawn {
+            LotStatus::Withdrawn
+        } else {
+            match self.last_bid() {
+                Some(_) => LotStatus::SaleSuccess,
+                None => LotStatus::SaleFailure,
+            }
+        }
+    }
+
     pub fn clean_up(&mut self) {
         self.bids.clear()
     }
-    
+
     pub fn validate_claim_by_buyer(&self, claimer_id: &ProfileId, time_now: Timestamp) {
         assert!(
             !self.is_active(time_now),
@@ -108,8 +136,7 @@ impl Lot {
             ERR_LOT_CLAIM_BY_SELLER_NOT_WITHDRAWN,
         );
         assert_eq!(
-            &self.seller_id,
-            claimer_id,
+            &self.seller_id, claimer_id,
             "{}",
             ERR_LOT_CLAIM_WRONG_CLAIMER,
         );
@@ -125,21 +152,12 @@ impl Lot {
 
     pub fn validate_withdraw(&self, withdrawer_id: &ProfileId) {
         assert_eq!(
-            &self.seller_id,
-            withdrawer_id,
+            &self.seller_id, withdrawer_id,
             "{}",
             ERR_LOT_WITHDRAW_NOT_SELLER,
         );
-        assert!(
-            self.last_bid().is_none(),
-            "{}",
-            ERR_LOT_WITHDRAW_HAS_BID,
-        );
-        assert!(
-            !self.is_withdrawn,
-            "{}",
-            ERR_LOT_WITHDRAW_ALREADY_WITHDRAWN,
-        );
+        assert!(self.last_bid().is_none(), "{}", ERR_LOT_WITHDRAW_HAS_BID,);
+        assert!(!self.is_withdrawn, "{}", ERR_LOT_WITHDRAW_ALREADY_WITHDRAWN,);
     }
 }
 
@@ -148,6 +166,7 @@ impl Lot {
 pub struct LotView {
     pub lot_id: LotId,
     pub seller_id: ProfileId,
+    pub last_bidder_id: Option<ProfileId>,
     pub reserve_price: WrappedBalance,
     pub buy_now_price: WrappedBalance,
     pub start_timestamp: WrappedTimestamp,
@@ -156,22 +175,27 @@ pub struct LotView {
     pub next_bid_amount: Option<WrappedBalance>,
     pub is_active: bool,
     pub is_withdrawn: bool,
+    pub status: String,
 }
 
 impl From<(&Lot, Timestamp)> for LotView {
     fn from(args: (&Lot, Timestamp)) -> Self {
         let (lot, now) = args;
+        let last_bid = lot.last_bid();
+
         Self {
             lot_id: lot.lot_id.clone(),
             seller_id: lot.seller_id.clone(),
+            last_bidder_id: last_bid.as_ref().map(|x| x.bidder_id.clone()),
             reserve_price: lot.reserve_price.into(),
             buy_now_price: lot.buy_now_price.into(),
             start_timestamp: lot.start_timestamp.into(),
             finish_timestamp: lot.finish_timestamp.into(),
-            last_bid_amount: lot.last_bid_amount().map(|x| x.into()),
+            last_bid_amount: last_bid.as_ref().map(|x| x.amount.into()),
             next_bid_amount: lot.next_bid_amount(now).map(|x| x.into()),
             is_active: lot.is_active(now),
             is_withdrawn: lot.is_withdrawn,
+            status: lot.status(now).to_string(),
         }
     }
 }
@@ -186,7 +210,9 @@ pub struct BidView {
 
 impl PartialEq for BidView {
     fn eq(&self, other: &Self) -> bool {
-        self.bidder_id == other.bidder_id && self.amount.0 == other.amount.0 && self.timestamp.0 == other.timestamp.0
+        self.bidder_id == other.bidder_id
+            && self.amount.0 == other.amount.0
+            && self.timestamp.0 == other.timestamp.0
     }
 }
 
@@ -204,6 +230,7 @@ impl From<Bid> for BidView {
 
 impl Contract {
     pub(crate) fn internal_lot_create(
+        &mut self,
         lot_id: LotId,
         seller_id: ProfileId,
         reserve_price: Balance,
@@ -291,6 +318,34 @@ impl Contract {
         self.lots.values().map(|v| (&v, now).into()).collect()
     }
 
+    pub fn lot_list_offering_by(&self, profile_id: ProfileId) -> Vec<LotView> {
+        let profile = self.profiles.get(&profile_id).unwrap();
+        let time_now = env::block_timestamp();
+
+        profile
+            .lots_offering
+            .iter()
+            .map(|lot_id| {
+                let lot = self.lots.get(&lot_id).unwrap();
+                (&lot, time_now).into()
+            })
+            .collect()
+    }
+
+    pub fn lot_list_bidding_by(&self, profile_id: ProfileId) -> Vec<LotView> {
+        let profile = self.profiles.get(&profile_id).unwrap();
+        let time_now = env::block_timestamp();
+
+        profile
+            .lots_bidding
+            .iter()
+            .map(|lot_id| {
+                let lot = self.lots.get(&lot_id).unwrap();
+                (&lot, time_now).into()
+            })
+            .collect()
+    }
+
     pub fn lot_offer(
         &mut self,
         seller_id: AccountId,
@@ -305,15 +360,23 @@ impl Contract {
         let time_now = env::block_timestamp();
         let duration: Duration = duration.into();
 
-        let lot = Contract::internal_lot_create(
-            lot_id,
-            seller_id,
+        let lot = self.internal_lot_create(
+            lot_id.clone(),
+            seller_id.clone(),
             reserve_price,
             buy_now_price,
             time_now,
             duration,
         );
         self.internal_lot_save(&lot);
+
+        // update associations
+        {
+            let mut profile = self.internal_profile_extract(&seller_id);
+            profile.lots_offering.insert(&lot_id);
+            self.internal_profile_save(&profile);
+        }
+
         true
     }
 
@@ -328,13 +391,20 @@ impl Contract {
         let timestamp = env::block_timestamp();
 
         let bid: Bid = Bid {
-            bidder_id,
+            bidder_id: bidder_id.clone(),
             amount,
             timestamp,
         };
 
         // TODO: rewrite to elliminate double read
         self.internal_lot_bid(&lot_id, &bid);
+
+        // update associations
+        {
+            let mut bidder = self.internal_profile_extract(&bidder_id);
+            bidder.lots_bidding.insert(&lot_id);
+            self.internal_profile_save(&bidder);
+        }
 
         // redistribute balances
         match last_bid {
@@ -381,20 +451,35 @@ impl Contract {
         assert!(is_promise_success(), "{}", ERR_LOT_CLEAN_UP_UNLOCK_FAILED);
         let time_now = env::block_timestamp();
         let mut lot: Lot = self.internal_lot_extract(&lot_id);
+
         assert!(
             !lot.is_active(time_now),
             "{}",
             ERR_LOT_CLEAN_UP_STILL_ACTIVE
         );
+        // TODO: iter by uniq
+        lot.bids.iter().for_each(|bid| {
+            // TODO: validate bid exists
+            let mut profile = self.internal_profile_extract(&bid.bidder_id);
+            profile.lots_bidding.remove(&lot_id);
+            self.internal_profile_save(&profile);
+        });
+        {
+            let mut seller = self.internal_profile_extract(&lot.seller_id);
+            seller.lots_offering.remove(&lot_id);
+            self.internal_profile_save(&seller);
+        }
+
         lot.clean_up();
         // lot is already deleted from lots storage, returning to persist changes
+
+        // intentionally not inserting the lot back
         true
     }
 
     pub fn lot_withdraw(&mut self, lot_id: AccountId) -> bool {
         let lot_id: ProfileId = lot_id.into();
         let withdrawer_id: ProfileId = env::predecessor_account_id();
-        println!("{}", &withdrawer_id);
         self.internal_lot_withdraw(&lot_id, &withdrawer_id);
         true
     }

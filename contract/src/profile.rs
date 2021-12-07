@@ -9,6 +9,9 @@ pub struct Profile {
     pub profile_id: ProfileId,
     pub rewards_available: Balance,
     pub rewards_claimed: Balance,
+
+    pub lots_offering: UnorderedSet<LotId>,
+    pub lots_bidding: UnorderedSet<LotId>,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -31,13 +34,23 @@ impl From<&Profile> for ProfileView {
 
 impl Contract {
     pub(crate) fn internal_profile_extract(&mut self, profile_id: &ProfileId) -> Profile {
-        self.profiles
-            .remove(&profile_id)
-            .unwrap_or_else(|| Profile {
+        self.profiles.remove(&profile_id).unwrap_or_else(|| {
+            let mut prefix_offering: Vec<u8> = Vec::with_capacity(33);
+            prefix_offering.extend(PREFIX_PROFILE_LOTS_OFFERING.as_bytes());
+            prefix_offering.extend(env::sha256(profile_id.as_bytes()));
+
+            let mut prefix_bidding: Vec<u8> = Vec::with_capacity(33);
+            prefix_bidding.extend(PREFIX_PROFILE_LOTS_BIDDING.as_bytes());
+            prefix_bidding.extend(env::sha256(profile_id.as_bytes()));
+
+            Profile {
                 profile_id: profile_id.clone(),
                 rewards_available: 0,
                 rewards_claimed: 0,
-            })
+                lots_offering: UnorderedSet::new(prefix_offering),
+                lots_bidding: UnorderedSet::new(prefix_bidding),
+            }
+        })
     }
 
     pub(crate) fn internal_profile_save(&mut self, profile: &Profile) {
@@ -76,23 +89,19 @@ impl Contract {
         profile.rewards_claimed += rewards;
         self.internal_profile_save(&profile);
 
-        Promise::new(profile_id.clone())
-            .transfer(rewards)
-            .then(ext_self_contract::profile_after_rewards_claim(
+        Promise::new(profile_id.clone()).transfer(rewards).then(
+            ext_self_contract::profile_after_rewards_claim(
                 profile_id.clone(),
                 rewards,
                 env::current_account_id(),
                 NO_DEPOSIT,
                 GAS_EXT_CALL_AFTER_REWARDS_COLLECT.into(),
-            ))
+            ),
+        )
     }
 
     #[private]
-    pub fn profile_after_rewards_claim(
-        &mut self,
-        profile_id: ProfileId,
-        rewards: Balance,
-    ) -> bool {
+    pub fn profile_after_rewards_claim(&mut self, profile_id: ProfileId, rewards: Balance) -> bool {
         let rewards_transferred = is_promise_success();
         if !rewards_transferred {
             // In case of failure, put the amount back

@@ -13,6 +13,13 @@ pub const LOCK_CONTRACT_BYTES: &[u8] =
     include_bytes!("../../lock_unlock_account_contract/res/lock_unlock_account.wasm");
 const DEFAULT_PUBLIC_KEY: &str = "ed25519:Ga6C8S7jVG2inG88cos8UsdtGVWRFQasSdTdtHL7kBqL";
 
+fn from_yocto(amount: Balance) -> String {
+    let yocto_in_near: Balance = 10u128.pow(24);
+    let fraction = amount % yocto_in_near;
+    let whole = amount / yocto_in_near;
+    format!("{}.{:024}", whole, fraction)
+}
+
 // near_sdk_sim::lazy_static_include::lazy_static_include_bytes! {
 //     COUNTER_BYTES => "res/marketplace.wasm",
 // }
@@ -136,6 +143,22 @@ fn simulate_lot_offer_buy_now() {
         "Expected empty lot list after cleanup callback"
     );
 
+    let result = view!(contract.lot_list_offering_by(bob.account_id()));
+    assert!(result.is_ok());
+    let result: Vec<LotView> = result.unwrap_json();
+    assert!(
+        result.is_empty(),
+        "Expected empty lot list offering after claim"
+    );
+
+    let result = view!(contract.lot_list_bidding_by(carol.account_id()));
+    assert!(result.is_ok());
+    let result: Vec<LotView> = result.unwrap_json();
+    assert!(
+        result.is_empty(),
+        "Expected empty lot list bidding after claim"
+    );
+
     let result = view!(contract.profile_get(bob.account_id()));
     assert!(result.is_ok());
     let result: Option<ProfileView> = result.unwrap_json();
@@ -143,17 +166,14 @@ fn simulate_lot_offer_buy_now() {
     assert_eq!(Balance::from(result.rewards_available), to_yocto("10"));
 
     root.transfer(bob.account_id(), to_yocto("0.2")); // storage and future gas
-    let result = call!(
-        bob,
-        contract.profile_rewards_claim()
-    );
+    let result = call!(bob, contract.profile_rewards_claim());
     assert!(result.is_ok());
 
     bob.transfer(root.account_id(), to_yocto("10")); // storage and future gas
 }
 
 #[test]
-fn simulate_lot_offer_revoke() {
+fn simulate_lot_offer_withdraw() {
     let (root, contract) = init();
     let alice: UserAccount = create_user_locked(&root, "alice");
     let bob: UserAccount = create_user(&root, "bob");
@@ -175,10 +195,7 @@ fn simulate_lot_offer_revoke() {
 
     let balance_to_reserve = to_yocto("0.2");
     root.transfer(bob.account_id(), balance_to_reserve); // storage and future gas
-    let result = call!(
-        bob,
-        contract.lot_withdraw(alice.account_id.clone())
-    );
+    let result = call!(bob, contract.lot_withdraw(alice.account_id.clone()));
     assert!(result.is_ok());
 
     let result = view!(contract.lot_list());
@@ -191,11 +208,7 @@ fn simulate_lot_offer_revoke() {
         result.is_active, false,
         "expected lot inactive after withdraw"
     );
-    assert_eq!(
-        result.is_withdrawn,
-        true,
-        "expected lot to be withdrawn",
-    );
+    assert_eq!(result.is_withdrawn, true, "expected lot to be withdrawn",);
 
     let result = call!(
         bob,
@@ -211,10 +224,30 @@ fn simulate_lot_offer_revoke() {
         "Expected empty lot list after cleanup callback"
     );
 
+    let result = view!(contract.lot_list_offering_by(bob.account_id()));
+    assert!(result.is_ok());
+    let result: Vec<LotView> = result.unwrap_json();
+    assert!(
+        result.is_empty(),
+        "Expected empty lot list offering after claim"
+    );
+
     let result = view!(contract.profile_get(bob.account_id()));
     assert!(result.is_ok());
     let result: Option<ProfileView> = result.unwrap_json();
-    assert!(result.is_none(), "profile should not be created, no rewards given");
+    assert!(
+        result.is_some(),
+        "profile not created, but should be, because of associations"
+    );
+    let result = result.unwrap();
+
+    assert_eq!(
+        Balance::from(result.rewards_available),
+        0,
+        "no rewards should be given on withdraw"
+    );
+
+    println!("{}", from_yocto(bob.account().unwrap().amount));
 }
 
 #[test]

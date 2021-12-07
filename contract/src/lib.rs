@@ -2,8 +2,10 @@ mod lot;
 mod profile;
 mod utils;
 
+use std::fmt;
+
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::collections::{UnorderedMap, Vector};
+use near_sdk::collections::{UnorderedMap, UnorderedSet, Vector};
 use near_sdk::json_types::{U128, U64};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{
@@ -24,6 +26,8 @@ pub type WrappedDuration = U64;
 pub const PREFIX_PROFILES: &str = "u";
 pub const PREFIX_LOTS: &str = "a";
 pub const PREFIX_LOTS_BIDS: &str = "y";
+pub const PREFIX_PROFILE_LOTS_BIDDING: &str = "b";
+pub const PREFIX_PROFILE_LOTS_OFFERING: &str = "f";
 
 #[ext_contract]
 pub trait ExtLockContract {
@@ -79,12 +83,16 @@ mod tests {
             .build()
     }
 
-    fn get_context_pred_alice(is_view: bool) -> VMContext {
+    fn get_context_pred_x(profile_id: &ProfileId, is_view: bool) -> VMContext {
         VMContextBuilder::new()
-            .predecessor_account_id("alice".parse().unwrap())
+            .predecessor_account_id(profile_id.clone())
             .is_view(is_view)
             .block_timestamp(DAY_NANOSECONDS * 10)
             .build()
+    }
+
+    fn get_context_pred_alice(is_view: bool) -> VMContext {
+        get_context_pred_x(&"alice".parse().unwrap(), is_view)
     }
 
     fn get_context_with_payer(
@@ -120,11 +128,10 @@ mod tests {
 
         let rewards_available: u128 = to_yocto(2);
         let rewards_claimed: u128 = to_yocto(3);
-        let profile: Profile = Profile {
-            profile_id: "alice".parse().unwrap(),
-            rewards_available,
-            rewards_claimed,
-        };
+        // TODO: make params constructor private
+        let mut profile: Profile = contract.internal_profile_extract(&"alice".parse().unwrap());
+        profile.rewards_available = rewards_available;
+        profile.rewards_claimed = rewards_claimed;
         contract.internal_profile_save(&profile);
 
         let response: Option<ProfileView> = contract.profile_get("alice".parse().unwrap());
@@ -152,14 +159,14 @@ mod tests {
 
     const DAY_NANOSECONDS: u64 = 10u64.pow(9) * 60 * 60 * 24;
 
-    fn create_lot_bob_sells_alice() -> Lot {
+    fn create_lot_bob_sells_alice(contract: &mut Contract) -> Lot {
         let reserve_price = to_yocto(5);
         let buy_now_price = to_yocto(10);
 
         let time_now = DAY_NANOSECONDS * 10;
         let duration = DAY_NANOSECONDS * 1;
 
-        Contract::internal_lot_create(
+        contract.internal_lot_create(
             "alice".parse().unwrap(),
             "bob".parse().unwrap(),
             reserve_price,
@@ -169,12 +176,42 @@ mod tests {
         )
     }
 
+    fn create_lot_x_sells_y_api(
+        contract: &mut Contract,
+        seller_id: &ProfileId,
+        lot_id: &LotId,
+    ) -> Lot {
+        let context = get_context_pred_x(&lot_id, false);
+        testing_env!(context);
+
+        let reserve_price = to_yocto(5);
+        let buy_now_price = to_yocto(10);
+        let duration = DAY_NANOSECONDS * 1;
+
+        contract.lot_offer(
+            seller_id.clone(),
+            reserve_price.into(),
+            buy_now_price.into(),
+            WrappedDuration::from(duration),
+        );
+
+        contract.lots.get(&lot_id).unwrap()
+    }
+
+    fn create_lot_bob_sells_alice_api(contract: &mut Contract) -> Lot {
+        let lot_id: ProfileId = "alice".parse().unwrap();
+        let seller_id: ProfileId = "bob".parse().unwrap();
+
+        create_lot_x_sells_y_api(contract, &seller_id, &lot_id)
+    }
+
     #[test]
     fn internal_lot_create_fields() {
         let context = get_context_simple(false);
         testing_env!(context);
+        let mut contract = Contract::default();
 
-        let lot = create_lot_bob_sells_alice();
+        let lot = create_lot_bob_sells_alice(&mut contract);
         assert_eq!(
             lot.lot_id,
             "alice".parse().unwrap(),
@@ -219,7 +256,7 @@ mod tests {
             "expected contract.lots.len() == 0 after extract"
         );
 
-        let lot_bob_sells_alice = create_lot_bob_sells_alice();
+        let lot_bob_sells_alice = create_lot_bob_sells_alice(&mut contract);
         contract.internal_lot_save(&lot_bob_sells_alice);
         assert_eq!(
             contract.lots.len(),
@@ -261,7 +298,7 @@ mod tests {
         let context = get_context_simple(false);
         testing_env!(context);
         let mut contract = Contract::default();
-        let lot_bob_sells_alice = create_lot_bob_sells_alice();
+        let lot_bob_sells_alice = create_lot_bob_sells_alice(&mut contract);
         contract.internal_lot_save(&lot_bob_sells_alice);
 
         let response: Vec<LotView> = contract.lot_list();
@@ -288,7 +325,7 @@ mod tests {
         let context = get_context_simple(false);
         testing_env!(context);
         let mut contract = Contract::default();
-        let lot_bob_sells_alice = create_lot_bob_sells_alice();
+        let lot_bob_sells_alice = create_lot_bob_sells_alice(&mut contract);
         contract.internal_lot_save(&lot_bob_sells_alice);
 
         let bid: Bid = Bid {
@@ -327,7 +364,7 @@ mod tests {
         let context = get_context_simple(false);
         testing_env!(context);
         let mut contract = Contract::default();
-        let lot_bob_sells_alice = create_lot_bob_sells_alice();
+        let lot_bob_sells_alice = create_lot_bob_sells_alice(&mut contract);
         contract.internal_lot_save(&lot_bob_sells_alice);
 
         let bid: Bid = Bid {
@@ -369,7 +406,7 @@ mod tests {
         let context = get_context_simple(false);
         testing_env!(context);
         let mut contract = Contract::default();
-        let mut lot = create_lot_bob_sells_alice();
+        let mut lot = create_lot_bob_sells_alice(&mut contract);
         lot.is_withdrawn = true;
         contract.internal_lot_save(&lot);
 
@@ -388,7 +425,8 @@ mod tests {
         let context = get_context_simple(false);
         testing_env!(context);
 
-        let lot_bob_sells_alice = create_lot_bob_sells_alice();
+        let mut contract = Contract::default();
+        let lot_bob_sells_alice = create_lot_bob_sells_alice(&mut contract);
         // we don't care about starting time, it's just for the record
         assert_eq!(lot_bob_sells_alice.is_active(DAY_NANOSECONDS * 9), true);
         assert_eq!(lot_bob_sells_alice.is_active(DAY_NANOSECONDS * 10), true);
@@ -406,7 +444,7 @@ mod tests {
         testing_env!(context);
         let mut contract = Contract::default();
         {
-            let lot = create_lot_bob_sells_alice();
+            let lot = create_lot_bob_sells_alice(&mut contract);
             contract.internal_lot_save(&lot);
         }
         let lot = contract.lots.get(&"alice".parse().unwrap()).unwrap();
@@ -435,7 +473,7 @@ mod tests {
         testing_env!(context);
         let mut contract = Contract::default();
         {
-            let lot = create_lot_bob_sells_alice();
+            let lot = create_lot_bob_sells_alice(&mut contract);
             contract.internal_lot_save(&lot);
         }
         let mut lot = contract.lots.get(&"alice".parse().unwrap()).unwrap();
@@ -523,7 +561,8 @@ mod tests {
     fn last_bid_amount() {
         let context = get_context_simple(false);
         testing_env!(context);
-        let mut lot = create_lot_bob_sells_alice();
+        let mut contract = Contract::default();
+        let mut lot = create_lot_bob_sells_alice(&mut contract);
         assert!(
             lot.last_bid_amount().is_none(),
             "expected last_bid_amount to be None"
@@ -550,7 +589,8 @@ mod tests {
     fn next_bid_amount() {
         let context = get_context_simple(false);
         testing_env!(context);
-        let mut lot = create_lot_bob_sells_alice();
+        let mut contract = Contract::default();
+        let mut lot = create_lot_bob_sells_alice(&mut contract);
         assert!(
             lot.last_bid_amount().is_none(),
             "expected last_bid_amount to be None"
@@ -586,7 +626,7 @@ mod tests {
         testing_env!(context);
         let mut contract = Contract::default();
         {
-            let lot = create_lot_bob_sells_alice();
+            let lot = create_lot_bob_sells_alice(&mut contract);
             contract.internal_lot_save(&lot);
         }
 
@@ -650,7 +690,7 @@ mod tests {
         testing_env!(context);
         let mut contract = Contract::default();
         {
-            let lot = create_lot_bob_sells_alice();
+            let lot = create_lot_bob_sells_alice(&mut contract);
             contract.internal_lot_save(&lot);
         }
         let bid: Bid = Bid {
@@ -668,7 +708,7 @@ mod tests {
         testing_env!(context);
         let mut contract = Contract::default();
         {
-            let lot = create_lot_bob_sells_alice();
+            let lot = create_lot_bob_sells_alice(&mut contract);
             contract.internal_lot_save(&lot);
         }
         let bid: Bid = Bid {
@@ -686,7 +726,7 @@ mod tests {
         testing_env!(context);
         let mut contract = Contract::default();
         {
-            let lot = create_lot_bob_sells_alice();
+            let lot = create_lot_bob_sells_alice(&mut contract);
             contract.internal_lot_save(&lot);
         }
 
@@ -716,7 +756,7 @@ mod tests {
         testing_env!(context);
         let mut contract = Contract::default();
         {
-            let lot = create_lot_bob_sells_alice();
+            let lot = create_lot_bob_sells_alice(&mut contract);
             contract.internal_lot_save(&lot);
         }
 
@@ -745,7 +785,7 @@ mod tests {
         testing_env!(context);
         let mut contract = Contract::default();
         {
-            let lot = create_lot_bob_sells_alice();
+            let lot = create_lot_bob_sells_alice(&mut contract);
             contract.internal_lot_save(&lot);
         }
 
@@ -874,7 +914,7 @@ mod tests {
         testing_env!(context);
         let mut contract = Contract::default();
         {
-            let lot = create_lot_bob_sells_alice();
+            let lot = create_lot_bob_sells_alice(&mut contract);
             contract.internal_lot_save(&lot);
         }
 
@@ -896,7 +936,7 @@ mod tests {
         testing_env!(context);
         let mut contract = Contract::default();
         {
-            let lot = create_lot_bob_sells_alice();
+            let lot = create_lot_bob_sells_alice(&mut contract);
             contract.internal_lot_save(&lot);
         }
 
@@ -917,15 +957,11 @@ mod tests {
         testing_env!(context);
         let mut contract = Contract::default();
         {
-            let lot = create_lot_bob_sells_alice();
+            let lot = create_lot_bob_sells_alice(&mut contract);
             contract.internal_lot_save(&lot);
         }
 
-        let context = get_context_with_payer(
-            &"bob".parse().unwrap(),
-            0,
-            DAY_NANOSECONDS * 13,
-        );
+        let context = get_context_with_payer(&"bob".parse().unwrap(), 0, DAY_NANOSECONDS * 13);
         testing_env!(context);
         contract.lot_withdraw("alice".to_string().try_into().unwrap());
     }
@@ -937,15 +973,11 @@ mod tests {
         testing_env!(context);
         let mut contract = Contract::default();
         {
-            let lot = create_lot_bob_sells_alice();
+            let lot = create_lot_bob_sells_alice(&mut contract);
             contract.internal_lot_save(&lot);
         }
 
-        let context = get_context_with_payer(
-            &"carol".parse().unwrap(),
-            0,
-            DAY_NANOSECONDS * 13,
-        );
+        let context = get_context_with_payer(&"carol".parse().unwrap(), 0, DAY_NANOSECONDS * 13);
         testing_env!(context);
         contract.lot_withdraw("alice".to_string().try_into().unwrap());
     }
@@ -957,7 +989,7 @@ mod tests {
         testing_env!(context);
         let mut contract = Contract::default();
         {
-            let lot = create_lot_bob_sells_alice();
+            let lot = create_lot_bob_sells_alice(&mut contract);
             contract.internal_lot_save(&lot);
         }
 
@@ -968,11 +1000,7 @@ mod tests {
         };
         contract.internal_lot_bid(&"alice".parse().unwrap(), &bid);
 
-        let context = get_context_with_payer(
-            &"bob".parse().unwrap(),
-            0,
-            DAY_NANOSECONDS * 13,
-        );
+        let context = get_context_with_payer(&"bob".parse().unwrap(), 0, DAY_NANOSECONDS * 13);
         testing_env!(context);
         contract.lot_withdraw("alice".to_string().try_into().unwrap());
     }
@@ -984,15 +1012,11 @@ mod tests {
         testing_env!(context);
         let mut contract = Contract::default();
         {
-            let lot = create_lot_bob_sells_alice();
+            let lot = create_lot_bob_sells_alice(&mut contract);
             contract.internal_lot_save(&lot);
         }
 
-        let context = get_context_with_payer(
-            &"bob".parse().unwrap(),
-            0,
-            DAY_NANOSECONDS * 13,
-        );
+        let context = get_context_with_payer(&"bob".parse().unwrap(), 0, DAY_NANOSECONDS * 13);
         testing_env!(context);
         contract.lot_withdraw("alice".to_string().try_into().unwrap());
         contract.lot_withdraw("alice".to_string().try_into().unwrap());
@@ -1007,7 +1031,7 @@ mod tests {
         testing_env!(context);
         let mut contract = Contract::default();
         {
-            let lot = create_lot_bob_sells_alice();
+            let lot = create_lot_bob_sells_alice(&mut contract);
             contract.internal_lot_save(&lot);
         }
 
@@ -1039,15 +1063,12 @@ mod tests {
         testing_env!(context);
         let mut contract = Contract::default();
         {
-            let lot = create_lot_bob_sells_alice();
+            let lot = create_lot_bob_sells_alice(&mut contract);
             contract.internal_lot_save(&lot);
         }
 
-        let context = get_context_with_payer(
-            &"bob".parse().unwrap(),
-            to_yocto(0),
-            DAY_NANOSECONDS * 13,
-        );
+        let context =
+            get_context_with_payer(&"bob".parse().unwrap(), to_yocto(0), DAY_NANOSECONDS * 13);
         testing_env!(context);
         contract.lot_withdraw("alice".to_string().try_into().unwrap());
         let public_key: PublicKey = DEFAULT_PUBLIC_KEY.parse().unwrap();
@@ -1061,7 +1082,7 @@ mod tests {
         testing_env!(context);
         let mut contract = Contract::default();
         {
-            let lot = create_lot_bob_sells_alice();
+            let lot = create_lot_bob_sells_alice(&mut contract);
             contract.internal_lot_save(&lot);
         }
 
@@ -1108,7 +1129,153 @@ mod tests {
         testing_env!(context);
         contract.profile_rewards_claim();
         let result = contract.profile_get(account_id.clone()).unwrap();
-        assert_eq!(result.rewards_available.0, to_yocto(0), "Expected rewards_available 0 after claim");
-        assert_eq!(result.rewards_claimed.0, amount, "Expected rewards_claimed amount after claim");
+        assert_eq!(
+            result.rewards_available.0,
+            to_yocto(0),
+            "Expected rewards_available 0 after claim"
+        );
+        assert_eq!(
+            result.rewards_claimed.0, amount,
+            "Expected rewards_claimed amount after claim"
+        );
+    }
+
+    #[test]
+    pub fn test_profile_lots_offering_bidding() {
+        let context = get_context_simple(false);
+        testing_env!(context);
+        let mut contract = Contract::default();
+
+        create_lot_bob_sells_alice_api(&mut contract);
+
+        {
+            let profile = contract.profiles.get(&"bob".parse().unwrap()).unwrap();
+            let expected_lots_offering: Vec<LotId> = vec!["alice".parse().unwrap()];
+            assert_eq!(
+                profile.lots_offering.to_vec(),
+                expected_lots_offering,
+                "must be present after offer",
+            );
+            assert!(profile.lots_bidding.is_empty(), "must be empty for seller");
+        }
+
+        {
+            let context = get_context_with_payer(
+                &"carol".parse().unwrap(),
+                to_yocto(7),
+                DAY_NANOSECONDS * 10,
+            );
+            testing_env!(context);
+            contract.lot_bid("alice".to_string().try_into().unwrap());
+        }
+
+        {
+            let profile = contract.profiles.get(&"carol".parse().unwrap()).unwrap();
+            let expected_lots_bidding: Vec<LotId> = vec!["alice".parse().unwrap()];
+            assert_eq!(
+                profile.lots_bidding.to_vec(),
+                expected_lots_bidding,
+                "alice must be present after lot bid",
+            );
+            assert_eq!(
+                profile.lots_offering.to_vec(),
+                vec![],
+                "must be empty for bidder"
+            );
+        }
+    }
+
+    #[test]
+    pub fn test_profile_lots_bidding_api() {
+        let context = get_context_simple(false);
+        testing_env!(context);
+        let mut contract = Contract::default();
+
+        create_lot_bob_sells_alice_api(&mut contract);
+        // create another lot to be filtered out
+        create_lot_x_sells_y_api(
+            &mut contract,
+            &"seller_1".parse().unwrap(),
+            &"lot_1".parse().unwrap(),
+        );
+
+        let context =
+            get_context_with_payer(&"carol".parse().unwrap(), to_yocto(7), DAY_NANOSECONDS * 10);
+        testing_env!(context);
+        contract.lot_bid("alice".to_string().try_into().unwrap());
+
+        {
+            let profile = contract.profiles.get(&"bob".parse().unwrap()).unwrap();
+            let expected_lots_offering: Vec<LotId> = vec!["alice".parse().unwrap()];
+            assert_eq!(
+                profile.lots_offering.to_vec(),
+                expected_lots_offering,
+                "must be present after offer",
+            );
+            assert!(profile.lots_bidding.is_empty(), "must be empty for seller");
+        }
+
+        {
+            let profile = contract.profiles.get(&"carol".parse().unwrap()).unwrap();
+            let expected_lots_bidding: Vec<LotId> = vec!["alice".parse().unwrap()];
+            assert_eq!(
+                profile.lots_bidding.to_vec(),
+                expected_lots_bidding,
+                "alice must be present after lot bid",
+            );
+            assert_eq!(
+                profile.lots_offering.to_vec(),
+                vec![],
+                "must be empty for bidder"
+            );
+        }
+
+        {
+            let result = contract.lot_list_offering_by("bob".parse().unwrap());
+            assert_eq!(result.len(), 1, "lot_offering must contain 1 lot");
+            let result = result.get(0).unwrap();
+            assert_eq!(
+                &result.lot_id,
+                &"alice".parse().unwrap(),
+                "expected alice in offering lot list"
+            );
+            assert_eq!(
+                result.last_bidder_id,
+                Some("carol".parse().unwrap()),
+                "expected carol last_bidder",
+            );
+            assert_eq!(
+                result.status,
+                "OnSale".to_string(),
+                "expected status on sale",
+            );
+
+            let result = contract.lot_list_offering_by("carol".parse().unwrap());
+            assert!(result.is_empty(), "lot_offering for carol must be empty");
+        }
+
+        {
+            let result = contract.lot_list_bidding_by("carol".parse().unwrap());
+            assert_eq!(result.len(), 1, "lot_bidding must contain 1 lot");
+            let result = result.get(0).unwrap();
+            assert_eq!(
+                &result.lot_id,
+                &"alice".parse().unwrap(),
+                "expected alice in bidding lot list"
+            );
+            assert_eq!(
+                result.last_bidder_id,
+                Some("carol".parse().unwrap()),
+                "expected bob as profile_role"
+            );
+            assert_eq!(
+                result.status,
+                "OnSale".to_string(),
+                "expected status on sale",
+            );
+
+            let result = contract.lot_list_bidding_by("bob".parse().unwrap());
+            assert!(result.is_empty(), "lot_bidding for bob must be empty");
+        }
     }
 }
