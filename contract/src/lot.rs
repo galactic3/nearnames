@@ -451,13 +451,30 @@ impl Contract {
         assert!(is_promise_success(), "{}", ERR_LOT_CLEAN_UP_UNLOCK_FAILED);
         let time_now = env::block_timestamp();
         let mut lot: Lot = self.internal_lot_extract(&lot_id);
+
         assert!(
             !lot.is_active(time_now),
             "{}",
             ERR_LOT_CLEAN_UP_STILL_ACTIVE
         );
+        // TODO: iter by uniq
+        lot.bids.iter()
+            .for_each(|bid| {
+                // TODO: validate bid exists
+                let mut profile = self.internal_profile_extract(&bid.bidder_id);
+                profile.lots_bidding.remove(&lot_id);
+                self.internal_profile_save(&profile);
+            });
+        {
+            let mut seller = self.internal_profile_extract(&lot.seller_id);
+            seller.lots_offering.remove(&lot_id);
+            self.internal_profile_save(&seller);
+        }
+
         lot.clean_up();
         // lot is already deleted from lots storage, returning to persist changes
+
+        // intentionally not inserting the lot back
         true
     }
 

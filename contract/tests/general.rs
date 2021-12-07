@@ -143,6 +143,22 @@ fn simulate_lot_offer_buy_now() {
         "Expected empty lot list after cleanup callback"
     );
 
+    let result = view!(contract.lot_list_offering_by(bob.account_id()));
+    assert!(result.is_ok());
+    let result: Vec<LotView> = result.unwrap_json();
+    assert!(
+        result.is_empty(),
+        "Expected empty lot list offering after claim"
+    );
+
+    let result = view!(contract.lot_list_bidding_by(carol.account_id()));
+    assert!(result.is_ok());
+    let result: Vec<LotView> = result.unwrap_json();
+    assert!(
+        result.is_empty(),
+        "Expected empty lot list bidding after claim"
+    );
+
     let result = view!(contract.profile_get(bob.account_id()));
     assert!(result.is_ok());
     let result: Option<ProfileView> = result.unwrap_json();
@@ -206,6 +222,14 @@ fn simulate_lot_offer_withdraw() {
     assert!(
         result.is_empty(),
         "Expected empty lot list after cleanup callback"
+    );
+
+    let result = view!(contract.lot_list_offering_by(bob.account_id()));
+    assert!(result.is_ok());
+    let result: Vec<LotView> = result.unwrap_json();
+    assert!(
+        result.is_empty(),
+        "Expected empty lot list offering after claim"
     );
 
     let result = view!(contract.profile_get(bob.account_id()));
