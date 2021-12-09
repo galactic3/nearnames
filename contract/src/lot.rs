@@ -457,10 +457,11 @@ impl Contract {
             "{}",
             ERR_LOT_CLEAN_UP_STILL_ACTIVE
         );
-        // TODO: iter by uniq
-        lot.bids.iter().for_each(|bid| {
+        let bidder_ids_unique: HashSet<ProfileId> = lot.bids.iter().map(|x| x.bidder_id).collect();
+
+        bidder_ids_unique.iter().for_each(|bidder_id| {
             // TODO: validate bid exists
-            let mut profile = self.internal_profile_extract(&bid.bidder_id);
+            let mut profile = self.internal_profile_extract(&bidder_id);
             profile.lots_bidding.remove(&lot_id);
             self.internal_profile_save(&profile);
         });

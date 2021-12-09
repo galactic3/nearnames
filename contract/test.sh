@@ -2,5 +2,5 @@
 set -e
 cd "`dirname $0`"
 bash ./build.sh
-echo cargo test $@
+echo cargo +nightly test $@
 cargo test $@

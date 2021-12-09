@@ -3,6 +3,7 @@ mod profile;
 mod utils;
 
 use std::fmt;
+use std::collections::HashSet;
 
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{UnorderedMap, UnorderedSet, Vector};
