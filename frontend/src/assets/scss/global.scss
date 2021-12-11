@@ -38,7 +38,7 @@ html {
 body {
   margin: 0 auto;
   padding: 0 1em;
-  max-width: 40em;
+  max-width: 60em;
 }
 
 fieldset {
@@ -61,7 +61,7 @@ fieldset {
 }
 
 label {
-  color: var(--gray);
+  color: var(--fg);
 }
 
 button, .highlight {
@@ -94,6 +94,15 @@ input[type="number"] {
   }
 }
 
+input[type="text"] {
+  border-bottom: 0.1em solid var(--primary);
+  margin: 0 1em;
+  padding-left: 0.5em;
+  &:hover, &:focus {
+    border-color: var(--secondary);
+  }
+}
+
 button, input {
   background: transparent;
   color: inherit;
@@ -106,12 +115,15 @@ button {
   position: relative;
   transition: top 50ms;
   &:hover, &:focus {
-    top: -1px;
+    border-color: var(--secondary);
   }
   &:active {
     background: var(--secondary);
     border-color: var(--secondary);
-    top: 1px;
+  }
+  &:disabled {
+    border-color: var(--primary);
+    color: var(--primary);
   }
 }
 
@@ -135,14 +147,56 @@ dt, dd {
   display: inline-block;
 }
 
+.lot_list {
+  margin: 0;
+  padding: 0;
+}
+
 .lot_item {
   border: 0.1em solid var(--primary);
   border-radius: 10px;
-  padding: 1em;
+  padding: 1em 0;
+  margin: 1em 0;
+}
+
+.form_offer {
+  margin: 20px 0;
+  label {
+    width: 120px;
+  }
+  button {
+    margin-top: 20px;
+  }
+}
+
+.offer_name {
+  margin: 0 1em;
+  padding-left: 0.5em;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-content: center;
+  h1 {
+    margin: 8px 0;
+  }
+  .auth {
+    margin: 8px 0;
+  }
+  .nav {
+    margin: 8px 12px;
+  }
+}
+
+.current_name {
+  font-size: 20px;
+  margin: 0 5px;
 }
 
 .button_wrapper {
   margin: 20px 0 0;
+  padding-left: 2em;
   button {
     display: inline-block;
     margin-right: 20px;
