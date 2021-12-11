@@ -1,33 +1,68 @@
-import React from 'react';
-import PropTypes from 'prop-types';
-import utils from '../utils';
-import Big from 'big.js';
+import React, { useState, useEffect } from 'react';
+import {fetchBidSafety, toNear, BOATLOAD_OF_GAS} from "../utils";
+import Lot from "./Lot";
 
-export default function Lots({ lots }) {
+
+
+function Lots(props) {
+
+  const contract = props.app.contract;
+
+  const [lots, setLots] = useState([]);
+
+  useEffect(() => {
+    contract.lot_list().then(setLots);
+  }, []);
+
+  const withdraw = async (lot) => {
+    contract.lot_withdraw({'lot_id': lot.lot_id}, BOATLOAD_OF_GAS).then(() => {
+        return contract.lot_list().then(setLots);
+      }
+    );
+  };
+
+  const claim = async (lot) => {
+    contract.lot_claim({'lot_id': lot.lot_id, 'public_key': ''}, BOATLOAD_OF_GAS).then(() => {
+        return contract.lot_list().then(setLots);
+      }
+    );
+  };
+
+  const bid = async (lot, e, value) => {
+    const isBuyNowButton = e.target.name === 'buy_now';
+    const bid_price = isBuyNowButton ? lot.buy_now_price : toNear(value);
+    const { codeHash, accessKeysLen, lockerOwner } = await fetchBidSafety(lot.lot_id, props.app.near);
+    const isSafe = codeHash === 'DKUq738xnns9pKjpv9GifM68UoFSmfnBYNp3hsfkkUFa' &&
+                   accessKeysLen === 0 &&
+                   lockerOwner === props.app.config.contractName;
+    console.log(codeHash, accessKeysLen, lockerOwner);
+    if (!isSafe) {
+      alert("account is not safe");
+    }
+    contract.lot_bid({'lot_id': lot.lot_id}, BOATLOAD_OF_GAS, bid_price).then(() => {
+        return contract.lot_list().then(setLots);
+      }
+    );
+  };
+
   return (
-    <>
+    <div>
+      {console.log(lots)}
       <h2>Lots</h2>
-      <ul>
-      {lots.map((lot, i) =>
-        // TODO: format as cards, add timestamp
-        <li key={i} className='lot_item'>
-          <ul>
-            <li>Lot name: <strong>{lot.lot_id}</strong></li>
-            <li>Seller name: <strong>{lot.seller_id}</strong></li>
-            <li>Current price: <strong>{Big(lot.reserve_price).div(10 ** 24).toFixed(2)}</strong></li>
-            <li>Lot expired: <strong>{new Date(Math.floor(lot.finish_timestamp/1000000)).toUTCString()}</strong></li>
-          </ul>
-          <div class="button_wrapper">
-            <input type="number" id="bid_price"/><button>Bid</button>
-            <button>Buy now</button>
+      { !lots.length ?
+        <div className='d-flex m-5 justify-content-center' key='1'>
+          <div className='spinner-grow' role='status'>
+            <span className='visually-hidden'>Loading...</span>
           </div>
-        </li>
-      )}
-      </ul>
-    </>
+        </div> :
+        <ul className="lot_list">
+          {lots.map((lot, i) =>
+            <Lot lot={lot} key={i} bid={bid} withdraw={withdraw} claim={claim} currentUser={props.app.accountId}/>
+          )}
+        </ul>
+      }
+    </div>
   );
 }
 
-Lots.propTypes = {
-  lots: PropTypes.array
-};
+export default Lots;

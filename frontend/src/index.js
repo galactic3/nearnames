@@ -18,7 +18,7 @@ async function initContract() {
   const near = await nearAPI.connect({ keyStore, ...nearConfig });
 
   // Initialize wallet connection
-  const walletConnection = new nearAPI.WalletConnection(near);
+  const walletConnection = new nearAPI.WalletConnection(near, nearConfig.contractName);
 
   // Load in user's account data
   let currentUser;
@@ -43,26 +43,27 @@ async function initContract() {
     nearConfig.contractName,
     {
       // View methods are read-only – they don't modify the state, but usually return some value
-      viewMethods: ['lot_list', 'profile_get'],
+      viewMethods: ['lot_list', 'lot_list_offering_by', 'lot_list_bidding_by', 'profile_get', 'lot_bid_list'],
       // Change methods can modify the state, but you don't receive the returned value when called
-      changeMethods: ['lot_offer', 'lot_bid'],
+      changeMethods: ['lot_offer', 'lot_bid', 'lot_claim', 'profile_rewards_claim', 'lot_withdraw'],
       // Sender is the account ID to initialize transactions.
       // getAccountId() will return empty string if user is still unauthorized
       sender: walletConnection.getAccountId(),
     }
   );
 
-  return { contract, currentUser, nearConfig, walletConnection };
+  return { contract, currentUser, nearConfig, walletConnection, near };
 }
 
 window.nearInitPromise = initContract().then(
-  ({ contract, currentUser, nearConfig, walletConnection }) => {
+  ({ contract, currentUser, nearConfig, walletConnection, near }) => {
     ReactDOM.render(
       <App
         contract={contract}
         currentUser={currentUser}
         nearConfig={nearConfig}
         wallet={walletConnection}
+        near={near}
       />,
       document.getElementById('root')
     );
