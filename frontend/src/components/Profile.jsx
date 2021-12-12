@@ -10,6 +10,7 @@ function Profile (props) {
   const [lotsOffering, setLotsOffering] = useState([]);
   const [lotsBidding, setLotsBidding] = useState([]);
   const [loader, setLoader] = useState(false);
+  const [claimLoader, setClaimLoader] = useState(false);
 
   const contract = props.app.contract;
 
@@ -38,42 +39,50 @@ function Profile (props) {
   }, []);
 
   const claim = async () => {
-    contract.profile_rewards_claim({}, BOATLOAD_OF_GAS).then(() => {
-        setProfile(profile);
-      }
-    );
+    setClaimLoader(true);
+    try {
+      await contract.profile_rewards_claim({}, BOATLOAD_OF_GAS).then(() => {
+        contract.profile_get({profile_id: profileId}).then((profile) => {
+          setProfile(profile);
+          console.log(profile);
+          setClaimLoader(false);
+        });
+      });
+    } catch (e) {
+      console.error(e);
+      setClaimLoader(false);
+    }
   };
 
 
   return (
     <div>
     { loader ? <Loader/> : profile ?
-      <div>
-        <h2>{profileId}</h2>
-        <h5>Rewards</h5>
+      <div className="mt-3">
+        <h5><strong>{profileId}</strong></h5>
         <p><strong>available:</strong> {nearTo(profile.rewards_available)}<span title="NEAR Tokens">Ⓝ</span> <strong>claimed:</strong> {nearTo(profile.rewards_claimed)}<span title="NEAR Tokens">Ⓝ</span></p>
-        <p><button name="claim" disabled={!!profile.rewards_available} onClick={(e) => claim()}>Claim rewards</button></p>
-        <h5>My Lots offer</h5>
+        {claimLoader ? <Loader position={'left'}/> : <button name="claim_rewards" className="mb-5" disabled={!parseFloat(profile.rewards_available)} onClick={(e) => claim()}>Claim rewards</button> }
+        {lotsOffering.length ? <h5>My Lots offer</h5> : ''}
         { loader ?
-          <Loader/> :
+          <Loader key={'1'}/> :
           <ul className="lot_list">
             {lotsOffering.map((lot, i) =>
-              <Lot lot={lot} key={lot.lot_id} currentUser={profileId}/>
+              <Lot lot={lot} key={lot.lot_id} contract={contract} currentUser={profileId}/>
             )}
           </ul>
         }
 
-        <h5>My Lots bidding</h5>
+        {lotsBidding.length ? <h5>My Lots bidding</h5> : ''}
         { loader ?
-          <Loader/> :
+          <Loader key={'2'}/> :
           <ul className="lot_list">
             {lotsBidding.map((lot, i) =>
-              <Lot lot={lot} key={lot.lot_id} currentUser={profileId}/>
+              <Lot lot={lot} key={lot.lot_id} contract={contract} currentUser={profileId}/>
             )}
           </ul>
         }
       </div> :
-      <div>Profile not founded</div> }</div>
+      <div>Profile not found</div> }</div>
   );
 
 

@@ -47,7 +47,6 @@ function Lots(props) {
 
   return (
     <div>
-      {console.log(lots)}
       <h2>Lots</h2>
       { !lots.length ?
         <div className='d-flex m-5 justify-content-center' key='1'>
@@ -57,7 +56,7 @@ function Lots(props) {
         </div> :
         <ul className="lot_list">
           {lots.map((lot, i) =>
-            <Lot lot={lot} key={i} bid={bid} withdraw={withdraw} claim={claim} currentUser={props.app.accountId}/>
+            <Lot lot={lot} key={i} bid={bid} withdraw={withdraw} claim={claim} contract={contract} currentUser={props.app.accountId}/>
           )}
         </ul>
       }
