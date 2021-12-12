@@ -15,7 +15,7 @@ html {
   background-color: var(--bg);
   color: var(--fg);
   font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
-  font-size: calc(.65em + 0.7vw);
+  font-size: 1em;
   line-height: 1.3;
 
   ::selection {
@@ -155,8 +155,11 @@ dt, dd {
 .lot_item {
   border: 0.1em solid var(--primary);
   border-radius: 10px;
-  padding: 1em 0;
+  padding: 1em 2em;
   margin: 1em 0;
+  ul {
+    padding: 0;
+  }
 }
 
 .form_offer {
@@ -165,7 +168,15 @@ dt, dd {
     width: 120px;
   }
   button {
-    margin-top: 20px;
+    margin: 20px 0;
+  }
+}
+
+.bids_list {
+  margin: 20px 0;
+  p {
+    margin: 0;
+    font-size: 12px;
   }
 }
 
@@ -176,27 +187,30 @@ dt, dd {
 
 header {
   display: flex;
-  justify-content: space-between;
-  align-content: center;
+  align-content: start;
   h1 {
     margin: 8px 0;
   }
   .auth {
-    margin: 8px 0;
+    margin: 8px 0 8px auto;
   }
   .nav {
     margin: 8px 12px;
+    font-size: 1.2em;
+    .nav-link {
+      padding-bottom: 0.2rem;
+      margin-top: 0.3rem;
+    }
   }
 }
 
 .current_name {
   font-size: 20px;
-  margin: 0 5px;
+  margin: 0 15px;
 }
 
 .button_wrapper {
-  margin: 20px 0 0;
-  padding-left: 2em;
+  margin: 20px 0;
   button {
     display: inline-block;
     margin-right: 20px;

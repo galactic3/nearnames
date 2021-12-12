@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import * as nearAPI from 'near-api-js';
 import 'bootstrap/dist/css/bootstrap.min.css'
 import localStorage from 'local-storage'
-import { HashRouter as Router, Link, Route, Switch } from 'react-router-dom'
+import { HashRouter as Router, Link, Route, Switch, Redirect } from 'react-router-dom'
 import OfferPage from './components/Offer';
 import OfferProcessPage from './components/OfferProcess';
 import Lots from './components/Lots';
@@ -178,20 +178,19 @@ class App extends React.Component {
         <Router basename='/'>
           <header>
             <h1>Name hub</h1>
-            { this.app.currentUser && (
+
               <ul className='nav'>
                 <li className='nav-item'>
                   <Link className='nav-link' aria-current='page' to='/lots'>Lots</Link>
                 </li>
-                <li className='nav-item'>
+              { this.app.currentUser && (<li className='nav-item'>
                   <Link className='nav-link' aria-current='page'
                         to={`/profile/${this.app.currentUser.accountId}`}>Profile</Link>
-                </li>
+                </li>)}
                 <li className='nav-item'>
                   <Link className='nav-link' aria-current='page' to='/offer'>Offer</Link>
                 </li>
               </ul>
-            )}
             { !this.state.connected ? (
                 <div className="m-2 p-1">Connecting... <span className='spinner-grow spinner-grow-sm' role='status' aria-hidden='true' /></div>
               ) : this.app.currentUser
@@ -203,6 +202,9 @@ class App extends React.Component {
             }
           </header>
           <Switch>
+            <Route exact path='/'>
+              <Redirect to='/lots'/>
+            </Route>
             <Route exact path='/lots'>
               <Lots {...passProps}/>
             </Route>
