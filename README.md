@@ -1,3 +1,3 @@
 # Near Domain Names Auction Marketplace
 
-See [Wiki](./wiki)
+See [Wiki](../../wiki)
