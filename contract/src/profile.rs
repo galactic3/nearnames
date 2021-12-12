@@ -1,8 +1,8 @@
 use crate::*;
 
 pub const ERR_PROFILE_REWARDS_CLAIM_NOT_ENOUGH: &str = "Not enough rewards for transfer";
-pub const MIN_PROFILE_REWARDS_CLAIM_AMOUNT: Balance = 200 * 10u128.pow(21);
-pub const GAS_EXT_CALL_AFTER_REWARDS_COLLECT: u64 = 100_000_000_000_000;
+pub const MIN_PROFILE_REWARDS_CLAIM_AMOUNT: Balance = 10 * 10u128.pow(21);
+pub const GAS_EXT_CALL_AFTER_REWARDS_COLLECT: u64 = 15_000_000_000_000;
 
 #[derive(BorshDeserialize, BorshSerialize)]
 pub struct Profile {
