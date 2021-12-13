@@ -17,7 +17,7 @@ pub const ERR_LOT_CLAIM_BY_SELLER_NOT_WITHDRAWN: &str = "Seller cannot claim not
 
 pub const NO_DEPOSIT: Balance = 0;
 pub const GAS_EXT_CALL_UNLOCK: u64 = 40_000_000_000_000;
-pub const GAS_EXT_CALL_CLEAN_UP: u64 = 40_000_000_000_000;
+pub const GAS_EXT_CALL_CLEAN_UP: u64 = 100_000_000_000_000;
 
 #[derive(Debug)]
 pub enum LotStatus {
