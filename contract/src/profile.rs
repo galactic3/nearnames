@@ -35,23 +35,29 @@ impl From<&Profile> for ProfileView {
 
 impl Contract {
     pub(crate) fn internal_profile_extract(&mut self, profile_id: &ProfileId) -> Profile {
-        self.profiles.remove(&profile_id).unwrap_or_else(|| {
-            let mut prefix_offering: Vec<u8> = Vec::with_capacity(33);
-            prefix_offering.extend(PREFIX_PROFILE_LOTS_OFFERING.as_bytes());
-            prefix_offering.extend(env::sha256(profile_id.as_bytes()));
+        self.profiles.remove(&profile_id).unwrap_or_else(|| self.internal_profile_new(&profile_id))
+    }
 
-            let mut prefix_bidding: Vec<u8> = Vec::with_capacity(33);
-            prefix_bidding.extend(PREFIX_PROFILE_LOTS_BIDDING.as_bytes());
-            prefix_bidding.extend(env::sha256(profile_id.as_bytes()));
+    pub(crate) fn internal_profile_get(&self, profile_id: &ProfileId) -> Profile {
+        self.profiles.get(&profile_id).unwrap_or_else(|| self.internal_profile_new(&profile_id))
+    }
 
-            Profile {
-                profile_id: profile_id.clone(),
-                rewards_available: 0,
-                rewards_claimed: 0,
-                lots_offering: UnorderedSet::new(prefix_offering),
-                lots_bidding: UnorderedSet::new(prefix_bidding),
-            }
-        })
+    pub(crate) fn internal_profile_new(&self, profile_id: &ProfileId) -> Profile {
+        let mut prefix_offering: Vec<u8> = Vec::with_capacity(33);
+        prefix_offering.extend(PREFIX_PROFILE_LOTS_OFFERING.as_bytes());
+        prefix_offering.extend(env::sha256(profile_id.as_bytes()));
+
+        let mut prefix_bidding: Vec<u8> = Vec::with_capacity(33);
+        prefix_bidding.extend(PREFIX_PROFILE_LOTS_BIDDING.as_bytes());
+        prefix_bidding.extend(env::sha256(profile_id.as_bytes()));
+
+        Profile {
+            profile_id: profile_id.clone(),
+            rewards_available: 0,
+            rewards_claimed: 0,
+            lots_offering: UnorderedSet::new(prefix_offering),
+            lots_bidding: UnorderedSet::new(prefix_bidding),
+        }
     }
 
     pub(crate) fn internal_profile_save(&mut self, profile: &Profile) {
@@ -71,8 +77,8 @@ impl Contract {
 
 #[near_bindgen]
 impl Contract {
-    pub fn profile_get(&self, profile_id: AccountId) -> Option<ProfileView> {
-        self.profiles.get(&profile_id).map(|p| (&p).into())
+    pub fn profile_get(&self, profile_id: AccountId) -> ProfileView {
+        (&self.internal_profile_get(&profile_id)).into()
     }
 
     pub fn profile_rewards_claim(&mut self) -> Promise {
