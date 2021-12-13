@@ -3,6 +3,8 @@ use crate::*;
 pub const ERR_PROFILE_REWARDS_CLAIM_NOT_ENOUGH: &str = "Not enough rewards for transfer";
 pub const MIN_PROFILE_REWARDS_CLAIM_AMOUNT: Balance = 10 * 10u128.pow(21);
 
+pub const GAS_EXT_CALL_AFTER_REWARDS_CLAIM: u64 = 20_000_000_000_000;
+
 #[derive(BorshDeserialize, BorshSerialize)]
 pub struct Profile {
     pub profile_id: ProfileId,
@@ -94,7 +96,7 @@ impl Contract {
                 rewards,
                 env::current_account_id(),
                 NO_DEPOSIT,
-                env::prepaid_gas() / 2,
+                GAS_EXT_CALL_AFTER_REWARDS_CLAIM.into(),
             ),
         )
     }
