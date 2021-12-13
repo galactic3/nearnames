@@ -115,10 +115,11 @@ mod tests {
         testing_env!(context);
         let contract = Contract::default();
 
-        assert!(
-            contract.profile_get("alice".parse().unwrap()).is_none(),
-            "Expected get_profile to return None",
-        );
+        let profile = contract.profile_get("alice".parse().unwrap());
+
+        assert_eq!(profile.profile_id, "alice".parse().unwrap(), "Expected profile_id alice");
+        assert_eq!(profile.rewards_available.0, 0, "Expected zero rewards_available");
+        assert_eq!(profile.rewards_claimed.0, 0, "Expected zero rewards_claimed");
     }
 
     #[test]
@@ -135,10 +136,7 @@ mod tests {
         profile.rewards_claimed = rewards_claimed;
         contract.internal_profile_save(&profile);
 
-        let response: Option<ProfileView> = contract.profile_get("alice".parse().unwrap());
-        assert!(response.is_some());
-        let response = response.unwrap();
-
+        let response: ProfileView = contract.profile_get("alice".parse().unwrap());
         assert_eq!(
             response.rewards_available,
             rewards_available.into(),
@@ -1129,7 +1127,7 @@ mod tests {
         let context = get_context_pred_alice(false);
         testing_env!(context);
         contract.profile_rewards_claim();
-        let result = contract.profile_get(account_id.clone()).unwrap();
+        let result = contract.profile_get(account_id.clone());
         assert_eq!(
             result.rewards_available.0,
             to_yocto(0),
