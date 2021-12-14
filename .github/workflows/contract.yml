@@ -1,0 +1,75 @@
+name: Rust
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Cache cargo
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+        key: ${{ runner.os }}-cargo_home-${{ hashFiles('**/Cargo.lock') }}-v4
+    - name: Cache target
+      uses: actions/cache@v2
+      with:
+        path: |
+          contract/target/
+        key: ${{ runner.os }}-contract_target-${{ hashFiles('**/Cargo.lock') }}-v4
+    - name: Cache toolchain
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.rustup/toolchains/
+        key: ${{ runner.os }}-rustup-toolchain-v3
+    #- name: find dirs target 0
+    #  working-directory: contract
+    #  run: find target -type d | sort
+    #- name: find all target 0
+    #  working-directory: contract
+    #  run: find target | sort
+    - name: Install latest nightly
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: 1.56.1
+        target: wasm32-unknown-unknown
+        default: true
+        override: true
+        components: rustfmt, clippy
+    - name: Cargo build
+      working-directory: contract
+      run: RUSTFLAGS='-C link-arg=-s' cargo build --target wasm32-unknown-unknown --release
+    - name: Copy wasm
+      working-directory: contract
+      run: cp target/wasm32-unknown-unknown/release/marketplace.wasm res/marketplace.wasm
+    - name: Cargo test
+      working-directory: contract
+      run: cargo test -- --nocapture
+    #- name: find dirs target
+    #  working-directory: contract
+    #  run: find target -type d | sort
+    #- name: find all target
+    #  working-directory: contract
+    #  run: find target | sort
+    #- name: Cargo test 2
+    #  working-directory: contract
+    #  run: cargo test -- --nocapture
+    #- name: find dirs target 2
+    #  working-directory: contract
+    #  run: find target -type d | sort
+    #- name: find all target 2
+    #  working-directory: contract
+    #  run: find target | sort
