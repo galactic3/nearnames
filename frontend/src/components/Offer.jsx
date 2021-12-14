@@ -18,6 +18,7 @@ function OfferPage (props) {
     }
 
     const lot_account_id = lot_id.value.endsWith(accountSuffix) ? lot_id.value : lot_id.value + accountSuffix;
+    const seller_account_id = seller_id.value.endsWith(accountSuffix) ? seller_id.value : seller_id.value  + accountSuffix;
 
     fieldset.disabled = true;
 
@@ -46,7 +47,7 @@ function OfferPage (props) {
     }
 
     let offerData = {
-      seller_id: seller_id.value.endsWith(accountSuffix) ? seller_id.value : seller_id.value  + accountSuffix,
+      seller_id: seller_account_id,
       reserve_price: toNear(reserve_price.value),
       buy_now_price: toNear(buy_now_price.value),
       duration: (duration.value * 3600000000000).toFixed()
