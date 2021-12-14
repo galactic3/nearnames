@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
-import {BOATLOAD_OF_GAS, nearTo} from "../utils";
+import { nearTo } from "../utils";
 import Bids from "./Bids";
-import {Accordion} from "react-bootstrap";
+import {Spinner} from "react-bootstrap";
 
 function getReservePrice(lot) {
   return nearTo(lot.reserve_price, 2);
@@ -39,6 +39,8 @@ function Lot(props) {
 
   const [bids, setBids] = useState([]);
 
+  const [showBidList, setShowBidList] = useState(false);
+
   const isLastBidder = props.currentUser === getLastBidder(bids);
 
   useEffect(() => {
@@ -50,9 +52,9 @@ function Lot(props) {
     switch(lot.status) {
       case 'OnSale':
         return (isNotSeller && <div className="button_wrapper">
-          <button name="buy_now" onClick={(e) => props.bid(lot, e)}>Buy now</button>
+          <button name="buy_now" onClick={(e) => props.bid(lot, e, getBuyNowPrice(lot))}>Buy now</button>
           <button name="bid" onClick={(e) => props.bid(lot, e, bidPrice.current.value)}>Bid</button>
-          <input type="number" id="bid_price" ref={bidPrice} defaultValue={getNextBidAmount(lot)}/>
+          <input type="number" name="bid_price" className="large" ref={bidPrice} defaultValue={getNextBidAmount(lot)}/>
         </div>)
       case 'SaleSuccess':
         return (isLastBidder && <div className="button_wrapper">
@@ -60,11 +62,11 @@ function Lot(props) {
         </div>)
       case 'SaleFailure':
         return (!isNotSeller && <div className="button_wrapper">
-          <button name="withdraw" onClick={(e) => props.withdraw(lot, e)}>Withdraw</button>
+          {props.loader ? <Spinner animation="border" /> : <button name="withdraw" onClick={(e) => props.withdraw(lot, e)}>Withdraw</button>}
         </div>)
       case 'Withdrawn':
         return (!isNotSeller && <div className="button_wrapper">
-          <button name="claim" onClick={(e) => props.claim(lot, e)}>Claim</button>
+          <button name="claim_back" onClick={(e) => props.claim(lot, e)}>Claim back</button>
         </div>)
     }
   }
@@ -80,11 +82,12 @@ function Lot(props) {
         <li>Lot status: <strong>{lot.status}</strong></li>
       </ul>
       {props.currentUser && renderButton(lot)}
-      <div className="bids_list">
+      {bids.length ? <a className="button-link" onClick={(e) => setShowBidList(!showBidList)}>{showBidList ? 'Hide' : 'Show'} bid list</a> : ''}
+      {showBidList ? (<div className="bids_list">
         {bids.map((bid, i) =>
           <Bids key={i} bid={bid}/>
         )}
-      </div>
+      </div>) : ''}
     </li>
   );
 }

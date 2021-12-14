@@ -83,6 +83,15 @@ input {
   }
 }
 
+a.button-link {
+  cursor: pointer;
+  margin-top: 0.5em;
+  text-decoration: none;
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
 input[type="number"] {
   text-align: center;
   border-bottom: 0.1em solid var(--primary);
@@ -91,6 +100,10 @@ input[type="number"] {
   padding-left: 0.5em;
   &:hover, &:focus {
     border-color: var(--secondary);
+  }
+  &.large {
+    width: 12em;
+    text-align: left;
   }
 }
 
@@ -173,7 +186,7 @@ dt, dd {
 }
 
 .bids_list {
-  margin: 20px 0;
+  margin: 10px 0 0;
   p {
     margin: 0;
     font-size: 12px;
@@ -192,7 +205,7 @@ header {
     margin: 8px 0;
   }
   .auth {
-    margin: 8px 0 8px auto;
+    margin: 16px 0 16px auto;
   }
   .nav {
     margin: 8px 12px;
@@ -200,6 +213,18 @@ header {
     .nav-link {
       padding-bottom: 0.2rem;
       margin-top: 0.3rem;
+    }
+  }
+}
+
+.modal-body {
+  .container {
+    .form-group {
+      width: 100%;
+    }
+    label {
+      font-size: 15px;
+      color: var(--gray);
     }
   }
 }

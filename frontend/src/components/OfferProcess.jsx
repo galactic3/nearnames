@@ -23,7 +23,7 @@ function OfferProcessPage (props) {
           )
         ) : (
           <div>
-            <div className='d-flex justify-content-center' key='1'>
+            <div className='d-flex m-5 justify-content-center' key='1'>
               <div className='spinner-grow' role='status'>
                 <span className='visually-hidden'>Loading...</span>
               </div>
