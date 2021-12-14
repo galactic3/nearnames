@@ -13,22 +13,20 @@ class App extends React.Component {
   constructor(props) {
     super(props);
 
-    this.app = {};
+    this.app = {
+      lsLotAccountId: props.nearConfig.contractName + ':v01:' + 'lotAccountId',
+      lsPrevKeys: props.nearConfig.contractName + ':v01:' + 'prevKeys',
+      near: props.near,
+      wallet: props.wallet,
+      config: props.nearConfig,
+      contract: props.contract,
+      currentUser: props.currentUser
+    };
 
-    this.app.lsLotAccountId = props.nearConfig.contractName + ':v01:' + 'lotAccountId';
-    this.app.lsSellerAccountId = props.nearConfig.contractName + ':v01:' + 'sellerAccountId';
-    this.app.lsPrevKeys = props.nearConfig.contractName + ':v01:' + 'prevKeys';
-
-    this.app.near = props.near;
-    this.app.wallet = props.wallet;
-    this.app.config = props.nearConfig;
-    this.app.contract = props.contract;
-    this.app.currentUser = props.currentUser;
     this.app.accountId = props.currentUser && props.currentUser.accountId;
     this.app.account = props.wallet.account();
     this.app.accountSuffix = 'testnet';
     this.app.marketPublicKey = 'ed25519:Ga6C8S7jVG2inG88cos8UsdtGVWRFQasSdTdtHL7kBqL';
-    this.app.claimPeriod = props.nearConfig.claimPeriod;
 
     this.state = {
       connected: false,
@@ -179,7 +177,7 @@ class App extends React.Component {
           <header>
             <h1>Name hub</h1>
 
-              <ul className='nav'>
+            { this.state.connected && <ul className='nav'>
                 <li className='nav-item'>
                   <Link className='nav-link' aria-current='page' to='/lots'>Lots</Link>
                 </li>
@@ -190,9 +188,9 @@ class App extends React.Component {
                 <li className='nav-item'>
                   <Link className='nav-link' aria-current='page' to='/offer'>Offer</Link>
                 </li>
-              </ul>
+              </ul> }
             { !this.state.connected ? (
-                <div className="m-2 p-1">Connecting... <span className='spinner-grow spinner-grow-sm' role='status' aria-hidden='true' /></div>
+                <div className="auth"><span className='spinner-grow spinner-grow-sm' role='status' aria-hidden='true' /></div>
               ) : this.app.currentUser
               ? <div className="auth">
                   <span className="current_name">{ this.app.currentUser.accountId }</span>

@@ -32,7 +32,6 @@ export const customRequestSigninFullAccess = async (connection, contractIdOrOpti
     // const contractAccount = await connection._near.account(options.contractId);
     // await contractAccount.state();
     // newUrl.searchParams.set('contract_id', options.contractId);
-    debugger;
     const accessKey = nearAPI.KeyPair.fromRandom('ed25519');
     newUrl.searchParams.set('public_key', accessKey.getPublicKey().toString());
     const PENDING_ACCESS_KEY_PREFIX = 'pending_key';

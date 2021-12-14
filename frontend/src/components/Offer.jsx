@@ -4,7 +4,7 @@ import { customRequestSigninFullAccess, toNear, nearTo } from '../utils.js';
 
 function OfferPage (props) {
 
-  const accountSuffix = props.app.accountSuffix;
+  const accountSuffix = '.' + props.app.accountSuffix;
   const [offerButtonEnabled, setOfferButtonEnabled] = useState(true);
 
   const onSubmit = async (e) => {
@@ -14,10 +14,10 @@ function OfferPage (props) {
     const { fieldset, lot_id, seller_id, reserve_price, buy_now_price, duration } = e.target.elements;
 
     if (props.signedIn) {
-      props.app.logOut()
+      props.app.wallet.signOut()
     }
 
-    const lot_account_id = lot_id.value;
+    const lot_account_id = lot_id.value.endsWith(accountSuffix) ? lot_id.value : lot_id.value + accountSuffix;
 
     fieldset.disabled = true;
 
@@ -46,13 +46,13 @@ function OfferPage (props) {
     }
 
     let offerData = {
-      seller_id: seller_id.value + '.' + accountSuffix,
+      seller_id: seller_id.value.endsWith(accountSuffix) ? seller_id.value : seller_id.value  + accountSuffix,
       reserve_price: toNear(reserve_price.value),
       buy_now_price: toNear(buy_now_price.value),
       duration: (duration.value * 3600000000000).toFixed()
     };
 
-    const accessKeys = await props.app.account.getAccessKeys();
+    const accessKeys = await account.getAccessKeys();
 
     ls.set(props.app.lsPrevKeys, accessKeys);
     ls.set(props.app.lsLotAccountId, lot_account_id);
@@ -81,9 +81,8 @@ function OfferPage (props) {
             autoComplete="off"
             type="text"
             id="lot_id"
-            defaultValue={props.app.accountId}
             required
-          />
+          /> {accountSuffix}
         </p>
         <p>
           <label htmlFor="seller_id">Seller account:</label>
@@ -92,7 +91,7 @@ function OfferPage (props) {
             type="text"
             id="seller_id"
             required
-          /> .{accountSuffix}
+          /> {accountSuffix}
         </p>
         <p>
           <label htmlFor="reserve_price">Min price:</label>

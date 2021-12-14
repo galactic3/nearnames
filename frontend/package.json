@@ -37,6 +37,7 @@
     "bootstrap": "5.1.3",
     "local-storage": "^2.0.0",
     "near-api-js": "~0.43.1",
+    "near-seed-phrase": "^0.2.0",
     "react": "^16.11.0 || ^17.0.0 || ^18.0.0",
     "react-bootstrap": "^2.0.3",
     "react-dom": ">=16.8",
