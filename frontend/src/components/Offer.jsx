@@ -66,10 +66,9 @@ function OfferPage (props) {
     await customRequestSigninFullAccess(
       props.app.wallet,
       props.app.config.contractName,
-      window.location.origin + '/#/offerProcess',
-      window.location.origin + '/#/offer'
+      window.location.origin + window.location.pathname + '/#/offerProcess',
+      window.location.origin + window.location.pathname + + '/#/offer'
     )
-
   };
 
   return (
