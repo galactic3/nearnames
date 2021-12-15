@@ -12,7 +12,7 @@ pub fn is_promise_success() -> bool {
     }
 }
 
-#[derive(BorshDeserialize, BorshSerialize, Debug)]
+#[derive(BorshDeserialize, BorshSerialize, Debug, Clone)]
 pub struct Fraction {
     num: u32,
     denom: u32,

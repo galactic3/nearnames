@@ -411,11 +411,15 @@ impl Contract {
             Some(last_bid) => {
                 let to_last_bid = last_bid.amount;
                 let to_seller = amount - to_last_bid;
+                let commission = self.seller_rewards_commission() * to_seller;
+                let to_seller = to_seller - commission;
                 self.internal_profile_rewards_transfer(&last_bid.bidder_id, to_last_bid);
                 self.internal_profile_rewards_transfer(&lot.seller_id, to_seller);
             }
             None => {
                 let to_seller = amount;
+                let commission = self.seller_rewards_commission() * to_seller;
+                let to_seller = to_seller - commission;
                 self.internal_profile_rewards_transfer(&lot.seller_id, to_seller)
             }
         }

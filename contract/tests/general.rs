@@ -5,7 +5,7 @@ use near_sdk_sim::{
     STORAGE_AMOUNT,
 };
 
-use marketplace::{ContractContract, LotView, ProfileView};
+use marketplace::{ContractContract, LotView, ProfileView, Fraction};
 
 // not using lazy static because it breaks my language server
 pub const CONTRACT_BYTES: &[u8] = include_bytes!("../res/marketplace.wasm");
@@ -90,6 +90,8 @@ fn simulate_lot_offer_buy_now() {
     let bob: UserAccount = create_user(&root, "bob");
     let carol: UserAccount = create_user(&root, "carol");
 
+    let seller_share = Fraction::new(9, 10);
+
     let balance_to_reserve = to_yocto("0.002");
     root.transfer(bob.account_id(), balance_to_reserve); // storage and future gas
     bob.transfer(root.account_id(), to_yocto("100")); // storage and future gas
@@ -163,13 +165,13 @@ fn simulate_lot_offer_buy_now() {
     assert!(result.is_ok());
     let result: Option<ProfileView> = result.unwrap_json();
     let result = result.unwrap();
-    assert_eq!(Balance::from(result.rewards_available), to_yocto("10"));
+    assert_eq!(Balance::from(result.rewards_available), seller_share.clone() * to_yocto("10"));
 
     root.transfer(bob.account_id(), to_yocto("0.2")); // storage and future gas
     let result = call!(bob, contract.profile_rewards_claim());
     assert!(result.is_ok());
 
-    bob.transfer(root.account_id(), to_yocto("10")); // storage and future gas
+    bob.transfer(root.account_id(), seller_share.clone() * to_yocto("10"));
 }
 
 #[test]

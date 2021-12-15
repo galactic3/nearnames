@@ -64,6 +64,12 @@ impl Default for Contract {
     }
 }
 
+impl Contract {
+    pub fn seller_rewards_commission(&self) -> Fraction {
+        Fraction::new(1, 10)
+    }
+}
+
 #[near_bindgen]
 impl Contract {
     pub fn hello(&self) -> String {
@@ -805,6 +811,8 @@ mod tests {
             contract.lot_bid("alice".to_string().try_into().unwrap());
         }
 
+        let seller_share = Fraction::new(9, 10);
+
         let lot = contract.lots.get(&"alice".parse().unwrap()).unwrap();
         assert_eq!(lot.bids.len(), 1, "expected one bid for lot");
 
@@ -836,7 +844,7 @@ mod tests {
             let profile_bob = contract.internal_profile_extract(&"bob".parse().unwrap());
             assert_eq!(
                 profile_bob.rewards_available,
-                to_yocto(7),
+                seller_share.clone() * to_yocto(7),
                 "seller profile should have bid balance"
             );
             contract.internal_profile_save(&profile_bob);
@@ -889,7 +897,7 @@ mod tests {
             let profile_bob = contract.internal_profile_extract(&"bob".parse().unwrap());
             assert_eq!(
                 profile_bob.rewards_available,
-                to_yocto(8),
+                seller_share.clone() * to_yocto(8),
                 "lot profile should have bid balance"
             );
             contract.internal_profile_save(&profile_bob);
