@@ -5,7 +5,7 @@ use near_sdk_sim::{
     STORAGE_AMOUNT,
 };
 
-use marketplace::{ContractContract, LotView, ProfileView, Fraction};
+use marketplace::{ContractContract, LotView, ProfileView, Fraction, ContractConfigView};
 
 // not using lazy static because it breaks my language server
 pub const CONTRACT_BYTES: &[u8] = include_bytes!("../res/marketplace.wasm");
@@ -94,7 +94,9 @@ fn simulate_lot_offer_buy_now() {
     let bob: UserAccount = create_user(&root, "bob");
     let carol: UserAccount = create_user(&root, "carol");
 
-    let commission = Fraction::new(1, 8);
+    let config: ContractConfigView = view!(contract.config_get()).unwrap_json();
+    let commission = config.seller_rewards_commission;
+    let commission = Fraction::new(commission.num, commission.denom);
 
     let balance_to_reserve = to_yocto("0.002");
     root.transfer(bob.account_id(), balance_to_reserve); // storage and future gas

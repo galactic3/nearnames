@@ -42,3 +42,16 @@ impl ops::Mul<Balance> for Fraction {
         (U256::from(self.num) * U256::from(balance) / U256::from(self.denom)).as_u128()
     }
 }
+
+#[derive(Deserialize, Serialize, Debug)]
+#[serde(crate = "near_sdk::serde")]
+pub struct FractionView {
+    pub num: u32,
+    pub denom: u32,
+}
+
+impl From<&Fraction> for FractionView {
+    fn from(fraction: &Fraction) -> FractionView {
+        FractionView { num: fraction.num, denom: fraction.denom }
+    }
+}

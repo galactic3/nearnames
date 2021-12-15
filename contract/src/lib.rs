@@ -66,8 +66,26 @@ impl Default for Contract {
     }
 }
 
+#[derive(Deserialize, Serialize, Debug)]
+#[serde(crate = "near_sdk::serde")]
+pub struct ContractConfigView {
+    pub seller_rewards_commission: FractionView,
+}
+
+impl From<&Contract> for ContractConfigView {
+    fn from(contract: &Contract) -> ContractConfigView {
+        ContractConfigView {
+            seller_rewards_commission: (&contract.seller_rewards_commission).into(),
+        }
+    }
+}
+
 #[near_bindgen]
 impl Contract {
+    pub fn config_get(&self) -> ContractConfigView {
+        self.into()
+    }
+
     pub fn hello(&self) -> String {
         format!("hello, {}", env::predecessor_account_id())
     }
@@ -116,6 +134,18 @@ mod tests {
             .attached_deposit(attached_deposit)
             .block_timestamp(timestamp)
             .build()
+    }
+
+    #[test]
+    fn contract_config_get() {
+        let context = get_context_simple(false);
+        testing_env!(context);
+        let contract = Contract::default();
+
+        let config = contract.config_get();
+        let commission = config.seller_rewards_commission;
+        assert_eq!(commission.num, 1);
+        assert_eq!(commission.denom, 8);
     }
 
     #[test]
