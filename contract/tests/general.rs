@@ -83,6 +83,10 @@ fn create_user_locked(root: &UserAccount, name: &str) -> UserAccount {
 
 const DAY_NANOSECONDS: u64 = 10u64.pow(9) * 60 * 60 * 24;
 
+fn subtract_seller_reward_commission(reward: Balance, commission: Fraction) -> Balance {
+    reward - commission * reward
+}
+
 #[test]
 fn simulate_lot_offer_buy_now() {
     let (root, contract) = init();
@@ -90,7 +94,7 @@ fn simulate_lot_offer_buy_now() {
     let bob: UserAccount = create_user(&root, "bob");
     let carol: UserAccount = create_user(&root, "carol");
 
-    let seller_share = Fraction::new(9, 10);
+    let commission = Fraction::new(1, 8);
 
     let balance_to_reserve = to_yocto("0.002");
     root.transfer(bob.account_id(), balance_to_reserve); // storage and future gas
@@ -165,13 +169,15 @@ fn simulate_lot_offer_buy_now() {
     assert!(result.is_ok());
     let result: Option<ProfileView> = result.unwrap_json();
     let result = result.unwrap();
-    assert_eq!(Balance::from(result.rewards_available), seller_share.clone() * to_yocto("10"));
+
+    let seller_rewards = subtract_seller_reward_commission(to_yocto("10"), commission.clone());
+    assert_eq!(Balance::from(result.rewards_available), seller_rewards, "wrong seller reward");
 
     root.transfer(bob.account_id(), to_yocto("0.2")); // storage and future gas
     let result = call!(bob, contract.profile_rewards_claim());
     assert!(result.is_ok());
 
-    bob.transfer(root.account_id(), seller_share.clone() * to_yocto("10"));
+    bob.transfer(root.account_id(), seller_rewards);
 }
 
 #[test]

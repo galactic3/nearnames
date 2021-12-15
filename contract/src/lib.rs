@@ -53,6 +53,7 @@ pub trait ExtSelfContract {
 pub struct Contract {
     pub profiles: UnorderedMap<ProfileId, Profile>,
     pub lots: UnorderedMap<LotId, Lot>,
+    pub seller_rewards_commission: Fraction,
 }
 
 impl Default for Contract {
@@ -60,13 +61,8 @@ impl Default for Contract {
         Self {
             profiles: UnorderedMap::new(PREFIX_PROFILES.as_bytes().to_vec()),
             lots: UnorderedMap::new(PREFIX_LOTS.as_bytes().to_vec()),
+            seller_rewards_commission: Fraction::new(1, 8),
         }
-    }
-}
-
-impl Contract {
-    pub fn seller_rewards_commission(&self) -> Fraction {
-        Fraction::new(1, 10)
     }
 }
 
@@ -791,6 +787,10 @@ mod tests {
         }
     }
 
+    fn subtract_seller_reward_commission(reward: Balance, commission: Fraction) -> Balance {
+        reward - commission * reward
+    }
+
     #[test]
     pub fn api_lot_bid() {
         let context = get_context_simple(false);
@@ -810,8 +810,6 @@ mod tests {
             testing_env!(context);
             contract.lot_bid("alice".to_string().try_into().unwrap());
         }
-
-        let seller_share = Fraction::new(9, 10);
 
         let lot = contract.lots.get(&"alice".parse().unwrap()).unwrap();
         assert_eq!(lot.bids.len(), 1, "expected one bid for lot");
@@ -842,10 +840,14 @@ mod tests {
         }
         {
             let profile_bob = contract.internal_profile_extract(&"bob".parse().unwrap());
+            let expected = subtract_seller_reward_commission(
+                to_yocto(7),
+                contract.seller_rewards_commission.clone(),
+            );
             assert_eq!(
                 profile_bob.rewards_available,
-                seller_share.clone() * to_yocto(7),
-                "seller profile should have bid balance"
+                expected,
+                "seller profile should have bid balance minus comission"
             );
             contract.internal_profile_save(&profile_bob);
         }
@@ -895,10 +897,14 @@ mod tests {
         }
         {
             let profile_bob = contract.internal_profile_extract(&"bob".parse().unwrap());
+            let expected = subtract_seller_reward_commission(
+                to_yocto(8),
+                contract.seller_rewards_commission.clone(),
+            );
             assert_eq!(
                 profile_bob.rewards_available,
-                seller_share.clone() * to_yocto(8),
-                "lot profile should have bid balance"
+                expected,
+                "lot profile should have bid balance minus commission"
             );
             contract.internal_profile_save(&profile_bob);
         }
@@ -1325,5 +1331,6 @@ mod tests {
         assert_eq!(Fraction::new(7, 13) * 0, 0, "expected zero mul for zero balance");
         assert_eq!(Fraction::new(13, 13) * 100, 100, "expected same mul one fraction");
         assert_eq!(Fraction::new(7, 13) * 100, 53, "expected zero mul for zero balance");
+        assert_eq!(Fraction::new(1, 2) * 9, 4, "expected floor rounding");
     }
 }
