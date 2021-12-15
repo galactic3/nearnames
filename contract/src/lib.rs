@@ -3,6 +3,7 @@ mod profile;
 mod utils;
 
 use std::fmt;
+use std::ops;
 use std::collections::HashSet;
 
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
@@ -13,10 +14,16 @@ use near_sdk::{
     env, ext_contract, near_bindgen, AccountId, Balance, Duration, Promise, PromiseResult,
     PublicKey, Timestamp,
 };
+use uint::construct_uint;
 
 pub use crate::lot::*;
 pub use crate::profile::*;
 pub use crate::utils::*;
+
+construct_uint! {
+    /// 256-bit unsigned integer.
+    pub struct U256(4);
+}
 
 pub type LotId = AccountId;
 pub type ProfileId = AccountId;
@@ -1276,5 +1283,39 @@ mod tests {
             let result = contract.lot_list_bidding_by("bob".parse().unwrap());
             assert!(result.is_empty(), "lot_bidding for bob must be empty");
         }
+    }
+
+    #[test]
+    pub fn test_fractions_new() {
+        {
+            Fraction::new(0, 1);
+            Fraction::new(1, 1);
+            Fraction::new(7, 13);
+            Fraction::new(13, 13);
+        }
+    }
+
+    #[test]
+    #[should_panic(expected = "expected denom > 0")]
+    pub fn test_fractions_new_fail_zero_denum() {
+        {
+            Fraction::new(0, 0);
+        }
+    }
+
+    #[test]
+    #[should_panic(expected = "expected num <= denom")]
+    pub fn test_fractions_new_fail_greater_than_one() {
+        {
+            Fraction::new(2, 1);
+        }
+    }
+
+    #[test]
+    pub fn test_fractions_mul() {
+        assert_eq!(Fraction::new(0, 13) * 10, 0, "expected zero mul for zero fraction");
+        assert_eq!(Fraction::new(7, 13) * 0, 0, "expected zero mul for zero balance");
+        assert_eq!(Fraction::new(13, 13) * 100, 100, "expected same mul one fraction");
+        assert_eq!(Fraction::new(7, 13) * 100, 53, "expected zero mul for zero balance");
     }
 }

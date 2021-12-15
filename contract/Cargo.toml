@@ -9,6 +9,7 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 near-sdk = "4.0.0-pre.4"
+uint = "0.9.1"
 
 [dev-dependencies]
 near-sdk-sim = "4.0.0-pre.4"
