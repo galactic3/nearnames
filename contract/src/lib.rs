@@ -12,7 +12,7 @@ use near_sdk::json_types::{U128, U64};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{
     env, ext_contract, near_bindgen, AccountId, Balance, Duration, Promise, PromiseResult,
-    PublicKey, Timestamp,
+    PublicKey, Timestamp, PanicOnDefault
 };
 use uint::construct_uint;
 
@@ -49,21 +49,11 @@ pub trait ExtSelfContract {
 }
 
 #[near_bindgen]
-#[derive(BorshDeserialize, BorshSerialize)]
+#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
 pub struct Contract {
     pub profiles: UnorderedMap<ProfileId, Profile>,
     pub lots: UnorderedMap<LotId, Lot>,
     pub seller_rewards_commission: Fraction,
-}
-
-impl Default for Contract {
-    fn default() -> Self {
-        Self {
-            profiles: UnorderedMap::new(PREFIX_PROFILES.as_bytes().to_vec()),
-            lots: UnorderedMap::new(PREFIX_LOTS.as_bytes().to_vec()),
-            seller_rewards_commission: Fraction::new(1, 8),
-        }
-    }
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -86,8 +76,18 @@ impl Contract {
         self.into()
     }
 
-    pub fn hello(&self) -> String {
-        format!("hello, {}", env::predecessor_account_id())
+    #[init(ignore_state)]
+    pub fn new(
+        seller_rewards_commission: FractionView
+    ) -> Self {
+        Self {
+            profiles: UnorderedMap::new(PREFIX_PROFILES.as_bytes().to_vec()),
+            lots: UnorderedMap::new(PREFIX_LOTS.as_bytes().to_vec()),
+            seller_rewards_commission: Fraction::new(
+                seller_rewards_commission.num,
+                seller_rewards_commission.denom,
+                ),
+        }
     }
 }
 
@@ -136,11 +136,15 @@ mod tests {
             .build()
     }
 
+    fn build_contract() -> Contract {
+        Contract::new(FractionView { num: 1, denom: 8 })
+    }
+
     #[test]
     fn contract_config_get() {
         let context = get_context_simple(false);
         testing_env!(context);
-        let contract = Contract::default();
+        let contract = build_contract();
 
         let config = contract.config_get();
         let commission = config.seller_rewards_commission;
@@ -152,7 +156,7 @@ mod tests {
     fn profile_get_missing() {
         let context = get_context_simple(false);
         testing_env!(context);
-        let contract = Contract::default();
+        let contract = build_contract();
 
         let profile = contract.profile_get("alice".parse().unwrap());
 
@@ -165,7 +169,7 @@ mod tests {
     fn profile_get_present() {
         let context = get_context_simple(false);
         testing_env!(context);
-        let mut contract = Contract::default();
+        let mut contract = build_contract();
 
         let rewards_available: u128 = to_yocto(2);
         let rewards_claimed: u128 = to_yocto(3);
@@ -191,7 +195,7 @@ mod tests {
     #[test]
     #[should_panic]
     fn internal_lot_extract_missing() {
-        let mut contract = Contract::default();
+        let mut contract = build_contract();
         contract.internal_lot_extract(&"alice".parse().unwrap());
     }
 
@@ -247,7 +251,7 @@ mod tests {
     fn internal_lot_create_fields() {
         let context = get_context_simple(false);
         testing_env!(context);
-        let mut contract = Contract::default();
+        let mut contract = build_contract();
 
         let lot = create_lot_bob_sells_alice(&mut contract);
         assert_eq!(
@@ -286,7 +290,7 @@ mod tests {
     fn internal_lot_create_save_extract() {
         let context = get_context_simple(false);
         testing_env!(context);
-        let mut contract = Contract::default();
+        let mut contract = build_contract();
         assert_eq!(
             contract.lots.len(),
             0,
@@ -323,7 +327,7 @@ mod tests {
     fn lot_get_missing() {
         let context = get_context_simple(false);
         testing_env!(context);
-        let contract = Contract::default();
+        let contract = build_contract();
 
         assert!(
             contract.lot_list().is_empty(),
@@ -335,7 +339,7 @@ mod tests {
     fn lot_list_present() {
         let context = get_context_simple(false);
         testing_env!(context);
-        let mut contract = Contract::default();
+        let mut contract = build_contract();
         let lot_bob_sells_alice = create_lot_bob_sells_alice(&mut contract);
         contract.internal_lot_save(&lot_bob_sells_alice);
 
@@ -362,7 +366,7 @@ mod tests {
     fn lot_bid_list() {
         let context = get_context_simple(false);
         testing_env!(context);
-        let mut contract = Contract::default();
+        let mut contract = build_contract();
         let lot_bob_sells_alice = create_lot_bob_sells_alice(&mut contract);
         contract.internal_lot_save(&lot_bob_sells_alice);
 
@@ -401,7 +405,7 @@ mod tests {
     fn lot_list_present_active() {
         let context = get_context_simple(false);
         testing_env!(context);
-        let mut contract = Contract::default();
+        let mut contract = build_contract();
         let lot_bob_sells_alice = create_lot_bob_sells_alice(&mut contract);
         contract.internal_lot_save(&lot_bob_sells_alice);
 
@@ -443,7 +447,7 @@ mod tests {
     fn lot_list_present_withdrawn() {
         let context = get_context_simple(false);
         testing_env!(context);
-        let mut contract = Contract::default();
+        let mut contract = build_contract();
         let mut lot = create_lot_bob_sells_alice(&mut contract);
         lot.is_withdrawn = true;
         contract.internal_lot_save(&lot);
@@ -463,7 +467,7 @@ mod tests {
         let context = get_context_simple(false);
         testing_env!(context);
 
-        let mut contract = Contract::default();
+        let mut contract = build_contract();
         let lot_bob_sells_alice = create_lot_bob_sells_alice(&mut contract);
         // we don't care about starting time, it's just for the record
         assert_eq!(lot_bob_sells_alice.is_active(DAY_NANOSECONDS * 9), true);
@@ -480,7 +484,7 @@ mod tests {
     fn lot_is_active_buy_now() {
         let context = get_context_simple(false);
         testing_env!(context);
-        let mut contract = Contract::default();
+        let mut contract = build_contract();
         {
             let lot = create_lot_bob_sells_alice(&mut contract);
             contract.internal_lot_save(&lot);
@@ -509,7 +513,7 @@ mod tests {
     fn lot_is_active_withdrawn() {
         let context = get_context_simple(false);
         testing_env!(context);
-        let mut contract = Contract::default();
+        let mut contract = build_contract();
         {
             let lot = create_lot_bob_sells_alice(&mut contract);
             contract.internal_lot_save(&lot);
@@ -534,7 +538,7 @@ mod tests {
         let context = get_context_pred_alice(false);
         testing_env!(context);
 
-        let mut contract = Contract::default();
+        let mut contract = build_contract();
 
         let lot_id: ProfileId = "alice".parse().unwrap();
         let seller_id: ProfileId = "bob".parse().unwrap();
@@ -573,7 +577,7 @@ mod tests {
     fn internal_transfer() {
         let context = get_context_simple(false);
         testing_env!(context);
-        let mut contract = Contract::default();
+        let mut contract = build_contract();
         let profile_id: ProfileId = "alice".parse().unwrap();
         contract.internal_profile_rewards_transfer(&profile_id, to_yocto(3));
         let profile = contract.profiles.get(&profile_id);
@@ -599,7 +603,7 @@ mod tests {
     fn last_bid_amount() {
         let context = get_context_simple(false);
         testing_env!(context);
-        let mut contract = Contract::default();
+        let mut contract = build_contract();
         let mut lot = create_lot_bob_sells_alice(&mut contract);
         assert!(
             lot.last_bid_amount().is_none(),
@@ -627,7 +631,7 @@ mod tests {
     fn next_bid_amount() {
         let context = get_context_simple(false);
         testing_env!(context);
-        let mut contract = Contract::default();
+        let mut contract = build_contract();
         let mut lot = create_lot_bob_sells_alice(&mut contract);
         assert!(
             lot.last_bid_amount().is_none(),
@@ -662,7 +666,7 @@ mod tests {
         // in this method we don't care bout predecessor, it's internal method
         let context = get_context_simple(false);
         testing_env!(context);
-        let mut contract = Contract::default();
+        let mut contract = build_contract();
         {
             let lot = create_lot_bob_sells_alice(&mut contract);
             contract.internal_lot_save(&lot);
@@ -726,7 +730,7 @@ mod tests {
     pub fn internal_lot_bid_fail_after_finish() {
         let context = get_context_simple(false);
         testing_env!(context);
-        let mut contract = Contract::default();
+        let mut contract = build_contract();
         {
             let lot = create_lot_bob_sells_alice(&mut contract);
             contract.internal_lot_save(&lot);
@@ -744,7 +748,7 @@ mod tests {
     pub fn internal_lot_bid_fail_bid_below_reserve() {
         let context = get_context_simple(false);
         testing_env!(context);
-        let mut contract = Contract::default();
+        let mut contract = build_contract();
         {
             let lot = create_lot_bob_sells_alice(&mut contract);
             contract.internal_lot_save(&lot);
@@ -762,7 +766,7 @@ mod tests {
     pub fn internal_lot_bid_fail_bid_below_prev_bid() {
         let context = get_context_simple(false);
         testing_env!(context);
-        let mut contract = Contract::default();
+        let mut contract = build_contract();
         {
             let lot = create_lot_bob_sells_alice(&mut contract);
             contract.internal_lot_save(&lot);
@@ -792,7 +796,7 @@ mod tests {
     pub fn internal_lot_bid_fail_bid_above_buy_now_price() {
         let context = get_context_simple(false);
         testing_env!(context);
-        let mut contract = Contract::default();
+        let mut contract = build_contract();
         {
             let lot = create_lot_bob_sells_alice(&mut contract);
             contract.internal_lot_save(&lot);
@@ -825,7 +829,7 @@ mod tests {
     pub fn api_lot_bid() {
         let context = get_context_simple(false);
         testing_env!(context);
-        let mut contract = Contract::default();
+        let mut contract = build_contract();
         {
             let lot = create_lot_bob_sells_alice(&mut contract);
             contract.internal_lot_save(&lot);
@@ -962,7 +966,7 @@ mod tests {
     pub fn api_lot_bid_fail_small_bid() {
         let context = get_context_simple(false);
         testing_env!(context);
-        let mut contract = Contract::default();
+        let mut contract = build_contract();
         {
             let lot = create_lot_bob_sells_alice(&mut contract);
             contract.internal_lot_save(&lot);
@@ -984,7 +988,7 @@ mod tests {
     pub fn api_lot_bid_fail_inactive() {
         let context = get_context_simple(false);
         testing_env!(context);
-        let mut contract = Contract::default();
+        let mut contract = build_contract();
         {
             let lot = create_lot_bob_sells_alice(&mut contract);
             contract.internal_lot_save(&lot);
@@ -1005,7 +1009,7 @@ mod tests {
     pub fn api_lot_withdraw_success() {
         let context = get_context_simple(false);
         testing_env!(context);
-        let mut contract = Contract::default();
+        let mut contract = build_contract();
         {
             let lot = create_lot_bob_sells_alice(&mut contract);
             contract.internal_lot_save(&lot);
@@ -1021,7 +1025,7 @@ mod tests {
     pub fn api_lot_withdraw_fail_not_seller() {
         let context = get_context_simple(false);
         testing_env!(context);
-        let mut contract = Contract::default();
+        let mut contract = build_contract();
         {
             let lot = create_lot_bob_sells_alice(&mut contract);
             contract.internal_lot_save(&lot);
@@ -1037,7 +1041,7 @@ mod tests {
     pub fn api_lot_withdraw_fail_has_bids() {
         let context = get_context_simple(false);
         testing_env!(context);
-        let mut contract = Contract::default();
+        let mut contract = build_contract();
         {
             let lot = create_lot_bob_sells_alice(&mut contract);
             contract.internal_lot_save(&lot);
@@ -1060,7 +1064,7 @@ mod tests {
     pub fn api_lot_withdraw_fail_double() {
         let context = get_context_simple(false);
         testing_env!(context);
-        let mut contract = Contract::default();
+        let mut contract = build_contract();
         {
             let lot = create_lot_bob_sells_alice(&mut contract);
             contract.internal_lot_save(&lot);
@@ -1079,7 +1083,7 @@ mod tests {
     pub fn api_lot_claim_success() {
         let context = get_context_simple(false);
         testing_env!(context);
-        let mut contract = Contract::default();
+        let mut contract = build_contract();
         {
             let lot = create_lot_bob_sells_alice(&mut contract);
             contract.internal_lot_save(&lot);
@@ -1111,7 +1115,7 @@ mod tests {
     pub fn api_lot_claim_by_seller_success_withdraw_after_finish() {
         let context = get_context_simple(false);
         testing_env!(context);
-        let mut contract = Contract::default();
+        let mut contract = build_contract();
         {
             let lot = create_lot_bob_sells_alice(&mut contract);
             contract.internal_lot_save(&lot);
@@ -1130,7 +1134,7 @@ mod tests {
     pub fn api_lot_claim_fail_still_active() {
         let context = get_context_simple(false);
         testing_env!(context);
-        let mut contract = Contract::default();
+        let mut contract = build_contract();
         {
             let lot = create_lot_bob_sells_alice(&mut contract);
             contract.internal_lot_save(&lot);
@@ -1154,7 +1158,7 @@ mod tests {
     pub fn profile_rewards_claim_fail_below_threshold() {
         let context = get_context_simple(false);
         testing_env!(context);
-        let mut contract = Contract::default();
+        let mut contract = build_contract();
         let account_id: AccountId = "alice".parse().unwrap();
         let amount = MIN_PROFILE_REWARDS_CLAIM_AMOUNT - 1;
 
@@ -1170,7 +1174,7 @@ mod tests {
     pub fn profile_rewards_claim_success() {
         let context = get_context_simple(false);
         testing_env!(context);
-        let mut contract = Contract::default();
+        let mut contract = build_contract();
         let account_id: AccountId = "alice".parse().unwrap();
         let amount = MIN_PROFILE_REWARDS_CLAIM_AMOUNT;
         contract.internal_profile_rewards_transfer(&account_id, amount);
@@ -1194,7 +1198,7 @@ mod tests {
     pub fn test_profile_lots_offering_bidding() {
         let context = get_context_simple(false);
         testing_env!(context);
-        let mut contract = Contract::default();
+        let mut contract = build_contract();
 
         create_lot_bob_sells_alice_api(&mut contract);
 
@@ -1239,7 +1243,7 @@ mod tests {
     pub fn test_profile_lots_bidding_api() {
         let context = get_context_simple(false);
         testing_env!(context);
-        let mut contract = Contract::default();
+        let mut contract = build_contract();
 
         create_lot_bob_sells_alice_api(&mut contract);
         // create another lot to be filtered out

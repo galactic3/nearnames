@@ -5,7 +5,9 @@ use near_sdk_sim::{
     STORAGE_AMOUNT,
 };
 
-use marketplace::{ContractContract, LotView, ProfileView, Fraction, ContractConfigView};
+use marketplace::{
+    ContractContract, LotView, ProfileView, Fraction, ContractConfigView, FractionView,
+};
 
 // not using lazy static because it breaks my language server
 pub const CONTRACT_BYTES: &[u8] = include_bytes!("../res/marketplace.wasm");
@@ -32,7 +34,8 @@ fn init() -> (UserAccount, ContractAccount<ContractContract>) {
         contract: ContractContract,
         contract_id: "marketplace".to_string(),
         bytes: &CONTRACT_BYTES,
-        signer_account: root
+        signer_account: root,
+        init_method: new(FractionView { num: 1, denom: 8 })
     );
 
     (root, counter)
