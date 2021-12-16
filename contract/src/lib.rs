@@ -678,6 +678,12 @@ mod tests {
             to_yocto(6) + 1,
             "expected plus yocto next bid for zero step",
         );
+
+        assert_eq!(
+            lot.next_bid_amount(time_now, Fraction::new(4, 4)).unwrap(),
+            to_yocto(10),
+            "expected cap at buy now price",
+        );
     }
 
     // checks:

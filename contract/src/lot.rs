@@ -91,7 +91,7 @@ impl Lot {
             if next_bid_amount == last_bid_amount {
                 next_bid_amount += 1;
             }
-            Some(next_bid_amount)
+            Some(std::cmp::min(next_bid_amount, self.buy_now_price))
         } else {
             Some(self.reserve_price)
         }
