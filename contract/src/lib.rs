@@ -54,6 +54,7 @@ pub struct Contract {
     pub profiles: UnorderedMap<ProfileId, Profile>,
     pub lots: UnorderedMap<LotId, Lot>,
     pub seller_rewards_commission: Fraction,
+    pub bid_step: Fraction,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -84,7 +85,8 @@ impl Contract {
 
     #[init(ignore_state)]
     pub fn new(
-        seller_rewards_commission: FractionView
+        seller_rewards_commission: FractionView,
+        bid_step: FractionView,
     ) -> Self {
         Self {
             profiles: UnorderedMap::new(PREFIX_PROFILES.as_bytes().to_vec()),
@@ -92,7 +94,10 @@ impl Contract {
             seller_rewards_commission: Fraction::new(
                 seller_rewards_commission.num,
                 seller_rewards_commission.denom,
-                ),
+            ),
+            bid_step: Fraction::new(
+                bid_step.num, bid_step.denom,
+            )
         }
     }
 }
@@ -143,7 +148,7 @@ mod tests {
     }
 
     fn build_contract() -> Contract {
-        Contract::new(FractionView { num: 1, denom: 8 })
+        Contract::new(FractionView { num: 1, denom: 8 }, FractionView { num: 1, denom: 4 })
     }
 
     #[test]
@@ -666,6 +671,12 @@ mod tests {
             lot.next_bid_amount(time_now, contract.bid_step()).unwrap(),
             to_yocto(7500) / 1000,
             "wrong next bid",
+        );
+
+        assert_eq!(
+            lot.next_bid_amount(time_now, Fraction::new(0, 4)).unwrap(),
+            to_yocto(6) + 1,
+            "expected plus yocto next bid for zero step",
         );
     }
 

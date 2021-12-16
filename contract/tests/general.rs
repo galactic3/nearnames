@@ -35,7 +35,7 @@ fn init() -> (UserAccount, ContractAccount<ContractContract>) {
         contract_id: "marketplace".to_string(),
         bytes: &CONTRACT_BYTES,
         signer_account: root,
-        init_method: new(FractionView { num: 1, denom: 8 })
+        init_method: new(FractionView { num: 1, denom: 8 }, FractionView { num: 1, denom: 4 })
     );
 
     (root, counter)
