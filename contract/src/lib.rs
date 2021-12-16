@@ -70,6 +70,12 @@ impl From<&Contract> for ContractConfigView {
     }
 }
 
+impl Contract {
+    pub fn bid_step(&self) -> Fraction {
+        Fraction::new(1, 4)
+    }
+}
+
 #[near_bindgen]
 impl Contract {
     pub fn config_get(&self) -> ContractConfigView {
@@ -402,16 +408,19 @@ mod tests {
     }
 
     #[test]
-    fn lot_list_present_active() {
+    fn api_lot_list_present_active() {
         let context = get_context_simple(false);
         testing_env!(context);
         let mut contract = build_contract();
         let lot_bob_sells_alice = create_lot_bob_sells_alice(&mut contract);
         contract.internal_lot_save(&lot_bob_sells_alice);
 
+        let first_bid_amount = to_yocto(6);
+        let next_bid_amount = to_yocto(7500) / 1000;
+
         let bid: Bid = Bid {
             bidder_id: "carol".parse().unwrap(),
-            amount: to_yocto(7),
+            amount: first_bid_amount,
             timestamp: DAY_NANOSECONDS * 10,
         };
         contract.internal_lot_bid(&"alice".parse().unwrap(), &bid);
@@ -431,13 +440,13 @@ mod tests {
         assert_eq!(response.buy_now_price, to_yocto(10).into());
         assert_eq!(
             response.last_bid_amount,
-            Some((to_yocto(7)).into()),
-            "expected present last price 7 near"
+            Some(first_bid_amount.into()),
+            "wrong last_bid for active lot"
         );
         assert_eq!(
             response.next_bid_amount,
-            Some((to_yocto(7) + 1).into()),
-            "expected none next price for inactive lot"
+            Some(next_bid_amount.into()),
+            "wrong next bid for active lot"
         );
         assert_eq!(response.is_active, true);
         assert_eq!(response.is_withdrawn, false);
@@ -640,12 +649,12 @@ mod tests {
 
         let time_now: Timestamp = DAY_NANOSECONDS * 12;
         assert!(
-            lot.next_bid_amount(time_now).is_none(),
+            lot.next_bid_amount(time_now, contract.bid_step()).is_none(),
             "Expected next_bid_amount to be none for inactive lot",
         );
 
         let time_now: Timestamp = DAY_NANOSECONDS * 10;
-        assert_eq!(lot.next_bid_amount(time_now).unwrap(), to_yocto(5));
+        assert_eq!(lot.next_bid_amount(time_now, contract.bid_step()).unwrap(), to_yocto(5));
 
         let bid = Bid {
             bidder_id: "carol".parse().unwrap(),
@@ -653,7 +662,11 @@ mod tests {
             amount: to_yocto(6),
         };
         lot.bids.push(&bid);
-        assert_eq!(lot.next_bid_amount(time_now).unwrap(), to_yocto(6) + 1);
+        assert_eq!(
+            lot.next_bid_amount(time_now, contract.bid_step()).unwrap(),
+            to_yocto(7500) / 1000,
+            "wrong next bid",
+        );
     }
 
     // checks:
@@ -672,9 +685,12 @@ mod tests {
             contract.internal_lot_save(&lot);
         }
 
+        let first_bid_amount = to_yocto(6);
+        let second_bid_amount = to_yocto(8);
+
         let bid: Bid = Bid {
             bidder_id: "carol".parse().unwrap(),
-            amount: to_yocto(7),
+            amount: first_bid_amount,
             timestamp: DAY_NANOSECONDS * 10,
         };
         contract.internal_lot_bid(&"alice".parse().unwrap(), &bid);
@@ -684,8 +700,8 @@ mod tests {
         let last_bid = lot.bids.get(lot.bids.len() - 1).unwrap();
         assert_eq!(
             last_bid.amount,
-            to_yocto(7),
-            "expected last bid to be 6 near"
+            first_bid_amount,
+            "wrong first bid amount"
         );
         assert_eq!(
             last_bid.bidder_id,
@@ -700,17 +716,17 @@ mod tests {
 
         let bid: Bid = Bid {
             bidder_id: "carol".parse().unwrap(),
-            amount: to_yocto(8),
+            amount: second_bid_amount,
             timestamp: DAY_NANOSECONDS * 10 + 1,
         };
         contract.internal_lot_bid(&"alice".parse().unwrap(), &bid);
         let lot = contract.lots.get(&"alice".parse().unwrap()).unwrap();
-        assert_eq!(lot.bids.len(), 2, "expected one bid for lot");
+        assert_eq!(lot.bids.len(), 2, "wrong bids length");
 
         let last_bid = lot.bids.get(lot.bids.len() - 1).unwrap();
         assert_eq!(
             last_bid.amount,
-            to_yocto(8),
+            second_bid_amount,
             "expected last bid to be 6 near"
         );
         assert_eq!(
@@ -835,10 +851,12 @@ mod tests {
             contract.internal_lot_save(&lot);
         }
 
+        let first_bid_amount = to_yocto(6);
+        let second_bid_amount = to_yocto(8);
         {
             let context = get_context_with_payer(
                 &"carol".parse().unwrap(),
-                to_yocto(7),
+                first_bid_amount,
                 DAY_NANOSECONDS * 10,
             );
             testing_env!(context);
@@ -851,8 +869,8 @@ mod tests {
         let last_bid = lot.last_bid().unwrap();
         assert_eq!(
             last_bid.amount,
-            to_yocto(7),
-            "expected last bid to be 7 near"
+            first_bid_amount,
+            "wrong_first_bid"
         );
         assert_eq!(
             last_bid.bidder_id,
@@ -875,7 +893,7 @@ mod tests {
         {
             let profile_bob = contract.internal_profile_extract(&"bob".parse().unwrap());
             let expected = subtract_seller_reward_commission(
-                to_yocto(7),
+                first_bid_amount,
                 contract.seller_rewards_commission.clone(),
             );
             assert_eq!(
@@ -897,7 +915,7 @@ mod tests {
         {
             let context = get_context_with_payer(
                 &"dan".parse().unwrap(),
-                to_yocto(8),
+                second_bid_amount,
                 DAY_NANOSECONDS * 10 + 1,
             );
             testing_env!(context);
@@ -908,8 +926,8 @@ mod tests {
         let last_bid = lot.last_bid().unwrap();
         assert_eq!(
             last_bid.amount,
-            to_yocto(8),
-            "expected last bid to be 8 near"
+            second_bid_amount,
+            "wrong second bid amount"
         );
         assert_eq!(
             last_bid.bidder_id,
@@ -932,13 +950,13 @@ mod tests {
         {
             let profile_bob = contract.internal_profile_extract(&"bob".parse().unwrap());
             let expected = subtract_seller_reward_commission(
-                to_yocto(8),
+                second_bid_amount,
                 contract.seller_rewards_commission.clone(),
             );
             assert_eq!(
                 profile_bob.rewards_available,
                 expected,
-                "lot profile should have bid balance minus commission"
+                "wrong seller rewards after second bid"
             );
             contract.internal_profile_save(&profile_bob);
         }
@@ -946,7 +964,7 @@ mod tests {
             let profile_carol = contract.internal_profile_extract(&"carol".parse().unwrap());
             assert_eq!(
                 profile_carol.rewards_available,
-                to_yocto(7),
+                first_bid_amount,
                 "first bidder profile should have prev bid balance"
             );
             contract.internal_profile_save(&profile_carol);
