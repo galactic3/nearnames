@@ -1,7 +1,7 @@
 use near_sdk::serde_json::json;
 use near_sdk::Balance;
 use near_sdk_sim::{
-    call, deploy, init_simulator, to_yocto, view, ContractAccount, UserAccount, DEFAULT_GAS,
+    call, deploy, init_simulator, to_yocto, to_nanos, view, ContractAccount, UserAccount, DEFAULT_GAS,
     STORAGE_AMOUNT,
 };
 
@@ -88,8 +88,6 @@ fn create_user_locked(root: &UserAccount, name: &str) -> UserAccount {
     alice
 }
 
-const DAY_NANOSECONDS: u64 = 10u64.pow(9) * 60 * 60 * 24;
-
 fn subtract_seller_reward_commission(reward: Balance, commission: Fraction) -> Balance {
     reward - commission * reward
 }
@@ -115,7 +113,7 @@ fn simulate_lot_offer_buy_now() {
             bob.account_id.clone(),
             to_yocto("3").into(),
             to_yocto("10").into(),
-            (DAY_NANOSECONDS * 10).into()
+            (to_nanos(10)).into()
         )
     );
     assert!(result.is_ok());
@@ -209,7 +207,7 @@ fn simulate_lot_offer_withdraw() {
             bob.account_id.clone(),
             to_yocto("3").into(),
             to_yocto("10").into(),
-            (DAY_NANOSECONDS * 10).into()
+            (to_nanos(10)).into()
         )
     );
     assert!(result.is_ok());
