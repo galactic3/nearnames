@@ -418,11 +418,17 @@ impl Contract {
         // redistribute balances
         match last_bid {
             Some(last_bid) => {
-                let to_last_bid = last_bid.amount;
-                let to_seller = amount - to_last_bid;
+                let to_prev_bider = last_bid.amount;
+                let to_seller = amount - to_prev_bider;
                 let commission = self.seller_rewards_commission.clone() * to_seller;
                 let to_seller = to_seller - commission;
-                self.internal_profile_rewards_transfer(&last_bid.bidder_id, to_last_bid);
+
+                let prev_bidder_reward = self.prev_bidder_commission_share.clone() * commission;
+
+                self.internal_profile_rewards_transfer(
+                    &last_bid.bidder_id,
+                    to_prev_bider + prev_bidder_reward,
+                );
                 self.internal_profile_rewards_transfer(&lot.seller_id, to_seller);
             }
             None => {

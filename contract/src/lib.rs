@@ -151,9 +151,9 @@ mod tests {
 
     fn build_contract() -> Contract {
         Contract::new(
-            FractionView { num: 1, denom: 8 },
-            FractionView { num: 1, denom: 4 },
-            FractionView { num: 0, denom: 1 },
+            FractionView { num: 1, denom: 10 },
+            FractionView { num: 1, denom: 5 },
+            FractionView { num: 4, denom: 5 },
         )
     }
 
@@ -166,13 +166,18 @@ mod tests {
         let config = contract.config_get();
         assert_eq!(
             config.seller_rewards_commission,
-            FractionView { num: 1, denom: 8 },
+            FractionView { num: 1, denom: 10 },
             "wrong seller rewards commission",
         );
         assert_eq!(
             config.bid_step,
-            FractionView { num: 1, denom: 4 },
+            FractionView { num: 1, denom: 5 },
             "wrong bid_step",
+        );
+        assert_eq!(
+            config.prev_bidder_commission_share,
+            FractionView { num: 4, denom: 5 },
+            "wrong seller rewards commission",
         );
     }
 
@@ -444,7 +449,7 @@ mod tests {
         contract.internal_lot_save(&lot_bob_sells_alice);
 
         let first_bid_amount = to_yocto(6);
-        let next_bid_amount = to_yocto(7500) / 1000;
+        let next_bid_amount = first_bid_amount + contract.bid_step.clone() * first_bid_amount;
 
         let bid: Bid = Bid {
             bidder_id: "carol".parse().unwrap(),
@@ -695,10 +700,11 @@ mod tests {
             amount: to_yocto(6),
         };
         lot.bids.push(&bid);
+        let expected_next_bid_amount = bid.amount + contract.bid_step.clone() * bid.amount;
         assert_eq!(
             lot.next_bid_amount(time_now, contract.bid_step.clone())
                 .unwrap(),
-            to_yocto(7500) / 1000,
+            expected_next_bid_amount,
             "wrong next bid",
         );
 
@@ -995,10 +1001,18 @@ mod tests {
             contract.internal_profile_save(&profile_bob);
         }
         {
+            let first_bidder_rewards = first_bid_amount +
+                contract.prev_bidder_commission_share.clone() *
+                (
+                    contract.seller_rewards_commission.clone() * (
+                        second_bid_amount -
+                        first_bid_amount
+                    )
+                );
             let profile_carol = contract.internal_profile_extract(&"carol".parse().unwrap());
             assert_eq!(
-                profile_carol.rewards_available, first_bid_amount,
-                "first bidder profile should have prev bid balance"
+                profile_carol.rewards_available, first_bidder_rewards,
+                "first bidder profile should have prev bid balance plus commission"
             );
             contract.internal_profile_save(&profile_carol);
         }
