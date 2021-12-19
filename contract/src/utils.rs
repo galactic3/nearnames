@@ -43,7 +43,7 @@ impl ops::Mul<Balance> for Fraction {
     }
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, PartialEq, Eq)]
 #[serde(crate = "near_sdk::serde")]
 pub struct FractionView {
     pub num: u32,

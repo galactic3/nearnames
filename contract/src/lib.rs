@@ -61,19 +61,15 @@ pub struct Contract {
 #[serde(crate = "near_sdk::serde")]
 pub struct ContractConfigView {
     pub seller_rewards_commission: FractionView,
+    pub bid_step: FractionView,
 }
 
 impl From<&Contract> for ContractConfigView {
     fn from(contract: &Contract) -> ContractConfigView {
         ContractConfigView {
             seller_rewards_commission: (&contract.seller_rewards_commission).into(),
+            bid_step: (&contract.bid_step).into(),
         }
-    }
-}
-
-impl Contract {
-    pub fn bid_step(&self) -> Fraction {
-        Fraction::new(1, 4)
     }
 }
 
@@ -96,8 +92,9 @@ impl Contract {
                 seller_rewards_commission.denom,
             ),
             bid_step: Fraction::new(
-                bid_step.num, bid_step.denom,
-            )
+                bid_step.num,
+                bid_step.denom,
+            ),
         }
     }
 }
@@ -158,9 +155,16 @@ mod tests {
         let contract = build_contract();
 
         let config = contract.config_get();
-        let commission = config.seller_rewards_commission;
-        assert_eq!(commission.num, 1);
-        assert_eq!(commission.denom, 8);
+        assert_eq!(
+            config.seller_rewards_commission,
+            FractionView { num: 1, denom: 8 },
+            "wrong seller rewards commission",
+        );
+        assert_eq!(
+            config.bid_step,
+            FractionView { num: 1, denom: 4 },
+            "wrong bid_step",
+        );
     }
 
     #[test]
@@ -654,12 +658,12 @@ mod tests {
 
         let time_now: Timestamp = DAY_NANOSECONDS * 12;
         assert!(
-            lot.next_bid_amount(time_now, contract.bid_step()).is_none(),
+            lot.next_bid_amount(time_now, contract.bid_step.clone()).is_none(),
             "Expected next_bid_amount to be none for inactive lot",
         );
 
         let time_now: Timestamp = DAY_NANOSECONDS * 10;
-        assert_eq!(lot.next_bid_amount(time_now, contract.bid_step()).unwrap(), to_yocto(5));
+        assert_eq!(lot.next_bid_amount(time_now, contract.bid_step.clone()).unwrap(), to_yocto(5));
 
         let bid = Bid {
             bidder_id: "carol".parse().unwrap(),
@@ -668,7 +672,7 @@ mod tests {
         };
         lot.bids.push(&bid);
         assert_eq!(
-            lot.next_bid_amount(time_now, contract.bid_step()).unwrap(),
+            lot.next_bid_amount(time_now, contract.bid_step.clone()).unwrap(),
             to_yocto(7500) / 1000,
             "wrong next bid",
         );
