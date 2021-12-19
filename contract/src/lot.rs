@@ -1,8 +1,7 @@
 use crate::*;
 
 pub const ERR_LOT_SELLS_SELF: &str = "expected lot_id != seller_id";
-pub const ERR_LOT_PRICE_RESERVE_GREATER_THAN_BUY_NOW: &str =
-    "Expected reserve_price greater or equal buy_now_price";
+pub const ERR_LOT_PRICE_RESERVE_LE_BUY_NOW: &str = "expected reserve_price <= buy_now_price";
 pub const ERR_LOT_BID_LOT_NOT_ACTIVE: &str = "Expected lot to be active, cannot bid";
 pub const ERR_LOT_BID_BID_TOO_SMALL: &str = "Expected bigger bid, try again";
 pub const ERR_LOT_BID_SELLER_BIDS_SELF: &str = "Expected bidder_id is not equal to seller_id";
@@ -247,7 +246,7 @@ impl Lot {
         assert!(
             reserve_price <= buy_now_price,
             "{}",
-            ERR_LOT_PRICE_RESERVE_GREATER_THAN_BUY_NOW,
+            ERR_LOT_PRICE_RESERVE_LE_BUY_NOW,
         );
 
         // TODO: do we still nid to hash the key
@@ -545,11 +544,24 @@ mod tests {
     #[test]
     #[should_panic(expected="expected lot_id != seller_id")]
     fn test_lot_new_fail_lot_seller_same() {
-        let lot = Lot::new(
+        Lot::new(
             "alice".parse().unwrap(),
             "alice".parse().unwrap(),
-            0,
-            0,
+            to_yocto("0"),
+            to_yocto("0"),
+            to_ts(0),
+            to_nanos(0),
+        );
+    }
+
+    #[test]
+    #[should_panic(expected="expected reserve_price <= buy_now_price")]
+    fn test_lot_new_fail_reserve_grater_than_buy_now() {
+        Lot::new(
+            "alice".parse().unwrap(),
+            "bob".parse().unwrap(),
+            to_yocto("1"),
+            to_yocto("0"),
             to_ts(0),
             to_nanos(0),
         );
