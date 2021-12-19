@@ -1,11 +1,13 @@
 use near_sdk::serde_json::json;
 use near_sdk::Balance;
 use near_sdk_sim::{
-    call, deploy, init_simulator, to_yocto, view, ContractAccount, UserAccount, DEFAULT_GAS,
+    call, deploy, init_simulator, to_yocto, to_nanos, view, ContractAccount, UserAccount, DEFAULT_GAS,
     STORAGE_AMOUNT,
 };
 
-use marketplace::{ContractContract, LotView, ProfileView};
+use marketplace::{
+    ContractConfigView, ContractContract, Fraction, FractionView, LotView, ProfileView,
+};
 
 // not using lazy static because it breaks my language server
 pub const CONTRACT_BYTES: &[u8] = include_bytes!("../res/marketplace.wasm");
@@ -32,7 +34,12 @@ fn init() -> (UserAccount, ContractAccount<ContractContract>) {
         contract: ContractContract,
         contract_id: "marketplace".to_string(),
         bytes: &CONTRACT_BYTES,
-        signer_account: root
+        signer_account: root,
+        init_method: new(
+            FractionView { num: 1, denom: 8 },
+            FractionView { num: 1, denom: 4 },
+            FractionView { num: 0, denom: 1 }
+        ),
     );
 
     (root, counter)
@@ -81,7 +88,9 @@ fn create_user_locked(root: &UserAccount, name: &str) -> UserAccount {
     alice
 }
 
-const DAY_NANOSECONDS: u64 = 10u64.pow(9) * 60 * 60 * 24;
+fn subtract_seller_reward_commission(reward: Balance, commission: Fraction) -> Balance {
+    reward - commission * reward
+}
 
 #[test]
 fn simulate_lot_offer_buy_now() {
@@ -89,6 +98,10 @@ fn simulate_lot_offer_buy_now() {
     let alice: UserAccount = create_user_locked(&root, "alice");
     let bob: UserAccount = create_user(&root, "bob");
     let carol: UserAccount = create_user(&root, "carol");
+
+    let config: ContractConfigView = view!(contract.config_get()).unwrap_json();
+    let commission = config.seller_rewards_commission;
+    let commission = Fraction::new(commission.num, commission.denom);
 
     let balance_to_reserve = to_yocto("0.002");
     root.transfer(bob.account_id(), balance_to_reserve); // storage and future gas
@@ -100,7 +113,7 @@ fn simulate_lot_offer_buy_now() {
             bob.account_id.clone(),
             to_yocto("3").into(),
             to_yocto("10").into(),
-            (DAY_NANOSECONDS * 10).into()
+            (to_nanos(10)).into()
         )
     );
     assert!(result.is_ok());
@@ -163,13 +176,19 @@ fn simulate_lot_offer_buy_now() {
     assert!(result.is_ok());
     let result: Option<ProfileView> = result.unwrap_json();
     let result = result.unwrap();
-    assert_eq!(Balance::from(result.rewards_available), to_yocto("10"));
+
+    let seller_rewards = subtract_seller_reward_commission(to_yocto("10"), commission.clone());
+    assert_eq!(
+        Balance::from(result.rewards_available),
+        seller_rewards,
+        "wrong seller reward"
+    );
 
     root.transfer(bob.account_id(), to_yocto("0.2")); // storage and future gas
     let result = call!(bob, contract.profile_rewards_claim());
     assert!(result.is_ok());
 
-    bob.transfer(root.account_id(), to_yocto("10")); // storage and future gas
+    bob.transfer(root.account_id(), seller_rewards);
 }
 
 #[test]
@@ -188,7 +207,7 @@ fn simulate_lot_offer_withdraw() {
             bob.account_id.clone(),
             to_yocto("3").into(),
             to_yocto("10").into(),
-            (DAY_NANOSECONDS * 10).into()
+            (to_nanos(10)).into()
         )
     );
     assert!(result.is_ok());

@@ -35,11 +35,15 @@ impl From<&Profile> for ProfileView {
 
 impl Contract {
     pub(crate) fn internal_profile_extract(&mut self, profile_id: &ProfileId) -> Profile {
-        self.profiles.remove(&profile_id).unwrap_or_else(|| self.internal_profile_new(&profile_id))
+        self.profiles
+            .remove(&profile_id)
+            .unwrap_or_else(|| self.internal_profile_new(&profile_id))
     }
 
     pub(crate) fn internal_profile_get(&self, profile_id: &ProfileId) -> Profile {
-        self.profiles.get(&profile_id).unwrap_or_else(|| self.internal_profile_new(&profile_id))
+        self.profiles
+            .get(&profile_id)
+            .unwrap_or_else(|| self.internal_profile_new(&profile_id))
     }
 
     pub(crate) fn internal_profile_new(&self, profile_id: &ProfileId) -> Profile {

@@ -24,3 +24,7 @@ improve scalability
 improve e2e test coverage
 provile gas usages
 improve tokenomics
+Allow lot to call claim on itself ( to clean up state and be able to resell )
+Adopt single strategy for ref vs value arg passing
+make fraction dumb again
+use standard to_yocto

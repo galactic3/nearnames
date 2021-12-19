@@ -82,13 +82,16 @@ impl Lot {
         self.last_bid().map(|x| x.amount)
     }
 
-    pub fn next_bid_amount(&self, time_now: Timestamp) -> Option<Balance> {
+    pub fn next_bid_amount(&self, time_now: Timestamp, bid_step: Fraction) -> Option<Balance> {
         if !self.is_active(time_now) {
             return None;
         }
         if let Some(last_bid_amount) = self.last_bid_amount() {
-            // TODO: remove max, unreachable branch
-            Some(std::cmp::max(self.reserve_price, last_bid_amount + 1))
+            let mut next_bid_amount = last_bid_amount + bid_step * last_bid_amount;
+            if next_bid_amount == last_bid_amount {
+                next_bid_amount += 1;
+            }
+            Some(std::cmp::min(next_bid_amount, self.buy_now_price))
         } else {
             Some(self.reserve_price)
         }
@@ -178,9 +181,10 @@ pub struct LotView {
     pub status: String,
 }
 
-impl From<(&Lot, Timestamp)> for LotView {
-    fn from(args: (&Lot, Timestamp)) -> Self {
-        let (lot, now) = args;
+// TODO: convert to regular meethod
+impl From<(&Lot, Timestamp, &Contract)> for LotView {
+    fn from(args: (&Lot, Timestamp, &Contract)) -> Self {
+        let (lot, now, contract) = args;
         let last_bid = lot.last_bid();
 
         Self {
@@ -192,7 +196,9 @@ impl From<(&Lot, Timestamp)> for LotView {
             start_timestamp: lot.start_timestamp.into(),
             finish_timestamp: lot.finish_timestamp.into(),
             last_bid_amount: last_bid.as_ref().map(|x| x.amount.into()),
-            next_bid_amount: lot.next_bid_amount(now).map(|x| x.into()),
+            next_bid_amount: lot
+                .next_bid_amount(now, contract.bid_step.clone())
+                .map(|x| x.into()),
             is_active: lot.is_active(now),
             is_withdrawn: lot.is_withdrawn,
             status: lot.status(now).to_string(),
@@ -278,7 +284,10 @@ impl Contract {
             ERR_LOT_BID_LOT_NOT_ACTIVE
         );
         assert!(
-            bid.amount >= lot.next_bid_amount(bid.timestamp).unwrap(),
+            bid.amount
+                >= lot
+                    .next_bid_amount(bid.timestamp, self.bid_step.clone())
+                    .unwrap(),
             "{}",
             ERR_LOT_BID_BID_TOO_SMALL
         );
@@ -315,7 +324,7 @@ impl Contract {
 
     pub fn lot_list(&self) -> Vec<LotView> {
         let now = env::block_timestamp();
-        self.lots.values().map(|v| (&v, now).into()).collect()
+        self.lots.values().map(|v| (&v, now, self).into()).collect()
     }
 
     pub fn lot_list_offering_by(&self, profile_id: ProfileId) -> Vec<LotView> {
@@ -327,7 +336,7 @@ impl Contract {
             .iter()
             .map(|lot_id| {
                 let lot = self.lots.get(&lot_id).unwrap();
-                (&lot, time_now).into()
+                (&lot, time_now, self).into()
             })
             .collect()
     }
@@ -341,7 +350,7 @@ impl Contract {
             .iter()
             .map(|lot_id| {
                 let lot = self.lots.get(&lot_id).unwrap();
-                (&lot, time_now).into()
+                (&lot, time_now, self).into()
             })
             .collect()
     }
@@ -409,13 +418,23 @@ impl Contract {
         // redistribute balances
         match last_bid {
             Some(last_bid) => {
-                let to_last_bid = last_bid.amount;
-                let to_seller = amount - to_last_bid;
-                self.internal_profile_rewards_transfer(&last_bid.bidder_id, to_last_bid);
+                let to_prev_bider = last_bid.amount;
+                let to_seller = amount - to_prev_bider;
+                let commission = self.seller_rewards_commission.clone() * to_seller;
+                let to_seller = to_seller - commission;
+
+                let prev_bidder_reward = self.prev_bidder_commission_share.clone() * commission;
+
+                self.internal_profile_rewards_transfer(
+                    &last_bid.bidder_id,
+                    to_prev_bider + prev_bidder_reward,
+                );
                 self.internal_profile_rewards_transfer(&lot.seller_id, to_seller);
             }
             None => {
                 let to_seller = amount;
+                let commission = self.seller_rewards_commission.clone() * to_seller;
+                let to_seller = to_seller - commission;
                 self.internal_profile_rewards_transfer(&lot.seller_id, to_seller)
             }
         }
