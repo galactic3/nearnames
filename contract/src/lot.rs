@@ -234,9 +234,8 @@ impl From<Bid> for BidView {
     }
 }
 
-impl Contract {
-    pub(crate) fn internal_lot_create(
-        &mut self,
+impl Lot {
+    pub fn new(
         lot_id: LotId,
         seller_id: ProfileId,
         reserve_price: Balance,
@@ -267,7 +266,9 @@ impl Contract {
             bids: Vector::new(prefix),
         }
     }
+}
 
+impl Contract {
     pub(crate) fn internal_lot_extract(&mut self, lot_id: &LotId) -> Lot {
         self.lots.remove(&lot_id).unwrap()
     }
@@ -369,7 +370,7 @@ impl Contract {
         let time_now = env::block_timestamp();
         let duration: Duration = duration.into();
 
-        let lot = self.internal_lot_create(
+        let lot = Lot::new(
             lot_id.clone(),
             seller_id.clone(),
             reserve_price,

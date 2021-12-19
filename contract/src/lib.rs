@@ -238,14 +238,14 @@ mod tests {
         contract.internal_lot_extract(&"alice".parse().unwrap());
     }
 
-    fn create_lot_bob_sells_alice(contract: &mut Contract) -> Lot {
+    fn create_lot_bob_sells_alice() -> Lot {
         let reserve_price = to_yocto("5");
         let buy_now_price = to_yocto("10");
 
         let time_now = to_ts(10);
         let duration = to_nanos(1);
 
-        contract.internal_lot_create(
+        Lot::new(
             "alice".parse().unwrap(),
             "bob".parse().unwrap(),
             reserve_price,
@@ -286,11 +286,7 @@ mod tests {
 
     #[test]
     fn internal_lot_create_fields() {
-        let context = get_context_simple(false);
-        testing_env!(context);
-        let mut contract = build_contract();
-
-        let lot = create_lot_bob_sells_alice(&mut contract);
+        let lot = create_lot_bob_sells_alice();
         assert_eq!(
             lot.lot_id,
             "alice".parse().unwrap(),
@@ -335,7 +331,7 @@ mod tests {
             "expected contract.lots.len() == 0 after extract"
         );
 
-        let lot_bob_sells_alice = create_lot_bob_sells_alice(&mut contract);
+        let lot_bob_sells_alice = create_lot_bob_sells_alice();
         contract.internal_lot_save(&lot_bob_sells_alice);
         assert_eq!(
             contract.lots.len(),
@@ -377,7 +373,7 @@ mod tests {
         let context = get_context_simple(false);
         testing_env!(context);
         let mut contract = build_contract();
-        let lot_bob_sells_alice = create_lot_bob_sells_alice(&mut contract);
+        let lot_bob_sells_alice = create_lot_bob_sells_alice();
         contract.internal_lot_save(&lot_bob_sells_alice);
 
         let response: Vec<LotView> = contract.lot_list();
@@ -404,7 +400,7 @@ mod tests {
         let context = get_context_simple(false);
         testing_env!(context);
         let mut contract = build_contract();
-        let lot_bob_sells_alice = create_lot_bob_sells_alice(&mut contract);
+        let lot_bob_sells_alice = create_lot_bob_sells_alice();
         contract.internal_lot_save(&lot_bob_sells_alice);
 
         let bid: Bid = Bid {
@@ -443,7 +439,7 @@ mod tests {
         let context = get_context_simple(false);
         testing_env!(context);
         let mut contract = build_contract();
-        let lot_bob_sells_alice = create_lot_bob_sells_alice(&mut contract);
+        let lot_bob_sells_alice = create_lot_bob_sells_alice();
         contract.internal_lot_save(&lot_bob_sells_alice);
 
         let first_bid_amount = to_yocto("6");
@@ -488,7 +484,7 @@ mod tests {
         let context = get_context_simple(false);
         testing_env!(context);
         let mut contract = build_contract();
-        let mut lot = create_lot_bob_sells_alice(&mut contract);
+        let mut lot = create_lot_bob_sells_alice();
         lot.is_withdrawn = true;
         contract.internal_lot_save(&lot);
 
@@ -504,11 +500,7 @@ mod tests {
 
     #[test]
     fn lot_is_active_by_tm() {
-        let context = get_context_simple(false);
-        testing_env!(context);
-
-        let mut contract = build_contract();
-        let lot_bob_sells_alice = create_lot_bob_sells_alice(&mut contract);
+        let lot_bob_sells_alice = create_lot_bob_sells_alice();
         // we don't care about starting time, it's just for the record
         assert_eq!(lot_bob_sells_alice.is_active(to_ts(9)), true);
         assert_eq!(lot_bob_sells_alice.is_active(to_ts(10)), true);
@@ -526,7 +518,7 @@ mod tests {
         testing_env!(context);
         let mut contract = build_contract();
         {
-            let lot = create_lot_bob_sells_alice(&mut contract);
+            let lot = create_lot_bob_sells_alice();
             contract.internal_lot_save(&lot);
         }
         let lot = contract.lots.get(&"alice".parse().unwrap()).unwrap();
@@ -555,7 +547,7 @@ mod tests {
         testing_env!(context);
         let mut contract = build_contract();
         {
-            let lot = create_lot_bob_sells_alice(&mut contract);
+            let lot = create_lot_bob_sells_alice();
             contract.internal_lot_save(&lot);
         }
         let mut lot = contract.lots.get(&"alice".parse().unwrap()).unwrap();
@@ -641,10 +633,7 @@ mod tests {
 
     #[test]
     fn last_bid_amount() {
-        let context = get_context_simple(false);
-        testing_env!(context);
-        let mut contract = build_contract();
-        let mut lot = create_lot_bob_sells_alice(&mut contract);
+        let mut lot = create_lot_bob_sells_alice();
         assert!(
             lot.last_bid_amount().is_none(),
             "expected last_bid_amount to be None"
@@ -671,8 +660,8 @@ mod tests {
     fn next_bid_amount() {
         let context = get_context_simple(false);
         testing_env!(context);
-        let mut contract = build_contract();
-        let mut lot = create_lot_bob_sells_alice(&mut contract);
+        let contract = build_contract();
+        let mut lot = create_lot_bob_sells_alice();
         assert!(
             lot.last_bid_amount().is_none(),
             "expected last_bid_amount to be None"
@@ -731,7 +720,7 @@ mod tests {
         testing_env!(context);
         let mut contract = build_contract();
         {
-            let lot = create_lot_bob_sells_alice(&mut contract);
+            let lot = create_lot_bob_sells_alice();
             contract.internal_lot_save(&lot);
         }
 
@@ -793,7 +782,7 @@ mod tests {
         testing_env!(context);
         let mut contract = build_contract();
         {
-            let lot = create_lot_bob_sells_alice(&mut contract);
+            let lot = create_lot_bob_sells_alice();
             contract.internal_lot_save(&lot);
         }
         let bid: Bid = Bid {
@@ -811,7 +800,7 @@ mod tests {
         testing_env!(context);
         let mut contract = build_contract();
         {
-            let lot = create_lot_bob_sells_alice(&mut contract);
+            let lot = create_lot_bob_sells_alice();
             contract.internal_lot_save(&lot);
         }
         let bid: Bid = Bid {
@@ -829,7 +818,7 @@ mod tests {
         testing_env!(context);
         let mut contract = build_contract();
         {
-            let lot = create_lot_bob_sells_alice(&mut contract);
+            let lot = create_lot_bob_sells_alice();
             contract.internal_lot_save(&lot);
         }
 
@@ -859,7 +848,7 @@ mod tests {
         testing_env!(context);
         let mut contract = build_contract();
         {
-            let lot = create_lot_bob_sells_alice(&mut contract);
+            let lot = create_lot_bob_sells_alice();
             contract.internal_lot_save(&lot);
         }
 
@@ -892,7 +881,7 @@ mod tests {
         testing_env!(context);
         let mut contract = build_contract();
         {
-            let lot = create_lot_bob_sells_alice(&mut contract);
+            let lot = create_lot_bob_sells_alice();
             contract.internal_lot_save(&lot);
         }
 
@@ -1031,7 +1020,7 @@ mod tests {
         testing_env!(context);
         let mut contract = build_contract();
         {
-            let lot = create_lot_bob_sells_alice(&mut contract);
+            let lot = create_lot_bob_sells_alice();
             contract.internal_lot_save(&lot);
         }
 
@@ -1053,7 +1042,7 @@ mod tests {
         testing_env!(context);
         let mut contract = build_contract();
         {
-            let lot = create_lot_bob_sells_alice(&mut contract);
+            let lot = create_lot_bob_sells_alice();
             contract.internal_lot_save(&lot);
         }
 
@@ -1074,7 +1063,7 @@ mod tests {
         testing_env!(context);
         let mut contract = build_contract();
         {
-            let lot = create_lot_bob_sells_alice(&mut contract);
+            let lot = create_lot_bob_sells_alice();
             contract.internal_lot_save(&lot);
         }
 
@@ -1090,7 +1079,7 @@ mod tests {
         testing_env!(context);
         let mut contract = build_contract();
         {
-            let lot = create_lot_bob_sells_alice(&mut contract);
+            let lot = create_lot_bob_sells_alice();
             contract.internal_lot_save(&lot);
         }
 
@@ -1106,7 +1095,7 @@ mod tests {
         testing_env!(context);
         let mut contract = build_contract();
         {
-            let lot = create_lot_bob_sells_alice(&mut contract);
+            let lot = create_lot_bob_sells_alice();
             contract.internal_lot_save(&lot);
         }
 
@@ -1129,7 +1118,7 @@ mod tests {
         testing_env!(context);
         let mut contract = build_contract();
         {
-            let lot = create_lot_bob_sells_alice(&mut contract);
+            let lot = create_lot_bob_sells_alice();
             contract.internal_lot_save(&lot);
         }
 
@@ -1148,7 +1137,7 @@ mod tests {
         testing_env!(context);
         let mut contract = build_contract();
         {
-            let lot = create_lot_bob_sells_alice(&mut contract);
+            let lot = create_lot_bob_sells_alice();
             contract.internal_lot_save(&lot);
         }
 
@@ -1180,7 +1169,7 @@ mod tests {
         testing_env!(context);
         let mut contract = build_contract();
         {
-            let lot = create_lot_bob_sells_alice(&mut contract);
+            let lot = create_lot_bob_sells_alice();
             contract.internal_lot_save(&lot);
         }
 
@@ -1199,7 +1188,7 @@ mod tests {
         testing_env!(context);
         let mut contract = build_contract();
         {
-            let lot = create_lot_bob_sells_alice(&mut contract);
+            let lot = create_lot_bob_sells_alice();
             contract.internal_lot_save(&lot);
         }
 
