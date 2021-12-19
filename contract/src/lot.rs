@@ -85,14 +85,6 @@ impl Lot {
         }
     }
 
-    pub fn last_bid(&self) -> Option<Bid> {
-        if self.bids.is_empty() {
-            None
-        } else {
-            Some(self.bids.get(self.bids.len() - 1).unwrap())
-        }
-    }
-
     pub fn is_active(&self, time_now: Timestamp) -> bool {
         if time_now >= self.finish_timestamp {
             return false;
@@ -107,6 +99,14 @@ impl Lot {
         }
 
         true
+    }
+
+    pub fn last_bid(&self) -> Option<Bid> {
+        if self.bids.is_empty() {
+            None
+        } else {
+            Some(self.bids.get(self.bids.len() - 1).unwrap())
+        }
     }
 
     pub fn last_bid_amount(&self) -> Option<Balance> {
@@ -563,5 +563,22 @@ mod tests {
             to_ts(0),
             to_nanos(0),
         );
+    }
+
+    #[test]
+    fn test_lot_is_active_by_time_now() {
+        let lot = create_lot_bob_sells_alice();
+        assert_eq!(lot.is_active(to_ts(10) - 1), true);
+        assert_eq!(lot.is_active(to_ts(10)), true);
+        assert_eq!(lot.is_active(to_ts(17) - 1), true);
+        assert_eq!(lot.is_active(to_ts(17)), false);
+        assert_eq!(lot.is_active(to_ts(17) + 1), false);
+    }
+
+    #[test]
+    fn test_lot_is_active_by_is_withdrawn() {
+        let mut lot = create_lot_bob_sells_alice();
+        lot.is_withdrawn = true;
+        assert_eq!(lot.is_active(to_ts(10)), false);
     }
 }

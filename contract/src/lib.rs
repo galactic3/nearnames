@@ -464,20 +464,6 @@ mod tests {
     }
 
     #[test]
-    fn lot_is_active_by_tm() {
-        let lot_bob_sells_alice = create_lot_bob_sells_alice();
-        // we don't care about starting time, it's just for the record
-        assert_eq!(lot_bob_sells_alice.is_active(to_ts(9)), true);
-        assert_eq!(lot_bob_sells_alice.is_active(to_ts(10)), true);
-        assert_eq!(
-            lot_bob_sells_alice.is_active(to_ts(11) - 1),
-            true
-        );
-        assert_eq!(lot_bob_sells_alice.is_active(to_ts(11)), false);
-        assert_eq!(lot_bob_sells_alice.is_active(to_ts(12)), false);
-    }
-
-    #[test]
     fn lot_is_active_buy_now() {
         let context = get_context_simple(false);
         testing_env!(context);
