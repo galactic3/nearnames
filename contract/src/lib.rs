@@ -1,6 +1,7 @@
 mod lot;
 mod profile;
 mod utils;
+mod fraction;
 
 use std::collections::HashSet;
 use std::fmt;
@@ -16,6 +17,7 @@ use near_sdk::{
 };
 use uint::construct_uint;
 
+pub use crate::fraction::*;
 pub use crate::lot::*;
 pub use crate::profile::*;
 pub use crate::utils::*;
@@ -1392,56 +1394,5 @@ mod tests {
             let result = contract.lot_list_bidding_by("bob".parse().unwrap());
             assert!(result.is_empty(), "lot_bidding for bob must be empty");
         }
-    }
-
-    #[test]
-    pub fn test_fractions_new() {
-        {
-            Fraction::new(0, 1);
-            Fraction::new(1, 1);
-            Fraction::new(7, 13);
-            Fraction::new(13, 13);
-        }
-    }
-
-    #[test]
-    #[should_panic(expected = "expected denom > 0")]
-    pub fn test_fractions_new_fail_zero_denum() {
-        {
-            Fraction::new(0, 0);
-        }
-    }
-
-    #[test]
-    #[should_panic(expected = "expected num <= denom")]
-    pub fn test_fractions_new_fail_greater_than_one() {
-        {
-            Fraction::new(2, 1);
-        }
-    }
-
-    #[test]
-    pub fn test_fractions_mul() {
-        assert_eq!(
-            Fraction::new(0, 13) * 10,
-            0,
-            "expected zero mul for zero fraction"
-        );
-        assert_eq!(
-            Fraction::new(7, 13) * 0,
-            0,
-            "expected zero mul for zero balance"
-        );
-        assert_eq!(
-            Fraction::new(13, 13) * 100,
-            100,
-            "expected same mul one fraction"
-        );
-        assert_eq!(
-            Fraction::new(7, 13) * 100,
-            53,
-            "expected zero mul for zero balance"
-        );
-        assert_eq!(Fraction::new(1, 2) * 9, 4, "expected floor rounding");
     }
 }
