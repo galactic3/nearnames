@@ -37,7 +37,8 @@ fn init() -> (UserAccount, ContractAccount<ContractContract>) {
         signer_account: root,
         init_method: new(
             FractionView { num: 1, denom: 8 },
-            FractionView { num: 1, denom: 4 }
+            FractionView { num: 1, denom: 4 },
+            FractionView { num: 0, denom: 1 }
         ),
     );
 

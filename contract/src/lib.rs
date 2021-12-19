@@ -55,6 +55,7 @@ pub struct Contract {
     pub lots: UnorderedMap<LotId, Lot>,
     pub seller_rewards_commission: Fraction,
     pub bid_step: Fraction,
+    pub prev_bidder_commission_share: Fraction,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -62,6 +63,7 @@ pub struct Contract {
 pub struct ContractConfigView {
     pub seller_rewards_commission: FractionView,
     pub bid_step: FractionView,
+    pub prev_bidder_commission_share: FractionView,
 }
 
 impl From<&Contract> for ContractConfigView {
@@ -69,6 +71,7 @@ impl From<&Contract> for ContractConfigView {
         ContractConfigView {
             seller_rewards_commission: (&contract.seller_rewards_commission).into(),
             bid_step: (&contract.bid_step).into(),
+            prev_bidder_commission_share: (&contract.prev_bidder_commission_share).into(),
         }
     }
 }
@@ -80,7 +83,11 @@ impl Contract {
     }
 
     #[init(ignore_state)]
-    pub fn new(seller_rewards_commission: FractionView, bid_step: FractionView) -> Self {
+    pub fn new(
+        seller_rewards_commission: FractionView,
+        bid_step: FractionView,
+        prev_bidder_commission_share: FractionView,
+    ) -> Self {
         Self {
             profiles: UnorderedMap::new(PREFIX_PROFILES.as_bytes().to_vec()),
             lots: UnorderedMap::new(PREFIX_LOTS.as_bytes().to_vec()),
@@ -89,6 +96,10 @@ impl Contract {
                 seller_rewards_commission.denom,
             ),
             bid_step: Fraction::new(bid_step.num, bid_step.denom),
+            prev_bidder_commission_share: Fraction::new(
+                prev_bidder_commission_share.num,
+                prev_bidder_commission_share.denom,
+            ),
         }
     }
 }
@@ -142,6 +153,7 @@ mod tests {
         Contract::new(
             FractionView { num: 1, denom: 8 },
             FractionView { num: 1, denom: 4 },
+            FractionView { num: 0, denom: 1 },
         )
     }
 
