@@ -285,41 +285,6 @@ mod tests {
     }
 
     #[test]
-    fn internal_lot_create_fields() {
-        let lot = create_lot_bob_sells_alice();
-        assert_eq!(
-            lot.lot_id,
-            "alice".parse().unwrap(),
-            "expected lot.lot_id = alice"
-        );
-        assert_eq!(
-            lot.seller_id,
-            "bob".parse().unwrap(),
-            "expected lot.seller_id = bob"
-        );
-        assert_eq!(
-            lot.reserve_price,
-            to_yocto("5"),
-            "expected reserve price 5 yocto"
-        );
-        assert_eq!(
-            lot.buy_now_price,
-            to_yocto("10"),
-            "expected buy now price 10 yocto"
-        );
-        assert_eq!(
-            lot.start_timestamp,
-            to_ts(10),
-            "expected start day ten"
-        );
-        assert_eq!(
-            lot.finish_timestamp,
-            to_ts(11),
-            "expected finish day eleven"
-        );
-    }
-
-    #[test]
     fn internal_lot_create_save_extract() {
         let context = get_context_simple(false);
         testing_env!(context);

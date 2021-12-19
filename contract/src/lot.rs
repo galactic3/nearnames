@@ -505,3 +505,40 @@ impl Contract {
         true
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use near_sdk_sim::{to_nanos, to_ts, to_yocto};
+
+    fn create_lot_bob_sells_alice() -> Lot {
+        let reserve_price = to_yocto("2");
+        let buy_now_price = to_yocto("10");
+
+        let time_now = to_ts(10);
+        let duration = to_nanos(7);
+
+        Lot::new(
+            "alice".parse().unwrap(),
+            "bob".parse().unwrap(),
+            reserve_price,
+            buy_now_price,
+            time_now,
+            duration,
+        )
+    }
+
+    #[test]
+    fn test_lot_new() {
+        let lot = create_lot_bob_sells_alice();
+        assert_eq!(lot.lot_id, "alice".parse().unwrap(), "wrong lot_id");
+        assert_eq!(lot.seller_id, "bob".parse().unwrap(), "wrong seller_id");
+        assert_eq!(lot.reserve_price, to_yocto("2"), "wrong reserve_price");
+        assert_eq!(lot.buy_now_price, to_yocto("10"), "wrong buy_now_price");
+        assert_eq!(lot.start_timestamp, to_ts(10), "wrong start_timestamp");
+        assert_eq!(lot.finish_timestamp, to_ts(17), "wrong finish_timestamp");
+        assert_eq!(lot.is_withdrawn, false, "expected withdrawn false");
+        assert!(lot.bids.is_empty(), "expected bids list is empty");
+    }
+}
