@@ -53,6 +53,38 @@ pub struct Lot {
 }
 
 impl Lot {
+    pub fn new(
+        lot_id: LotId,
+        seller_id: ProfileId,
+        reserve_price: Balance,
+        buy_now_price: Balance,
+        time_now: Timestamp,
+        duration: Duration,
+    ) -> Lot {
+        assert_ne!(lot_id, seller_id, "{}", ERR_LOT_SELLS_SELF);
+        assert!(
+            reserve_price <= buy_now_price,
+            "{}",
+            ERR_LOT_PRICE_RESERVE_LE_BUY_NOW,
+        );
+
+        // TODO: do we still need to hash the key
+        let mut prefix: Vec<u8> = Vec::with_capacity(33);
+        prefix.extend(PREFIX_LOTS_BIDS.as_bytes());
+        prefix.extend(env::sha256(lot_id.as_bytes()));
+
+        Lot {
+            lot_id,
+            seller_id,
+            reserve_price,
+            buy_now_price,
+            start_timestamp: time_now,
+            finish_timestamp: time_now + duration,
+            is_withdrawn: false,
+            bids: Vector::new(prefix),
+        }
+    }
+
     pub fn last_bid(&self) -> Option<Bid> {
         if self.bids.is_empty() {
             None
@@ -229,40 +261,6 @@ impl From<Bid> for BidView {
             bidder_id: bid.bidder_id.clone(),
             amount: bid.amount.into(),
             timestamp: bid.timestamp.into(),
-        }
-    }
-}
-
-impl Lot {
-    pub fn new(
-        lot_id: LotId,
-        seller_id: ProfileId,
-        reserve_price: Balance,
-        buy_now_price: Balance,
-        time_now: Timestamp,
-        duration: Duration,
-    ) -> Lot {
-        assert_ne!(lot_id, seller_id, "{}", ERR_LOT_SELLS_SELF);
-        assert!(
-            reserve_price <= buy_now_price,
-            "{}",
-            ERR_LOT_PRICE_RESERVE_LE_BUY_NOW,
-        );
-
-        // TODO: do we still nid to hash the key
-        let mut prefix: Vec<u8> = Vec::with_capacity(33);
-        prefix.extend(PREFIX_LOTS_BIDS.as_bytes());
-        prefix.extend(env::sha256(lot_id.as_bytes()));
-
-        Lot {
-            lot_id,
-            seller_id,
-            reserve_price,
-            buy_now_price,
-            start_timestamp: time_now,
-            finish_timestamp: time_now + duration,
-            is_withdrawn: false,
-            bids: Vector::new(prefix),
         }
     }
 }
