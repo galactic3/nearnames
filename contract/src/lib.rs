@@ -447,7 +447,7 @@ mod tests {
         contract.internal_lot_save(&lot_bob_sells_alice);
 
         let first_bid_amount = to_yocto("6");
-        let next_bid_amount = first_bid_amount + contract.bid_step.clone() * first_bid_amount;
+        let next_bid_amount = first_bid_amount + contract.bid_step * first_bid_amount;
 
         let bid: Bid = Bid {
             bidder_id: "carol".parse().unwrap(),
@@ -680,14 +680,14 @@ mod tests {
 
         let time_now: Timestamp = to_ts(12);
         assert!(
-            lot.next_bid_amount(time_now, contract.bid_step.clone())
+            lot.next_bid_amount(time_now, contract.bid_step)
                 .is_none(),
             "Expected next_bid_amount to be none for inactive lot",
         );
 
         let time_now: Timestamp = to_ts(10);
         assert_eq!(
-            lot.next_bid_amount(time_now, contract.bid_step.clone())
+            lot.next_bid_amount(time_now, contract.bid_step)
                 .unwrap(),
             to_yocto("5")
         );
@@ -698,9 +698,9 @@ mod tests {
             amount: to_yocto("6"),
         };
         lot.bids.push(&bid);
-        let expected_next_bid_amount = bid.amount + contract.bid_step.clone() * bid.amount;
+        let expected_next_bid_amount = bid.amount + contract.bid_step * bid.amount;
         assert_eq!(
-            lot.next_bid_amount(time_now, contract.bid_step.clone())
+            lot.next_bid_amount(time_now, contract.bid_step)
                 .unwrap(),
             expected_next_bid_amount,
             "wrong next bid",
@@ -935,7 +935,7 @@ mod tests {
             let profile_bob = contract.internal_profile_extract(&"bob".parse().unwrap());
             let expected = subtract_seller_reward_commission(
                 first_bid_amount,
-                contract.seller_rewards_commission.clone(),
+                contract.seller_rewards_commission,
             );
             assert_eq!(
                 profile_bob.rewards_available, expected,
@@ -990,7 +990,7 @@ mod tests {
             let profile_bob = contract.internal_profile_extract(&"bob".parse().unwrap());
             let expected = subtract_seller_reward_commission(
                 second_bid_amount,
-                contract.seller_rewards_commission.clone(),
+                contract.seller_rewards_commission,
             );
             assert_eq!(
                 profile_bob.rewards_available, expected,
@@ -1000,9 +1000,9 @@ mod tests {
         }
         {
             let first_bidder_rewards = first_bid_amount +
-                contract.prev_bidder_commission_share.clone() *
+                contract.prev_bidder_commission_share *
                 (
-                    contract.seller_rewards_commission.clone() * (
+                    contract.seller_rewards_commission * (
                         second_bid_amount -
                         first_bid_amount
                     )

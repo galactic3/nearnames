@@ -1,6 +1,6 @@
 use crate::*;
 
-#[derive(BorshDeserialize, BorshSerialize, Debug, Clone)]
+#[derive(BorshDeserialize, BorshSerialize, Debug, Clone, Copy)]
 pub struct Fraction {
     num: u32,
     denom: u32,

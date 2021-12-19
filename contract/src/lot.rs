@@ -420,10 +420,10 @@ impl Contract {
             Some(last_bid) => {
                 let to_prev_bider = last_bid.amount;
                 let to_seller = amount - to_prev_bider;
-                let commission = self.seller_rewards_commission.clone() * to_seller;
+                let commission = self.seller_rewards_commission * to_seller;
                 let to_seller = to_seller - commission;
 
-                let prev_bidder_reward = self.prev_bidder_commission_share.clone() * commission;
+                let prev_bidder_reward = self.prev_bidder_commission_share * commission;
 
                 self.internal_profile_rewards_transfer(
                     &last_bid.bidder_id,
@@ -433,7 +433,7 @@ impl Contract {
             }
             None => {
                 let to_seller = amount;
-                let commission = self.seller_rewards_commission.clone() * to_seller;
+                let commission = self.seller_rewards_commission * to_seller;
                 let to_seller = to_seller - commission;
                 self.internal_profile_rewards_transfer(&lot.seller_id, to_seller)
             }
