@@ -16,14 +16,18 @@ pub fn is_promise_success() -> bool {
 pub struct Fraction {
     num: u32,
     denom: u32,
-    _private: ()
+    _private: (),
 }
 
 impl Fraction {
     pub fn new(num: u32, denom: u32) -> Self {
         assert!(num <= denom, "expected num <= denom");
         assert!(denom > 0, "expected denom > 0");
-        Self { num, denom, _private: () }
+        Self {
+            num,
+            denom,
+            _private: (),
+        }
     }
 
     pub fn num(&self) -> u32 {
@@ -52,6 +56,9 @@ pub struct FractionView {
 
 impl From<&Fraction> for FractionView {
     fn from(fraction: &Fraction) -> FractionView {
-        FractionView { num: fraction.num, denom: fraction.denom }
+        FractionView {
+            num: fraction.num,
+            denom: fraction.denom,
+        }
     }
 }

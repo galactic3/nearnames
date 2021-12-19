@@ -6,7 +6,7 @@ use near_sdk_sim::{
 };
 
 use marketplace::{
-    ContractContract, LotView, ProfileView, Fraction, ContractConfigView, FractionView,
+    ContractConfigView, ContractContract, Fraction, FractionView, LotView, ProfileView,
 };
 
 // not using lazy static because it breaks my language server
@@ -179,7 +179,11 @@ fn simulate_lot_offer_buy_now() {
     let result = result.unwrap();
 
     let seller_rewards = subtract_seller_reward_commission(to_yocto("10"), commission.clone());
-    assert_eq!(Balance::from(result.rewards_available), seller_rewards, "wrong seller reward");
+    assert_eq!(
+        Balance::from(result.rewards_available),
+        seller_rewards,
+        "wrong seller reward"
+    );
 
     root.transfer(bob.account_id(), to_yocto("0.2")); // storage and future gas
     let result = call!(bob, contract.profile_rewards_claim());

@@ -196,7 +196,9 @@ impl From<(&Lot, Timestamp, &Contract)> for LotView {
             start_timestamp: lot.start_timestamp.into(),
             finish_timestamp: lot.finish_timestamp.into(),
             last_bid_amount: last_bid.as_ref().map(|x| x.amount.into()),
-            next_bid_amount: lot.next_bid_amount(now, contract.bid_step.clone()).map(|x| x.into()),
+            next_bid_amount: lot
+                .next_bid_amount(now, contract.bid_step.clone())
+                .map(|x| x.into()),
             is_active: lot.is_active(now),
             is_withdrawn: lot.is_withdrawn,
             status: lot.status(now).to_string(),
@@ -282,7 +284,10 @@ impl Contract {
             ERR_LOT_BID_LOT_NOT_ACTIVE
         );
         assert!(
-            bid.amount >= lot.next_bid_amount(bid.timestamp, self.bid_step.clone()).unwrap(),
+            bid.amount
+                >= lot
+                    .next_bid_amount(bid.timestamp, self.bid_step.clone())
+                    .unwrap(),
             "{}",
             ERR_LOT_BID_BID_TOO_SMALL
         );

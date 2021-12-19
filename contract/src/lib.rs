@@ -2,17 +2,17 @@ mod lot;
 mod profile;
 mod utils;
 
+use std::collections::HashSet;
 use std::fmt;
 use std::ops;
-use std::collections::HashSet;
 
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{UnorderedMap, UnorderedSet, Vector};
 use near_sdk::json_types::{U128, U64};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{
-    env, ext_contract, near_bindgen, AccountId, Balance, Duration, Promise, PromiseResult,
-    PublicKey, Timestamp, PanicOnDefault
+    env, ext_contract, near_bindgen, AccountId, Balance, Duration, PanicOnDefault, Promise,
+    PromiseResult, PublicKey, Timestamp,
 };
 use uint::construct_uint;
 
@@ -80,10 +80,7 @@ impl Contract {
     }
 
     #[init(ignore_state)]
-    pub fn new(
-        seller_rewards_commission: FractionView,
-        bid_step: FractionView,
-    ) -> Self {
+    pub fn new(seller_rewards_commission: FractionView, bid_step: FractionView) -> Self {
         Self {
             profiles: UnorderedMap::new(PREFIX_PROFILES.as_bytes().to_vec()),
             lots: UnorderedMap::new(PREFIX_LOTS.as_bytes().to_vec()),
@@ -91,10 +88,7 @@ impl Contract {
                 seller_rewards_commission.num,
                 seller_rewards_commission.denom,
             ),
-            bid_step: Fraction::new(
-                bid_step.num,
-                bid_step.denom,
-            ),
+            bid_step: Fraction::new(bid_step.num, bid_step.denom),
         }
     }
 }
@@ -145,7 +139,10 @@ mod tests {
     }
 
     fn build_contract() -> Contract {
-        Contract::new(FractionView { num: 1, denom: 8 }, FractionView { num: 1, denom: 4 })
+        Contract::new(
+            FractionView { num: 1, denom: 8 },
+            FractionView { num: 1, denom: 4 },
+        )
     }
 
     #[test]
@@ -175,9 +172,19 @@ mod tests {
 
         let profile = contract.profile_get("alice".parse().unwrap());
 
-        assert_eq!(profile.profile_id, "alice".parse().unwrap(), "Expected profile_id alice");
-        assert_eq!(profile.rewards_available.0, 0, "Expected zero rewards_available");
-        assert_eq!(profile.rewards_claimed.0, 0, "Expected zero rewards_claimed");
+        assert_eq!(
+            profile.profile_id,
+            "alice".parse().unwrap(),
+            "Expected profile_id alice"
+        );
+        assert_eq!(
+            profile.rewards_available.0, 0,
+            "Expected zero rewards_available"
+        );
+        assert_eq!(
+            profile.rewards_claimed.0, 0,
+            "Expected zero rewards_claimed"
+        );
     }
 
     #[test]
@@ -658,12 +665,17 @@ mod tests {
 
         let time_now: Timestamp = DAY_NANOSECONDS * 12;
         assert!(
-            lot.next_bid_amount(time_now, contract.bid_step.clone()).is_none(),
+            lot.next_bid_amount(time_now, contract.bid_step.clone())
+                .is_none(),
             "Expected next_bid_amount to be none for inactive lot",
         );
 
         let time_now: Timestamp = DAY_NANOSECONDS * 10;
-        assert_eq!(lot.next_bid_amount(time_now, contract.bid_step.clone()).unwrap(), to_yocto(5));
+        assert_eq!(
+            lot.next_bid_amount(time_now, contract.bid_step.clone())
+                .unwrap(),
+            to_yocto(5)
+        );
 
         let bid = Bid {
             bidder_id: "carol".parse().unwrap(),
@@ -672,7 +684,8 @@ mod tests {
         };
         lot.bids.push(&bid);
         assert_eq!(
-            lot.next_bid_amount(time_now, contract.bid_step.clone()).unwrap(),
+            lot.next_bid_amount(time_now, contract.bid_step.clone())
+                .unwrap(),
             to_yocto(7500) / 1000,
             "wrong next bid",
         );
@@ -719,11 +732,7 @@ mod tests {
         assert_eq!(lot.bids.len(), 1, "expected one bid for lot");
 
         let last_bid = lot.bids.get(lot.bids.len() - 1).unwrap();
-        assert_eq!(
-            last_bid.amount,
-            first_bid_amount,
-            "wrong first bid amount"
-        );
+        assert_eq!(last_bid.amount, first_bid_amount, "wrong first bid amount");
         assert_eq!(
             last_bid.bidder_id,
             "carol".parse().unwrap(),
@@ -746,8 +755,7 @@ mod tests {
 
         let last_bid = lot.bids.get(lot.bids.len() - 1).unwrap();
         assert_eq!(
-            last_bid.amount,
-            second_bid_amount,
+            last_bid.amount, second_bid_amount,
             "expected last bid to be 6 near"
         );
         assert_eq!(
@@ -888,11 +896,7 @@ mod tests {
         assert_eq!(lot.bids.len(), 1, "expected one bid for lot");
 
         let last_bid = lot.last_bid().unwrap();
-        assert_eq!(
-            last_bid.amount,
-            first_bid_amount,
-            "wrong_first_bid"
-        );
+        assert_eq!(last_bid.amount, first_bid_amount, "wrong_first_bid");
         assert_eq!(
             last_bid.bidder_id,
             "carol".parse().unwrap(),
@@ -918,8 +922,7 @@ mod tests {
                 contract.seller_rewards_commission.clone(),
             );
             assert_eq!(
-                profile_bob.rewards_available,
-                expected,
+                profile_bob.rewards_available, expected,
                 "seller profile should have bid balance minus comission"
             );
             contract.internal_profile_save(&profile_bob);
@@ -946,8 +949,7 @@ mod tests {
         let lot = contract.lots.get(&"alice".parse().unwrap()).unwrap();
         let last_bid = lot.last_bid().unwrap();
         assert_eq!(
-            last_bid.amount,
-            second_bid_amount,
+            last_bid.amount, second_bid_amount,
             "wrong second bid amount"
         );
         assert_eq!(
@@ -975,8 +977,7 @@ mod tests {
                 contract.seller_rewards_commission.clone(),
             );
             assert_eq!(
-                profile_bob.rewards_available,
-                expected,
+                profile_bob.rewards_available, expected,
                 "wrong seller rewards after second bid"
             );
             contract.internal_profile_save(&profile_bob);
@@ -984,8 +985,7 @@ mod tests {
         {
             let profile_carol = contract.internal_profile_extract(&"carol".parse().unwrap());
             assert_eq!(
-                profile_carol.rewards_available,
-                first_bid_amount,
+                profile_carol.rewards_available, first_bid_amount,
                 "first bidder profile should have prev bid balance"
             );
             contract.internal_profile_save(&profile_carol);
@@ -1400,10 +1400,26 @@ mod tests {
 
     #[test]
     pub fn test_fractions_mul() {
-        assert_eq!(Fraction::new(0, 13) * 10, 0, "expected zero mul for zero fraction");
-        assert_eq!(Fraction::new(7, 13) * 0, 0, "expected zero mul for zero balance");
-        assert_eq!(Fraction::new(13, 13) * 100, 100, "expected same mul one fraction");
-        assert_eq!(Fraction::new(7, 13) * 100, 53, "expected zero mul for zero balance");
+        assert_eq!(
+            Fraction::new(0, 13) * 10,
+            0,
+            "expected zero mul for zero fraction"
+        );
+        assert_eq!(
+            Fraction::new(7, 13) * 0,
+            0,
+            "expected zero mul for zero balance"
+        );
+        assert_eq!(
+            Fraction::new(13, 13) * 100,
+            100,
+            "expected same mul one fraction"
+        );
+        assert_eq!(
+            Fraction::new(7, 13) * 100,
+            53,
+            "expected zero mul for zero balance"
+        );
         assert_eq!(Fraction::new(1, 2) * 9, 4, "expected floor rounding");
     }
 }
