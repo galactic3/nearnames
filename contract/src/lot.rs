@@ -625,4 +625,59 @@ mod tests {
         lot.bids.push(&bid);
         assert_eq!(lot.last_bid_amount(), Some(to_yocto("2")));
     }
+
+    #[test]
+    fn test_lot_next_bid_amount() {
+        let mut lot = create_lot_bob_sells_alice();
+
+        assert_eq!(
+            lot.next_bid_amount(to_ts(10), Fraction::new(0, 1)).unwrap(),
+            to_yocto("2"),
+            "expected reserve_price for new lot"
+        );
+
+        let bid = Bid {
+            bidder_id: "carol".parse().unwrap(),
+            amount: to_yocto("6"),
+            timestamp: to_ts(0),
+        };
+        lot.bids.push(&bid);
+
+        assert_eq!(
+            lot.next_bid_amount(to_ts(10), Fraction::new(0, 1)),
+            Some(to_yocto("6") + 1),
+            "expected increase by 1 yocto for zero step",
+        );
+
+        assert_eq!(
+            lot.next_bid_amount(to_ts(10), Fraction::new(1, 4)),
+            Some(to_yocto("7.5")),
+            "expected increase by 1 yocto for zero step",
+        );
+
+        assert_eq!(
+            lot.next_bid_amount(to_ts(10), Fraction::new(1, 1)),
+            Some(to_yocto("10")),
+            "expected buy now price cap",
+        );
+
+        assert_eq!(
+            lot.next_bid_amount(to_ts(20), Fraction::new(0, 1)),
+            None,
+            "expected none for inactive lot",
+        );
+
+        let bid = Bid {
+            bidder_id: "carol".parse().unwrap(),
+            amount: to_yocto("10"),
+            timestamp: to_ts(0),
+        };
+        lot.bids.push(&bid);
+
+        assert_eq!(
+            lot.next_bid_amount(to_ts(10), Fraction::new(0, 1)),
+            None,
+            "expected none for buy now sold lot",
+        );
+    }
 }

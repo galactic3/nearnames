@@ -607,58 +607,6 @@ mod tests {
         assert_eq!(lot.last_bid_amount().unwrap(), to_yocto("7"));
     }
 
-    #[test]
-    fn next_bid_amount() {
-        let context = get_context_simple(false);
-        testing_env!(context);
-        let contract = build_contract();
-        let mut lot = create_lot_bob_sells_alice();
-        assert!(
-            lot.last_bid_amount().is_none(),
-            "expected last_bid_amount to be None"
-        );
-
-        let time_now: Timestamp = to_ts(12);
-        assert!(
-            lot.next_bid_amount(time_now, contract.bid_step)
-                .is_none(),
-            "Expected next_bid_amount to be none for inactive lot",
-        );
-
-        let time_now: Timestamp = to_ts(10);
-        assert_eq!(
-            lot.next_bid_amount(time_now, contract.bid_step)
-                .unwrap(),
-            to_yocto("5")
-        );
-
-        let bid = Bid {
-            bidder_id: "carol".parse().unwrap(),
-            timestamp: to_ts(10),
-            amount: to_yocto("6"),
-        };
-        lot.bids.push(&bid);
-        let expected_next_bid_amount = bid.amount + contract.bid_step * bid.amount;
-        assert_eq!(
-            lot.next_bid_amount(time_now, contract.bid_step)
-                .unwrap(),
-            expected_next_bid_amount,
-            "wrong next bid",
-        );
-
-        assert_eq!(
-            lot.next_bid_amount(time_now, Fraction::new(0, 4)).unwrap(),
-            to_yocto("6") + 1,
-            "expected plus yocto next bid for zero step",
-        );
-
-        assert_eq!(
-            lot.next_bid_amount(time_now, Fraction::new(4, 4)).unwrap(),
-            to_yocto("10"),
-            "expected cap at buy now price",
-        );
-    }
-
     // checks:
     //   - lot cannot bid
     //   - seller cannot bid
