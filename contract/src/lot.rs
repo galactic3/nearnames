@@ -581,4 +581,48 @@ mod tests {
         lot.is_withdrawn = true;
         assert_eq!(lot.is_active(to_ts(10)), false);
     }
+
+    #[test]
+    fn test_lot_last_bid() {
+        let mut lot = create_lot_bob_sells_alice();
+        assert_eq!(lot.last_bid().map(|x| x.bidder_id), None);
+
+        let bid = Bid {
+            bidder_id: "carol".parse().unwrap(),
+            amount: to_yocto("0"),
+            timestamp: to_ts(0),
+        };
+        lot.bids.push(&bid);
+        assert_eq!(lot.last_bid().map(|x| x.bidder_id), Some("carol".parse().unwrap()));
+
+        let bid = Bid {
+            bidder_id: "dan".parse().unwrap(),
+            amount: to_yocto("0"),
+            timestamp: to_ts(0),
+        };
+        lot.bids.push(&bid);
+        assert_eq!(lot.last_bid().map(|x| x.bidder_id), Some("dan".parse().unwrap()));
+    }
+
+    #[test]
+    fn test_lot_last_bid_amount() {
+        let mut lot = create_lot_bob_sells_alice();
+        assert_eq!(lot.last_bid_amount(), None, "expected none bid amount");
+
+        let bid = Bid {
+            bidder_id: "carol".parse().unwrap(),
+            amount: to_yocto("1"),
+            timestamp: to_ts(0),
+        };
+        lot.bids.push(&bid);
+        assert_eq!(lot.last_bid_amount(), Some(to_yocto("1")));
+
+        let bid = Bid {
+            bidder_id: "dan".parse().unwrap(),
+            amount: to_yocto("2"),
+            timestamp: to_ts(0),
+        };
+        lot.bids.push(&bid);
+        assert_eq!(lot.last_bid_amount(), Some(to_yocto("2")));
+    }
 }
