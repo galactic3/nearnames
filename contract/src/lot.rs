@@ -725,4 +725,11 @@ mod tests {
         let (lot, time_now) = create_lot_alice_withdrawn();
         assert_eq!(lot.status(time_now), LotStatus::Withdrawn);
     }
+
+    #[test]
+    fn test_lot_clean_up() {
+        let (mut lot, _tm) = create_lot_alice_with_bids();
+        lot.clean_up();
+        assert!(lot.bids.is_empty(), "expected bids empty after clean up");
+    }
 }
