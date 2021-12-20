@@ -18,7 +18,7 @@ pub const NO_DEPOSIT: Balance = 0;
 pub const GAS_EXT_CALL_UNLOCK: u64 = 40_000_000_000_000;
 pub const GAS_EXT_CALL_CLEAN_UP: u64 = 100_000_000_000_000;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum LotStatus {
     OnSale,
     Withdrawn,
@@ -526,6 +526,50 @@ mod tests {
         )
     }
 
+    fn create_lot_alice_withdrawn() -> (Lot, Timestamp) {
+        let mut lot = create_lot_bob_sells_alice();
+        lot.is_withdrawn = true;
+        let time_now = to_ts(10);
+
+        (lot, time_now)
+    }
+
+    fn create_lot_alice_with_bids() -> (Lot, Timestamp) {
+        let mut lot = create_lot_bob_sells_alice();
+        lot.bids.push(&Bid {
+            bidder_id: "dan".parse().unwrap(),
+            amount: to_yocto("3"),
+            timestamp: to_ts(11),
+        });
+        lot.bids.push(&Bid {
+            bidder_id: "dan".parse().unwrap(),
+            amount: to_yocto("6"),
+            timestamp: to_ts(12),
+        });
+        let time_now = to_ts(13);
+
+        (lot, time_now)
+    }
+
+    fn create_lot_alice_with_bids_sale_success() -> (Lot, Timestamp) {
+        let (lot, _tm) = create_lot_alice_with_bids();
+        let time_now = to_ts(20);
+
+        (lot, time_now)
+    }
+
+    fn create_lot_alice_buy_now_bid() -> (Lot, Timestamp) {
+        let (mut lot, _tm) = create_lot_alice_with_bids();
+        lot.bids.push(&Bid {
+            bidder_id: "carol".parse().unwrap(),
+            amount: to_yocto("10"),
+            timestamp: to_ts(13),
+        });
+        let time_now = to_ts(14);
+
+        (lot, time_now)
+    }
+
     #[test]
     fn test_lot_new() {
         let lot = create_lot_bob_sells_alice();
@@ -583,123 +627,102 @@ mod tests {
     }
 
     #[test]
+    fn test_lot_is_active_by_buy_now_bid() {
+        let (lot, time_now) = create_lot_alice_buy_now_bid();
+        assert_eq!(lot.is_active(time_now), false, "expected lot inactive on buy now bid");
+    }
+
+    #[test]
     fn test_lot_last_bid() {
-        let mut lot = create_lot_bob_sells_alice();
+        let lot = create_lot_bob_sells_alice();
         assert_eq!(lot.last_bid().map(|x| x.bidder_id), None);
 
-        let bid = Bid {
-            bidder_id: "carol".parse().unwrap(),
-            amount: to_yocto("0"),
-            timestamp: to_ts(0),
-        };
-        lot.bids.push(&bid);
-        assert_eq!(lot.last_bid().map(|x| x.bidder_id), Some("carol".parse().unwrap()));
-
-        let bid = Bid {
-            bidder_id: "dan".parse().unwrap(),
-            amount: to_yocto("0"),
-            timestamp: to_ts(0),
-        };
-        lot.bids.push(&bid);
+        let (lot, _tm) = create_lot_alice_with_bids();
         assert_eq!(lot.last_bid().map(|x| x.bidder_id), Some("dan".parse().unwrap()));
     }
 
     #[test]
     fn test_lot_last_bid_amount() {
-        let mut lot = create_lot_bob_sells_alice();
+        let lot = create_lot_bob_sells_alice();
         assert_eq!(lot.last_bid_amount(), None, "expected none bid amount");
 
-        let bid = Bid {
-            bidder_id: "carol".parse().unwrap(),
-            amount: to_yocto("1"),
-            timestamp: to_ts(0),
-        };
-        lot.bids.push(&bid);
-        assert_eq!(lot.last_bid_amount(), Some(to_yocto("1")));
-
-        let bid = Bid {
-            bidder_id: "dan".parse().unwrap(),
-            amount: to_yocto("2"),
-            timestamp: to_ts(0),
-        };
-        lot.bids.push(&bid);
-        assert_eq!(lot.last_bid_amount(), Some(to_yocto("2")));
+        let (lot, _tm) = create_lot_alice_with_bids();
+        assert_eq!(lot.last_bid_amount(), Some(to_yocto("6")), "wrong last_bid_amount");
     }
 
     #[test]
     fn test_lot_next_bid_amount() {
-        let mut lot = create_lot_bob_sells_alice();
-
+        let lot = create_lot_bob_sells_alice();
         assert_eq!(
             lot.next_bid_amount(to_ts(10), Fraction::new(0, 1)).unwrap(),
             to_yocto("2"),
             "expected reserve_price for new lot"
         );
 
-        let bid = Bid {
-            bidder_id: "carol".parse().unwrap(),
-            amount: to_yocto("6"),
-            timestamp: to_ts(0),
-        };
-        lot.bids.push(&bid);
-
+        let (lot, time_now) = create_lot_alice_with_bids();
         assert_eq!(
-            lot.next_bid_amount(to_ts(10), Fraction::new(0, 1)),
+            lot.next_bid_amount(time_now, Fraction::new(0, 1)),
             Some(to_yocto("6") + 1),
             "expected increase by 1 yocto for zero step",
         );
-
         assert_eq!(
-            lot.next_bid_amount(to_ts(10), Fraction::new(1, 4)),
+            lot.next_bid_amount(time_now, Fraction::new(1, 4)),
             Some(to_yocto("7.5")),
             "expected increase by 1 yocto for zero step",
         );
-
         assert_eq!(
-            lot.next_bid_amount(to_ts(10), Fraction::new(1, 1)),
+            lot.next_bid_amount(time_now, Fraction::new(1, 1)),
             Some(to_yocto("10")),
             "expected buy now price cap",
         );
 
+        let (lot, time_now) = create_lot_alice_with_bids_sale_success();
         assert_eq!(
-            lot.next_bid_amount(to_ts(20), Fraction::new(0, 1)),
+            lot.next_bid_amount(time_now, Fraction::new(0, 1)),
             None,
             "expected none for inactive lot",
         );
 
-        let bid = Bid {
-            bidder_id: "carol".parse().unwrap(),
-            amount: to_yocto("10"),
-            timestamp: to_ts(0),
-        };
-        lot.bids.push(&bid);
-
+        let (lot, time_now) = create_lot_alice_buy_now_bid();
         assert_eq!(
-            lot.next_bid_amount(to_ts(10), Fraction::new(0, 1)),
+            lot.next_bid_amount(time_now, Fraction::new(0, 1)),
             None,
             "expected none for buy now sold lot",
+        );
+
+        let (lot, time_now) = create_lot_alice_withdrawn();
+        assert_eq!(
+            lot.next_bid_amount(time_now, Fraction::new(0, 1)),
+            None,
+            "expected none for withdrawn lot",
         );
     }
 
     #[test]
     fn test_lot_potential_claimer_id() {
-        let mut lot = create_lot_bob_sells_alice();
+        let lot = create_lot_bob_sells_alice();
         assert_eq!(lot.potential_claimer_id(), None);
 
-        let bid = Bid {
-            bidder_id: "carol".parse().unwrap(),
-            amount: to_yocto("0"),
-            timestamp: to_ts(0),
-        };
-        lot.bids.push(&bid);
-        assert_eq!(lot.potential_claimer_id(), Some("carol".parse().unwrap()));
-
-        let bid = Bid {
-            bidder_id: "dan".parse().unwrap(),
-            amount: to_yocto("0"),
-            timestamp: to_ts(0),
-        };
-        lot.bids.push(&bid);
+        let (lot, _tm) = create_lot_alice_with_bids();
         assert_eq!(lot.potential_claimer_id(), Some("dan".parse().unwrap()));
+    }
+
+    #[test]
+    fn test_lot_status() {
+        let lot = create_lot_bob_sells_alice();
+        assert_eq!(lot.status(to_ts(10)), LotStatus::OnSale);
+        assert_eq!(lot.status(to_ts(20)), LotStatus::SaleFailure);
+
+        let (lot, time_now) = create_lot_alice_with_bids();
+        assert_eq!(lot.status(time_now), LotStatus::OnSale);
+
+        let (lot, time_now) = create_lot_alice_with_bids_sale_success();
+        assert_eq!(lot.status(time_now), LotStatus::SaleSuccess);
+
+        let (lot, time_now) = create_lot_alice_buy_now_bid();
+        assert_eq!(lot.status(time_now), LotStatus::SaleSuccess);
+
+        let (lot, time_now) = create_lot_alice_withdrawn();
+        assert_eq!(lot.status(time_now), LotStatus::Withdrawn);
     }
 }
