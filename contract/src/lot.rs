@@ -680,4 +680,26 @@ mod tests {
             "expected none for buy now sold lot",
         );
     }
+
+    #[test]
+    fn test_lot_potential_claimer_id() {
+        let mut lot = create_lot_bob_sells_alice();
+        assert_eq!(lot.potential_claimer_id(), None);
+
+        let bid = Bid {
+            bidder_id: "carol".parse().unwrap(),
+            amount: to_yocto("0"),
+            timestamp: to_ts(0),
+        };
+        lot.bids.push(&bid);
+        assert_eq!(lot.potential_claimer_id(), Some("carol".parse().unwrap()));
+
+        let bid = Bid {
+            bidder_id: "dan".parse().unwrap(),
+            amount: to_yocto("0"),
+            timestamp: to_ts(0),
+        };
+        lot.bids.push(&bid);
+        assert_eq!(lot.potential_claimer_id(), Some("dan".parse().unwrap()));
+    }
 }
