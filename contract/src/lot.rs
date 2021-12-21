@@ -195,6 +195,19 @@ impl Lot {
             ERR_LOT_WITHDRAW_WRONG_WITHDRAWER,
         );
     }
+
+    pub fn validate_place_bid(&mut self, bid: &Bid, bid_step: Fraction) {
+        assert!(self.is_active(bid.timestamp), "{}", ERR_LOT_BID_LOT_NOT_ACTIVE);
+        let min_next_bid_amount = self.next_bid_amount(bid.timestamp, bid_step).unwrap();
+        assert!(bid.amount >= min_next_bid_amount, "{}", ERR_LOT_BID_BID_TOO_SMALL);
+        assert_ne!(self.seller_id, bid.bidder_id, "{}", ERR_LOT_BID_SELLER_BIDS_SELF);
+        assert_ne!(self.lot_id, bid.bidder_id, "{}", ERR_LOT_BID_SELLER_BIDS_SELF);
+    }
+
+    pub fn place_bid(&mut self, bid: &Bid, bid_step: Fraction) {
+        self.validate_place_bid(bid, bid_step);
+        self.bids.push(bid);
+    }
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -277,33 +290,6 @@ impl Contract {
     }
 
     pub(crate) fn internal_lot_bid(&mut self, lot_id: &LotId, bid: &Bid) {
-        let mut lot = self.internal_lot_extract(lot_id);
-        assert!(
-            lot.is_active(bid.timestamp),
-            "{}",
-            ERR_LOT_BID_LOT_NOT_ACTIVE
-        );
-        assert!(
-            bid.amount
-                >= lot
-                    .next_bid_amount(bid.timestamp, self.bid_step.clone())
-                    .unwrap(),
-            "{}",
-            ERR_LOT_BID_BID_TOO_SMALL
-        );
-        assert_ne!(
-            lot.seller_id, bid.bidder_id,
-            "{}",
-            ERR_LOT_BID_SELLER_BIDS_SELF
-        );
-        assert_ne!(
-            lot.lot_id, bid.bidder_id,
-            "{}",
-            ERR_LOT_BID_SELLER_BIDS_SELF
-        );
-
-        lot.bids.push(bid);
-        self.internal_lot_save(&lot);
     }
 
     pub(crate) fn internal_lot_withdraw(&mut self, lot_id: &LotId, withdrawer_id: &ProfileId) {
@@ -406,7 +392,11 @@ impl Contract {
         };
 
         // TODO: rewrite to elliminate double read
-        self.internal_lot_bid(&lot_id, &bid);
+        {
+            let mut lot = self.internal_lot_extract(&lot_id);
+            lot.place_bid(&bid, self.bid_step);
+            self.internal_lot_save(&lot);
+        }
 
         // update associations
         {
