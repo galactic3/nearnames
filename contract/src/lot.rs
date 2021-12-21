@@ -11,9 +11,9 @@ pub const ERR_LOT_CLAIM_BY_SELLER_WRONG_STATUS: &str = "claim by seller: expecte
 pub const ERR_LOT_CLAIM_BY_SELLER_WRONG_CLAIMER: &str = "claim by seller: wrong claimer";
 pub const ERR_LOT_CLEAN_UP_STILL_ACTIVE: &str = "UNREACHABLE: cannot clean up still active lot";
 pub const ERR_LOT_CLEAN_UP_UNLOCK_FAILED: &str = "Expected unlock promise to be successful";
-pub const ERR_LOT_WITHDRAW_HAS_BID: &str = "Bid exists, cannot withdraw";
-pub const ERR_LOT_WITHDRAW_ALREADY_WITHDRAWN: &str = "Lot already withdrawn";
-pub const ERR_LOT_WITHDRAW_NOT_SELLER: &str = "Only seller can withdraw";
+pub const ERR_LOT_WITHDRAW_HAS_BID: &str = "withdraw: expected no bids";
+pub const ERR_LOT_WITHDRAW_WRONG_STATUS: &str = "withdraw: already withdrawn";
+pub const ERR_LOT_WITHDRAW_WRONG_WITHDRAWER: &str = "withdraw: wrong withdrawer";
 
 pub const NO_DEPOSIT: Balance = 0;
 pub const GAS_EXT_CALL_UNLOCK: u64 = 40_000_000_000_000;
@@ -185,14 +185,15 @@ impl Lot {
         }
     }
 
+    // add status
     pub fn validate_withdraw(&self, withdrawer_id: &ProfileId) {
+        assert!(!self.is_withdrawn, "{}", ERR_LOT_WITHDRAW_WRONG_STATUS);
+        assert!(self.last_bid().is_none(), "{}", ERR_LOT_WITHDRAW_HAS_BID);
         assert_eq!(
             &self.seller_id, withdrawer_id,
             "{}",
-            ERR_LOT_WITHDRAW_NOT_SELLER,
+            ERR_LOT_WITHDRAW_WRONG_WITHDRAWER,
         );
-        assert!(self.last_bid().is_none(), "{}", ERR_LOT_WITHDRAW_HAS_BID,);
-        assert!(!self.is_withdrawn, "{}", ERR_LOT_WITHDRAW_ALREADY_WITHDRAWN,);
     }
 }
 
@@ -786,5 +787,36 @@ mod tests {
         let (lot, time_now) = create_lot_alice_with_bids_sale_success(); // dan is the last bidder
         let bidder_id: AccountId = "carol".parse().unwrap();
         lot.validate_claim(&bidder_id, time_now);
+    }
+
+    #[test]
+    fn test_lot_validate_withdraw() {
+        let lot = create_lot_bob_sells_alice();
+        let withdrawer_id: AccountId = "bob".parse().unwrap();
+        lot.validate_withdraw(&withdrawer_id);
+    }
+
+    #[test]
+    #[should_panic(expected = "withdraw: already withdrawn")]
+    fn test_lot_validate_withdraw_fail_already_withdrawn() {
+        let (lot, _tm) = create_lot_alice_withdrawn();
+        let withdrawer_id: AccountId = "bob".parse().unwrap();
+        lot.validate_withdraw(&withdrawer_id);
+    }
+
+    #[test]
+    #[should_panic(expected = "withdraw: expected no bids")]
+    fn test_lot_validate_withdraw_fail_has_bids() {
+        let (lot, _tm) = create_lot_alice_with_bids(); // dan is the last bidder
+        let withdrawer_id: AccountId = "bob".parse().unwrap();
+        lot.validate_withdraw(&withdrawer_id);
+    }
+
+    #[test]
+    #[should_panic(expected = "withdraw: wrong withdrawer")]
+    fn test_lot_validate_withdraw_fail_wrong_withdrawer() {
+        let lot = create_lot_bob_sells_alice();
+        let not_withdrawer_id: AccountId = "alice".parse().unwrap();
+        lot.validate_withdraw(&not_withdrawer_id);
     }
 }
