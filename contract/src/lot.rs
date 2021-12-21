@@ -289,9 +289,6 @@ impl Contract {
         assert!(self.lots.insert(&lot.lot_id, lot).is_none());
     }
 
-    pub(crate) fn internal_lot_bid(&mut self, lot_id: &LotId, bid: &Bid) {
-    }
-
     pub(crate) fn internal_lot_withdraw(&mut self, lot_id: &LotId, withdrawer_id: &ProfileId) {
         let mut lot = self.internal_lot_extract(lot_id);
         lot.validate_withdraw(withdrawer_id);
@@ -808,5 +805,17 @@ mod tests {
         let lot = create_lot_bob_sells_alice();
         let not_withdrawer_id: AccountId = "alice".parse().unwrap();
         lot.validate_withdraw(&not_withdrawer_id);
+    }
+
+    #[test]
+    fn test_lot_validate_place_bid() {
+        let mut lot = create_lot_bob_sells_alice();
+        let bid = Bid {
+            bidder_id: "dan".parse().unwrap(),
+            amount: to_yocto("3"),
+            timestamp: to_ts(11),
+        };
+        lot.place_bid(&bid, Fraction::new(0, 1));
+        assert_eq!(lot.bids.len(), 1, "{}", "expected bids size 1");
     }
 }

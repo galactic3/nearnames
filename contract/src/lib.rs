@@ -360,6 +360,22 @@ mod tests {
         assert_eq!(response.is_withdrawn, false);
     }
 
+    fn api_lot_bid(contract: &mut Contract, lot_id: &AccountId, bid: &Bid) {
+        let context = get_context_with_payer(
+            &bid.bidder_id,
+            bid.amount,
+            bid.timestamp,
+        );
+        testing_env!(context);
+        contract.lot_bid(lot_id.clone());
+    }
+
+    fn internal_lot_bid(contract: &mut Contract, lot_id: &LotId, bid: &Bid) {
+        let mut lot = contract.internal_lot_extract(lot_id);
+        lot.place_bid(bid, contract.bid_step);
+        contract.internal_lot_save(&lot);
+    }
+
     #[test]
     fn lot_bid_list() {
         let context = get_context_simple(false);
@@ -373,14 +389,14 @@ mod tests {
             amount: to_yocto("7"),
             timestamp: to_ts(10),
         };
-        contract.internal_lot_bid(&"alice".parse().unwrap(), &bid);
+        internal_lot_bid(&mut contract, &"alice".parse().unwrap(), &bid);
 
         let bid: Bid = Bid {
             bidder_id: "dan".parse().unwrap(),
             amount: to_yocto("9"),
             timestamp: to_ts(10) + 1,
         };
-        contract.internal_lot_bid(&"alice".parse().unwrap(), &bid);
+        internal_lot_bid(&mut contract, &"alice".parse().unwrap(), &bid);
 
         let response: Vec<BidView> = contract.lot_bid_list("alice".parse().unwrap());
         let expected: Vec<BidView> = vec![
@@ -415,7 +431,7 @@ mod tests {
             amount: first_bid_amount,
             timestamp: to_ts(10),
         };
-        contract.internal_lot_bid(&"alice".parse().unwrap(), &bid);
+        internal_lot_bid(&mut contract, &"alice".parse().unwrap(), &bid);
 
         let context = get_context_pred_alice(true);
         testing_env!(context);
@@ -483,7 +499,7 @@ mod tests {
             amount: to_yocto("10"),
             timestamp: to_ts(10),
         };
-        contract.internal_lot_bid(&"alice".parse().unwrap(), &bid);
+        internal_lot_bid(&mut contract, &"alice".parse().unwrap(), &bid);
         let lot = contract.lots.get(&"alice".parse().unwrap()).unwrap();
 
         assert!(
@@ -631,7 +647,7 @@ mod tests {
             amount: first_bid_amount,
             timestamp: to_ts(10),
         };
-        contract.internal_lot_bid(&"alice".parse().unwrap(), &bid);
+        internal_lot_bid(&mut contract, &"alice".parse().unwrap(), &bid);
         let lot = contract.lots.get(&"alice".parse().unwrap()).unwrap();
         assert_eq!(lot.bids.len(), 1, "expected one bid for lot");
 
@@ -653,7 +669,7 @@ mod tests {
             amount: second_bid_amount,
             timestamp: to_ts(10) + 1,
         };
-        contract.internal_lot_bid(&"alice".parse().unwrap(), &bid);
+        internal_lot_bid(&mut contract, &"alice".parse().unwrap(), &bid);
         let lot = contract.lots.get(&"alice".parse().unwrap()).unwrap();
         assert_eq!(lot.bids.len(), 2, "wrong bids length");
 
@@ -689,7 +705,7 @@ mod tests {
             amount: to_yocto("6"),
             timestamp: to_ts(13),
         };
-        contract.internal_lot_bid(&"alice".parse().unwrap(), &bid);
+        internal_lot_bid(&mut contract, &"alice".parse().unwrap(), &bid);
     }
 
     #[test]
@@ -707,7 +723,7 @@ mod tests {
             amount: to_yocto("4"),
             timestamp: to_ts(10),
         };
-        contract.internal_lot_bid(&"alice".parse().unwrap(), &bid);
+        internal_lot_bid(&mut contract, &"alice".parse().unwrap(), &bid);
     }
 
     #[test]
@@ -727,7 +743,7 @@ mod tests {
                 amount: to_yocto("7"),
                 timestamp: to_ts(10),
             };
-            contract.internal_lot_bid(&"alice".parse().unwrap(), &bid);
+            internal_lot_bid(&mut contract, &"alice".parse().unwrap(), &bid);
         }
 
         {
@@ -736,7 +752,7 @@ mod tests {
                 amount: to_yocto("6"),
                 timestamp: to_ts(10) + 1,
             };
-            contract.internal_lot_bid(&"alice".parse().unwrap(), &bid);
+            internal_lot_bid(&mut contract, &"alice".parse().unwrap(), &bid);
         }
     }
 
@@ -757,7 +773,7 @@ mod tests {
                 amount: to_yocto("10"),
                 timestamp: to_ts(10),
             };
-            contract.internal_lot_bid(&"alice".parse().unwrap(), &bid);
+            internal_lot_bid(&mut contract, &"alice".parse().unwrap(), &bid);
         }
 
         {
@@ -766,7 +782,7 @@ mod tests {
                 amount: to_yocto("11"),
                 timestamp: to_ts(10) + 1,
             };
-            contract.internal_lot_bid(&"alice".parse().unwrap(), &bid);
+            internal_lot_bid(&mut contract, &"alice".parse().unwrap(), &bid);
         }
     }
 
@@ -775,7 +791,7 @@ mod tests {
     }
 
     #[test]
-    pub fn api_lot_bid() {
+    pub fn test_api_lot_bid() {
         let context = get_context_simple(false);
         testing_env!(context);
         let mut contract = build_contract();
@@ -786,15 +802,11 @@ mod tests {
 
         let first_bid_amount = to_yocto("6");
         let second_bid_amount = to_yocto("8");
-        {
-            let context = get_context_with_payer(
-                &"carol".parse().unwrap(),
-                first_bid_amount,
-                to_ts(10),
-            );
-            testing_env!(context);
-            contract.lot_bid("alice".to_string().try_into().unwrap());
-        }
+        api_lot_bid(&mut contract, &"alice".parse().unwrap(), &Bid {
+            bidder_id: "carol".parse().unwrap(),
+            amount: first_bid_amount,
+            timestamp: to_ts(10),
+        });
 
         let lot = contract.lots.get(&"alice".parse().unwrap()).unwrap();
         assert_eq!(lot.bids.len(), 1, "expected one bid for lot");
@@ -840,15 +852,11 @@ mod tests {
             contract.internal_profile_save(&profile_carol);
         }
 
-        {
-            let context = get_context_with_payer(
-                &"dan".parse().unwrap(),
-                second_bid_amount,
-                to_ts(10) + 1,
-            );
-            testing_env!(context);
-            contract.lot_bid("alice".to_string().try_into().unwrap());
-        }
+        api_lot_bid(&mut contract, &"alice".parse().unwrap(), &Bid {
+            bidder_id: "dan".parse().unwrap(),
+            amount: second_bid_amount,
+            timestamp: to_ts(10) + 1,
+        });
 
         let lot = contract.lots.get(&"alice".parse().unwrap()).unwrap();
         let last_bid = lot.last_bid().unwrap();
@@ -923,15 +931,11 @@ mod tests {
             contract.internal_lot_save(&lot);
         }
 
-        {
-            let context = get_context_with_payer(
-                &"carol".parse().unwrap(),
-                to_yocto("4"),
-                to_ts(10),
-            );
-            testing_env!(context);
-            contract.lot_bid("alice".to_string().try_into().unwrap());
-        }
+        api_lot_bid(&mut contract, &"alice".parse().unwrap(), &Bid {
+            bidder_id: "carol".parse().unwrap(),
+            amount: to_yocto("4"),
+            timestamp: to_ts(10),
+        });
     }
 
     #[test]
@@ -945,15 +949,11 @@ mod tests {
             contract.internal_lot_save(&lot);
         }
 
-        {
-            let context = get_context_with_payer(
-                &"carol".parse().unwrap(),
-                to_yocto("6"),
-                to_ts(11),
-            );
-            testing_env!(context);
-            contract.lot_bid("alice".to_string().try_into().unwrap());
-        }
+        api_lot_bid(&mut contract, &"alice".parse().unwrap(), &Bid {
+            bidder_id: "carol".parse().unwrap(),
+            amount: to_yocto("6"),
+            timestamp: to_ts(11),
+        });
     }
 
     #[test]
@@ -987,7 +987,7 @@ mod tests {
             amount: to_yocto("7"),
             timestamp: to_ts(10),
         };
-        contract.internal_lot_bid(&"alice".parse().unwrap(), &bid);
+        internal_lot_bid(&mut contract, &"alice".parse().unwrap(), &bid);
 
         let context = get_context_with_payer(&"bob".parse().unwrap(), 0, to_ts(13));
         testing_env!(context);
@@ -1013,7 +1013,7 @@ mod tests {
                 amount: to_yocto("7"),
                 timestamp: to_ts(10),
             };
-            contract.internal_lot_bid(&"alice".parse().unwrap(), &bid);
+            internal_lot_bid(&mut contract, &"alice".parse().unwrap(), &bid);
         }
 
         {
@@ -1131,15 +1131,11 @@ mod tests {
             assert!(profile.lots_bidding.is_empty(), "must be empty for seller");
         }
 
-        {
-            let context = get_context_with_payer(
-                &"carol".parse().unwrap(),
-                to_yocto("7"),
-                to_ts(10),
-            );
-            testing_env!(context);
-            contract.lot_bid("alice".to_string().try_into().unwrap());
-        }
+        api_lot_bid(&mut contract, &"alice".parse().unwrap(), &Bid {
+            bidder_id: "carol".parse().unwrap(),
+            amount: to_yocto("7"),
+            timestamp: to_ts(10),
+        });
 
         {
             let profile = contract.profiles.get(&"carol".parse().unwrap()).unwrap();
@@ -1171,10 +1167,11 @@ mod tests {
             &"lot_1".parse().unwrap(),
         );
 
-        let context =
-            get_context_with_payer(&"carol".parse().unwrap(), to_yocto("7"), to_ts(10));
-        testing_env!(context);
-        contract.lot_bid("alice".to_string().try_into().unwrap());
+        api_lot_bid(&mut contract, &"alice".parse().unwrap(), &Bid {
+            bidder_id: "carol".parse().unwrap(),
+            amount: to_yocto("7"),
+            timestamp: to_ts(10)
+        });
 
         {
             let profile = contract.profiles.get(&"bob".parse().unwrap()).unwrap();
