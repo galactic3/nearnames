@@ -1081,7 +1081,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Expected lot to be not active")]
+    #[should_panic(expected = "claim by bidder: expected status sale success")]
     pub fn api_lot_claim_fail_still_active() {
         let context = get_context_simple(false);
         testing_env!(context);

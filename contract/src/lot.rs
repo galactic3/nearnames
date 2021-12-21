@@ -5,14 +5,15 @@ pub const ERR_LOT_PRICE_RESERVE_LE_BUY_NOW: &str = "expected reserve_price <= bu
 pub const ERR_LOT_BID_LOT_NOT_ACTIVE: &str = "Expected lot to be active, cannot bid";
 pub const ERR_LOT_BID_BID_TOO_SMALL: &str = "Expected bigger bid, try again";
 pub const ERR_LOT_BID_SELLER_BIDS_SELF: &str = "Expected bidder_id is not equal to seller_id";
-pub const ERR_LOT_CLAIM_LOT_STILL_ACTIVE: &str = "Expected lot to be not active";
-pub const ERR_LOT_CLAIM_WRONG_CLAIMER: &str = "This account cannot claim this lot";
+pub const ERR_LOT_CLAIM_BY_BIDDER_WRONG_STATUS: &str = "claim by bidder: expected status sale success";
+pub const ERR_LOT_CLAIM_BY_BIDDER_WRONG_CLAIMER: &str = "claim by bidder: wrong claimer";
+pub const ERR_LOT_CLAIM_BY_SELLER_WRONG_STATUS: &str = "claim by seller: expected status withdrawn";
+pub const ERR_LOT_CLAIM_BY_SELLER_WRONG_CLAIMER: &str = "claim by seller: wrong claimer";
 pub const ERR_LOT_CLEAN_UP_STILL_ACTIVE: &str = "UNREACHABLE: cannot clean up still active lot";
 pub const ERR_LOT_CLEAN_UP_UNLOCK_FAILED: &str = "Expected unlock promise to be successful";
 pub const ERR_LOT_WITHDRAW_HAS_BID: &str = "Bid exists, cannot withdraw";
 pub const ERR_LOT_WITHDRAW_ALREADY_WITHDRAWN: &str = "Lot already withdrawn";
 pub const ERR_LOT_WITHDRAW_NOT_SELLER: &str = "Only seller can withdraw";
-pub const ERR_LOT_CLAIM_BY_SELLER_NOT_WITHDRAWN: &str = "Seller cannot claim not withdrwn lot";
 
 pub const NO_DEPOSIT: Balance = 0;
 pub const GAS_EXT_CALL_UNLOCK: u64 = 40_000_000_000_000;
@@ -153,13 +154,13 @@ impl Lot {
         assert!(
             !self.is_active(time_now),
             "{}",
-            ERR_LOT_CLAIM_LOT_STILL_ACTIVE,
+            ERR_LOT_CLAIM_BY_BIDDER_WRONG_STATUS,
         );
         assert_eq!(
             self.potential_claimer_id().as_ref(),
             Some(claimer_id),
             "{}",
-            ERR_LOT_CLAIM_WRONG_CLAIMER,
+            ERR_LOT_CLAIM_BY_BIDDER_WRONG_CLAIMER,
         );
     }
 
@@ -167,12 +168,12 @@ impl Lot {
         assert!(
             self.is_withdrawn,
             "{}",
-            ERR_LOT_CLAIM_BY_SELLER_NOT_WITHDRAWN,
+            ERR_LOT_CLAIM_BY_SELLER_WRONG_STATUS,
         );
         assert_eq!(
             &self.seller_id, claimer_id,
             "{}",
-            ERR_LOT_CLAIM_WRONG_CLAIMER,
+            ERR_LOT_CLAIM_BY_SELLER_WRONG_CLAIMER,
         );
     }
 
@@ -731,5 +732,59 @@ mod tests {
         let (mut lot, _tm) = create_lot_alice_with_bids();
         lot.clean_up();
         assert!(lot.bids.is_empty(), "expected bids empty after clean up");
+    }
+
+    #[test]
+    fn test_lot_validate_claim_by_seller() {
+        let (lot, time_now) = create_lot_alice_withdrawn();
+        let seller_id: AccountId = "bob".parse().unwrap();
+        lot.validate_claim(&seller_id, time_now);
+    }
+
+    #[test]
+    #[should_panic(expected = "claim by seller: expected status withdrawn")]
+    fn test_lot_validate_claim_by_seller_fail_lot_active() {
+        let lot = create_lot_bob_sells_alice();
+        let seller_id: AccountId = "bob".parse().unwrap();
+        lot.validate_claim(&seller_id, to_ts(10));
+    }
+
+    #[test]
+    #[should_panic(expected = "claim by seller: expected status withdrawn")]
+    fn test_lot_validate_claim_by_seller_fail_lot_sale_success() {
+        let (lot, time_now) = create_lot_alice_with_bids_sale_success();
+        let seller_id: AccountId = "bob".parse().unwrap();
+        lot.validate_claim(&seller_id, time_now);
+    }
+
+    #[test]
+    #[should_panic(expected = "claim by seller: wrong claimer")]
+    fn test_lot_validate_claim_by_seller_fail_wrong_claimer() {
+        let (lot, _tm) = create_lot_alice_withdrawn();
+        let fake_seller_id: AccountId = "carol".parse().unwrap();
+        lot.validate_claim_by_seller(&fake_seller_id);
+    }
+
+    #[test]
+    fn test_lot_validate_claim_by_bidder() {
+        let (lot, time_now) = create_lot_alice_with_bids_sale_success(); // dan is the last bidder
+        let bidder_id: AccountId = "dan".parse().unwrap();
+        lot.validate_claim(&bidder_id, time_now);
+    }
+
+    #[test]
+    #[should_panic(expected = "claim by bidder: expected status sale success")]
+    fn test_lot_validate_claim_by_bidder_fail_active() {
+        let (lot, time_now) = create_lot_alice_with_bids(); // dan is the last bidder
+        let bidder_id: AccountId = "dan".parse().unwrap();
+        lot.validate_claim(&bidder_id, time_now);
+    }
+
+    #[test]
+    #[should_panic(expected = "claim by bidder: wrong claimer")]
+    fn test_lot_validate_claim_by_bidder_fail_wrong_bidder() {
+        let (lot, time_now) = create_lot_alice_with_bids_sale_success(); // dan is the last bidder
+        let bidder_id: AccountId = "carol".parse().unwrap();
+        lot.validate_claim(&bidder_id, time_now);
     }
 }
