@@ -281,4 +281,3 @@ impl Contract {
         true
     }
 }
-
