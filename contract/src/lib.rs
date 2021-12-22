@@ -691,7 +691,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Expected lot to be active")]
+    #[should_panic(expected = "bid: expected status active")]
     pub fn internal_lot_bid_fail_after_finish() {
         let context = get_context_simple(false);
         testing_env!(context);
@@ -709,7 +709,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Expected bigger bid")]
+    #[should_panic(expected = "bid: expected bigger bid")]
     pub fn internal_lot_bid_fail_bid_below_reserve() {
         let context = get_context_simple(false);
         testing_env!(context);
@@ -727,7 +727,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Expected bigger bid")]
+    #[should_panic(expected = "bid: expected bigger bid")]
     pub fn internal_lot_bid_fail_bid_below_prev_bid() {
         let context = get_context_simple(false);
         testing_env!(context);
@@ -757,7 +757,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Expected lot to be active")]
+    #[should_panic(expected = "bid: expected status active")]
     pub fn internal_lot_bid_fail_bid_above_buy_now_price() {
         let context = get_context_simple(false);
         testing_env!(context);
@@ -921,7 +921,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Expected bigger bid")]
+    #[should_panic(expected = "bid: expected bigger bid")]
     pub fn api_lot_bid_fail_small_bid() {
         let context = get_context_simple(false);
         testing_env!(context);
@@ -939,7 +939,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Expected lot to be active")]
+    #[should_panic(expected = "bid: expected status active")]
     pub fn api_lot_bid_fail_inactive() {
         let context = get_context_simple(false);
         testing_env!(context);

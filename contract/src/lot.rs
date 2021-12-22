@@ -2,9 +2,9 @@ use crate::*;
 
 pub const ERR_LOT_SELLS_SELF: &str = "expected lot_id != seller_id";
 pub const ERR_LOT_PRICE_RESERVE_LE_BUY_NOW: &str = "expected reserve_price <= buy_now_price";
-pub const ERR_LOT_BID_LOT_NOT_ACTIVE: &str = "Expected lot to be active, cannot bid";
-pub const ERR_LOT_BID_BID_TOO_SMALL: &str = "Expected bigger bid, try again";
-pub const ERR_LOT_BID_SELLER_BIDS_SELF: &str = "Expected bidder_id is not equal to seller_id";
+pub const ERR_LOT_BID_WRONG_STATUS: &str = "bid: expected status active";
+pub const ERR_LOT_BID_BID_TOO_SMALL: &str = "bid: expected bigger bid";
+pub const ERR_LOT_BID_WRONG_BIDDER: &str = "bid: seller and lot cannot bid";
 pub const ERR_LOT_CLAIM_BY_BIDDER_WRONG_STATUS: &str = "claim by bidder: expected status sale success";
 pub const ERR_LOT_CLAIM_BY_BIDDER_WRONG_CLAIMER: &str = "claim by bidder: wrong claimer";
 pub const ERR_LOT_CLAIM_BY_SELLER_WRONG_STATUS: &str = "claim by seller: expected status withdrawn";
@@ -197,11 +197,11 @@ impl Lot {
     }
 
     pub fn validate_place_bid(&mut self, bid: &Bid, bid_step: Fraction) {
-        assert!(self.is_active(bid.timestamp), "{}", ERR_LOT_BID_LOT_NOT_ACTIVE);
+        assert!(self.is_active(bid.timestamp), "{}", ERR_LOT_BID_WRONG_STATUS);
         let min_next_bid_amount = self.next_bid_amount(bid.timestamp, bid_step).unwrap();
         assert!(bid.amount >= min_next_bid_amount, "{}", ERR_LOT_BID_BID_TOO_SMALL);
-        assert_ne!(self.seller_id, bid.bidder_id, "{}", ERR_LOT_BID_SELLER_BIDS_SELF);
-        assert_ne!(self.lot_id, bid.bidder_id, "{}", ERR_LOT_BID_SELLER_BIDS_SELF);
+        assert_ne!(self.seller_id, bid.bidder_id, "{}", ERR_LOT_BID_WRONG_BIDDER);
+        assert_ne!(self.lot_id, bid.bidder_id, "{}", ERR_LOT_BID_WRONG_BIDDER);
     }
 
     pub fn place_bid(&mut self, bid: &Bid, bid_step: Fraction) {
@@ -808,7 +808,7 @@ mod tests {
     }
 
     #[test]
-    fn test_lot_validate_place_bid() {
+    fn test_lot_place_bid() {
         let mut lot = create_lot_bob_sells_alice();
         let bid = Bid {
             bidder_id: "dan".parse().unwrap(),
@@ -817,5 +817,53 @@ mod tests {
         };
         lot.place_bid(&bid, Fraction::new(0, 1));
         assert_eq!(lot.bids.len(), 1, "{}", "expected bids size 1");
+    }
+
+    #[test]
+    #[should_panic(expected="bid: expected status active")]
+    fn test_lot_place_bid_fail_has_bids() {
+        let mut lot = create_lot_bob_sells_alice();
+        let bid = Bid {
+            bidder_id: "dan".parse().unwrap(),
+            amount: to_yocto("3"),
+            timestamp: to_ts(18),
+        };
+        lot.place_bid(&bid, Fraction::new(0, 1));
+    }
+
+    #[test]
+    #[should_panic(expected="bid: expected bigger bid")]
+    fn test_lot_place_bid_fail_too_small() {
+        let (mut lot, time_now) = create_lot_alice_with_bids();
+        let bid = Bid {
+            bidder_id: "dan".parse().unwrap(),
+            amount: to_yocto("3"),
+            timestamp: time_now,
+        };
+        lot.place_bid(&bid, Fraction::new(0, 1));
+    }
+
+    #[test]
+    #[should_panic(expected="bid: seller and lot cannot bid")]
+    fn test_lot_place_bid_fail_bid_from_seller() {
+        let mut lot = create_lot_bob_sells_alice();
+        let bid = Bid {
+            bidder_id: "bob".parse().unwrap(),
+            amount: to_yocto("3"),
+            timestamp: to_ts(11),
+        };
+        lot.place_bid(&bid, Fraction::new(0, 1));
+    }
+
+    #[test]
+    #[should_panic(expected="bid: seller and lot cannot bid")]
+    fn test_lot_place_bid_fail_bid_from_lot() {
+        let mut lot = create_lot_bob_sells_alice();
+        let bid = Bid {
+            bidder_id: "alice".parse().unwrap(),
+            amount: to_yocto("3"),
+            timestamp: to_ts(11),
+        };
+        lot.place_bid(&bid, Fraction::new(0, 1));
     }
 }
