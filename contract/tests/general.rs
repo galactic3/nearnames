@@ -1,8 +1,8 @@
 use near_sdk::serde_json::json;
 use near_sdk::Balance;
 use near_sdk_sim::{
-    call, deploy, init_simulator, to_yocto, to_nanos, view, ContractAccount, UserAccount, DEFAULT_GAS,
-    STORAGE_AMOUNT,
+    call, deploy, init_simulator, to_nanos, to_yocto, view, ContractAccount, UserAccount,
+    DEFAULT_GAS, STORAGE_AMOUNT,
 };
 
 use marketplace::{

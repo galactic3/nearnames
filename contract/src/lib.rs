@@ -1,3 +1,5 @@
+mod api_lot;
+mod fraction;
 mod lot;
 mod profile;
 mod utils;
@@ -16,6 +18,8 @@ use near_sdk::{
 };
 use uint::construct_uint;
 
+pub use crate::api_lot::*;
+pub use crate::fraction::*;
 pub use crate::lot::*;
 pub use crate::profile::*;
 pub use crate::utils::*;
@@ -112,7 +116,7 @@ mod tests {
 
     use near_sdk::test_utils::VMContextBuilder;
     use near_sdk::{testing_env, VMContext};
-    use near_sdk_sim::{to_yocto, to_ts, to_nanos};
+    use near_sdk_sim::{to_nanos, to_ts, to_yocto};
 
     fn get_context_simple(is_view: bool) -> VMContext {
         VMContextBuilder::new()
@@ -236,14 +240,14 @@ mod tests {
         contract.internal_lot_extract(&"alice".parse().unwrap());
     }
 
-    fn create_lot_bob_sells_alice(contract: &mut Contract) -> Lot {
+    fn create_lot_bob_sells_alice() -> Lot {
         let reserve_price = to_yocto("5");
         let buy_now_price = to_yocto("10");
 
         let time_now = to_ts(10);
         let duration = to_nanos(1);
 
-        contract.internal_lot_create(
+        Lot::new(
             "alice".parse().unwrap(),
             "bob".parse().unwrap(),
             reserve_price,
@@ -283,45 +287,6 @@ mod tests {
     }
 
     #[test]
-    fn internal_lot_create_fields() {
-        let context = get_context_simple(false);
-        testing_env!(context);
-        let mut contract = build_contract();
-
-        let lot = create_lot_bob_sells_alice(&mut contract);
-        assert_eq!(
-            lot.lot_id,
-            "alice".parse().unwrap(),
-            "expected lot.lot_id = alice"
-        );
-        assert_eq!(
-            lot.seller_id,
-            "bob".parse().unwrap(),
-            "expected lot.seller_id = bob"
-        );
-        assert_eq!(
-            lot.reserve_price,
-            to_yocto("5"),
-            "expected reserve price 5 yocto"
-        );
-        assert_eq!(
-            lot.buy_now_price,
-            to_yocto("10"),
-            "expected buy now price 10 yocto"
-        );
-        assert_eq!(
-            lot.start_timestamp,
-            to_ts(10),
-            "expected start day ten"
-        );
-        assert_eq!(
-            lot.finish_timestamp,
-            to_ts(11),
-            "expected finish day eleven"
-        );
-    }
-
-    #[test]
     fn internal_lot_create_save_extract() {
         let context = get_context_simple(false);
         testing_env!(context);
@@ -333,7 +298,7 @@ mod tests {
             "expected contract.lots.len() == 0 after extract"
         );
 
-        let lot_bob_sells_alice = create_lot_bob_sells_alice(&mut contract);
+        let lot_bob_sells_alice = create_lot_bob_sells_alice();
         contract.internal_lot_save(&lot_bob_sells_alice);
         assert_eq!(
             contract.lots.len(),
@@ -375,7 +340,7 @@ mod tests {
         let context = get_context_simple(false);
         testing_env!(context);
         let mut contract = build_contract();
-        let lot_bob_sells_alice = create_lot_bob_sells_alice(&mut contract);
+        let lot_bob_sells_alice = create_lot_bob_sells_alice();
         contract.internal_lot_save(&lot_bob_sells_alice);
 
         let response: Vec<LotView> = contract.lot_list();
@@ -397,12 +362,24 @@ mod tests {
         assert_eq!(response.is_withdrawn, false);
     }
 
+    fn api_lot_bid(contract: &mut Contract, lot_id: &AccountId, bid: &Bid) {
+        let context = get_context_with_payer(&bid.bidder_id, bid.amount, bid.timestamp);
+        testing_env!(context);
+        contract.lot_bid(lot_id.clone());
+    }
+
+    fn internal_lot_bid(contract: &mut Contract, lot_id: &LotId, bid: &Bid) {
+        let mut lot = contract.internal_lot_extract(lot_id);
+        lot.place_bid(bid, contract.bid_step);
+        contract.internal_lot_save(&lot);
+    }
+
     #[test]
     fn lot_bid_list() {
         let context = get_context_simple(false);
         testing_env!(context);
         let mut contract = build_contract();
-        let lot_bob_sells_alice = create_lot_bob_sells_alice(&mut contract);
+        let lot_bob_sells_alice = create_lot_bob_sells_alice();
         contract.internal_lot_save(&lot_bob_sells_alice);
 
         let bid: Bid = Bid {
@@ -410,14 +387,14 @@ mod tests {
             amount: to_yocto("7"),
             timestamp: to_ts(10),
         };
-        contract.internal_lot_bid(&"alice".parse().unwrap(), &bid);
+        internal_lot_bid(&mut contract, &"alice".parse().unwrap(), &bid);
 
         let bid: Bid = Bid {
             bidder_id: "dan".parse().unwrap(),
             amount: to_yocto("9"),
             timestamp: to_ts(10) + 1,
         };
-        contract.internal_lot_bid(&"alice".parse().unwrap(), &bid);
+        internal_lot_bid(&mut contract, &"alice".parse().unwrap(), &bid);
 
         let response: Vec<BidView> = contract.lot_bid_list("alice".parse().unwrap());
         let expected: Vec<BidView> = vec![
@@ -441,18 +418,18 @@ mod tests {
         let context = get_context_simple(false);
         testing_env!(context);
         let mut contract = build_contract();
-        let lot_bob_sells_alice = create_lot_bob_sells_alice(&mut contract);
+        let lot_bob_sells_alice = create_lot_bob_sells_alice();
         contract.internal_lot_save(&lot_bob_sells_alice);
 
         let first_bid_amount = to_yocto("6");
-        let next_bid_amount = first_bid_amount + contract.bid_step.clone() * first_bid_amount;
+        let next_bid_amount = first_bid_amount + contract.bid_step * first_bid_amount;
 
         let bid: Bid = Bid {
             bidder_id: "carol".parse().unwrap(),
             amount: first_bid_amount,
             timestamp: to_ts(10),
         };
-        contract.internal_lot_bid(&"alice".parse().unwrap(), &bid);
+        internal_lot_bid(&mut contract, &"alice".parse().unwrap(), &bid);
 
         let context = get_context_pred_alice(true);
         testing_env!(context);
@@ -486,7 +463,7 @@ mod tests {
         let context = get_context_simple(false);
         testing_env!(context);
         let mut contract = build_contract();
-        let mut lot = create_lot_bob_sells_alice(&mut contract);
+        let mut lot = create_lot_bob_sells_alice();
         lot.is_withdrawn = true;
         contract.internal_lot_save(&lot);
 
@@ -501,44 +478,23 @@ mod tests {
     }
 
     #[test]
-    fn lot_is_active_by_tm() {
-        let context = get_context_simple(false);
-        testing_env!(context);
-
-        let mut contract = build_contract();
-        let lot_bob_sells_alice = create_lot_bob_sells_alice(&mut contract);
-        // we don't care about starting time, it's just for the record
-        assert_eq!(lot_bob_sells_alice.is_active(to_ts(9)), true);
-        assert_eq!(lot_bob_sells_alice.is_active(to_ts(10)), true);
-        assert_eq!(
-            lot_bob_sells_alice.is_active(to_ts(11) - 1),
-            true
-        );
-        assert_eq!(lot_bob_sells_alice.is_active(to_ts(11)), false);
-        assert_eq!(lot_bob_sells_alice.is_active(to_ts(12)), false);
-    }
-
-    #[test]
     fn lot_is_active_buy_now() {
         let context = get_context_simple(false);
         testing_env!(context);
         let mut contract = build_contract();
         {
-            let lot = create_lot_bob_sells_alice(&mut contract);
+            let lot = create_lot_bob_sells_alice();
             contract.internal_lot_save(&lot);
         }
         let lot = contract.lots.get(&"alice".parse().unwrap()).unwrap();
-        assert!(
-            lot.is_active(to_ts(10)),
-            "must be active with no bids",
-        );
+        assert!(lot.is_active(to_ts(10)), "must be active with no bids",);
 
         let bid: Bid = Bid {
             bidder_id: "carol".parse().unwrap(),
             amount: to_yocto("10"),
             timestamp: to_ts(10),
         };
-        contract.internal_lot_bid(&"alice".parse().unwrap(), &bid);
+        internal_lot_bid(&mut contract, &"alice".parse().unwrap(), &bid);
         let lot = contract.lots.get(&"alice".parse().unwrap()).unwrap();
 
         assert!(
@@ -553,14 +509,11 @@ mod tests {
         testing_env!(context);
         let mut contract = build_contract();
         {
-            let lot = create_lot_bob_sells_alice(&mut contract);
+            let lot = create_lot_bob_sells_alice();
             contract.internal_lot_save(&lot);
         }
         let mut lot = contract.lots.get(&"alice".parse().unwrap()).unwrap();
-        assert!(
-            lot.is_active(to_ts(10)),
-            "must be active with no bids",
-        );
+        assert!(lot.is_active(to_ts(10)), "must be active with no bids",);
 
         lot.is_withdrawn = true;
 
@@ -597,11 +550,7 @@ mod tests {
 
         assert_eq!(result.lot_id, "alice".parse().unwrap());
         assert_eq!(result.seller_id, "bob".parse().unwrap());
-        assert_eq!(
-            result.start_timestamp,
-            to_ts(10),
-            "expected start day ten"
-        );
+        assert_eq!(result.start_timestamp, to_ts(10), "expected start day ten");
         assert_eq!(
             result.finish_timestamp,
             to_ts(11),
@@ -639,10 +588,7 @@ mod tests {
 
     #[test]
     fn last_bid_amount() {
-        let context = get_context_simple(false);
-        testing_env!(context);
-        let mut contract = build_contract();
-        let mut lot = create_lot_bob_sells_alice(&mut contract);
+        let mut lot = create_lot_bob_sells_alice();
         assert!(
             lot.last_bid_amount().is_none(),
             "expected last_bid_amount to be None"
@@ -665,58 +611,6 @@ mod tests {
         assert_eq!(lot.last_bid_amount().unwrap(), to_yocto("7"));
     }
 
-    #[test]
-    fn next_bid_amount() {
-        let context = get_context_simple(false);
-        testing_env!(context);
-        let mut contract = build_contract();
-        let mut lot = create_lot_bob_sells_alice(&mut contract);
-        assert!(
-            lot.last_bid_amount().is_none(),
-            "expected last_bid_amount to be None"
-        );
-
-        let time_now: Timestamp = to_ts(12);
-        assert!(
-            lot.next_bid_amount(time_now, contract.bid_step.clone())
-                .is_none(),
-            "Expected next_bid_amount to be none for inactive lot",
-        );
-
-        let time_now: Timestamp = to_ts(10);
-        assert_eq!(
-            lot.next_bid_amount(time_now, contract.bid_step.clone())
-                .unwrap(),
-            to_yocto("5")
-        );
-
-        let bid = Bid {
-            bidder_id: "carol".parse().unwrap(),
-            timestamp: to_ts(10),
-            amount: to_yocto("6"),
-        };
-        lot.bids.push(&bid);
-        let expected_next_bid_amount = bid.amount + contract.bid_step.clone() * bid.amount;
-        assert_eq!(
-            lot.next_bid_amount(time_now, contract.bid_step.clone())
-                .unwrap(),
-            expected_next_bid_amount,
-            "wrong next bid",
-        );
-
-        assert_eq!(
-            lot.next_bid_amount(time_now, Fraction::new(0, 4)).unwrap(),
-            to_yocto("6") + 1,
-            "expected plus yocto next bid for zero step",
-        );
-
-        assert_eq!(
-            lot.next_bid_amount(time_now, Fraction::new(4, 4)).unwrap(),
-            to_yocto("10"),
-            "expected cap at buy now price",
-        );
-    }
-
     // checks:
     //   - lot cannot bid
     //   - seller cannot bid
@@ -729,7 +623,7 @@ mod tests {
         testing_env!(context);
         let mut contract = build_contract();
         {
-            let lot = create_lot_bob_sells_alice(&mut contract);
+            let lot = create_lot_bob_sells_alice();
             contract.internal_lot_save(&lot);
         }
 
@@ -741,7 +635,7 @@ mod tests {
             amount: first_bid_amount,
             timestamp: to_ts(10),
         };
-        contract.internal_lot_bid(&"alice".parse().unwrap(), &bid);
+        internal_lot_bid(&mut contract, &"alice".parse().unwrap(), &bid);
         let lot = contract.lots.get(&"alice".parse().unwrap()).unwrap();
         assert_eq!(lot.bids.len(), 1, "expected one bid for lot");
 
@@ -763,7 +657,7 @@ mod tests {
             amount: second_bid_amount,
             timestamp: to_ts(10) + 1,
         };
-        contract.internal_lot_bid(&"alice".parse().unwrap(), &bid);
+        internal_lot_bid(&mut contract, &"alice".parse().unwrap(), &bid);
         let lot = contract.lots.get(&"alice".parse().unwrap()).unwrap();
         assert_eq!(lot.bids.len(), 2, "wrong bids length");
 
@@ -785,13 +679,13 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Expected lot to be active")]
+    #[should_panic(expected = "bid: expected status active")]
     pub fn internal_lot_bid_fail_after_finish() {
         let context = get_context_simple(false);
         testing_env!(context);
         let mut contract = build_contract();
         {
-            let lot = create_lot_bob_sells_alice(&mut contract);
+            let lot = create_lot_bob_sells_alice();
             contract.internal_lot_save(&lot);
         }
         let bid: Bid = Bid {
@@ -799,17 +693,17 @@ mod tests {
             amount: to_yocto("6"),
             timestamp: to_ts(13),
         };
-        contract.internal_lot_bid(&"alice".parse().unwrap(), &bid);
+        internal_lot_bid(&mut contract, &"alice".parse().unwrap(), &bid);
     }
 
     #[test]
-    #[should_panic(expected = "Expected bigger bid")]
+    #[should_panic(expected = "bid: expected bigger bid")]
     pub fn internal_lot_bid_fail_bid_below_reserve() {
         let context = get_context_simple(false);
         testing_env!(context);
         let mut contract = build_contract();
         {
-            let lot = create_lot_bob_sells_alice(&mut contract);
+            let lot = create_lot_bob_sells_alice();
             contract.internal_lot_save(&lot);
         }
         let bid: Bid = Bid {
@@ -817,17 +711,17 @@ mod tests {
             amount: to_yocto("4"),
             timestamp: to_ts(10),
         };
-        contract.internal_lot_bid(&"alice".parse().unwrap(), &bid);
+        internal_lot_bid(&mut contract, &"alice".parse().unwrap(), &bid);
     }
 
     #[test]
-    #[should_panic(expected = "Expected bigger bid")]
+    #[should_panic(expected = "bid: expected bigger bid")]
     pub fn internal_lot_bid_fail_bid_below_prev_bid() {
         let context = get_context_simple(false);
         testing_env!(context);
         let mut contract = build_contract();
         {
-            let lot = create_lot_bob_sells_alice(&mut contract);
+            let lot = create_lot_bob_sells_alice();
             contract.internal_lot_save(&lot);
         }
 
@@ -837,7 +731,7 @@ mod tests {
                 amount: to_yocto("7"),
                 timestamp: to_ts(10),
             };
-            contract.internal_lot_bid(&"alice".parse().unwrap(), &bid);
+            internal_lot_bid(&mut contract, &"alice".parse().unwrap(), &bid);
         }
 
         {
@@ -846,18 +740,18 @@ mod tests {
                 amount: to_yocto("6"),
                 timestamp: to_ts(10) + 1,
             };
-            contract.internal_lot_bid(&"alice".parse().unwrap(), &bid);
+            internal_lot_bid(&mut contract, &"alice".parse().unwrap(), &bid);
         }
     }
 
     #[test]
-    #[should_panic(expected = "Expected lot to be active")]
+    #[should_panic(expected = "bid: expected status active")]
     pub fn internal_lot_bid_fail_bid_above_buy_now_price() {
         let context = get_context_simple(false);
         testing_env!(context);
         let mut contract = build_contract();
         {
-            let lot = create_lot_bob_sells_alice(&mut contract);
+            let lot = create_lot_bob_sells_alice();
             contract.internal_lot_save(&lot);
         }
 
@@ -867,7 +761,7 @@ mod tests {
                 amount: to_yocto("10"),
                 timestamp: to_ts(10),
             };
-            contract.internal_lot_bid(&"alice".parse().unwrap(), &bid);
+            internal_lot_bid(&mut contract, &"alice".parse().unwrap(), &bid);
         }
 
         {
@@ -876,7 +770,7 @@ mod tests {
                 amount: to_yocto("11"),
                 timestamp: to_ts(10) + 1,
             };
-            contract.internal_lot_bid(&"alice".parse().unwrap(), &bid);
+            internal_lot_bid(&mut contract, &"alice".parse().unwrap(), &bid);
         }
     }
 
@@ -885,26 +779,26 @@ mod tests {
     }
 
     #[test]
-    pub fn api_lot_bid() {
+    pub fn test_api_lot_bid() {
         let context = get_context_simple(false);
         testing_env!(context);
         let mut contract = build_contract();
         {
-            let lot = create_lot_bob_sells_alice(&mut contract);
+            let lot = create_lot_bob_sells_alice();
             contract.internal_lot_save(&lot);
         }
 
         let first_bid_amount = to_yocto("6");
         let second_bid_amount = to_yocto("8");
-        {
-            let context = get_context_with_payer(
-                &"carol".parse().unwrap(),
-                first_bid_amount,
-                to_ts(10),
-            );
-            testing_env!(context);
-            contract.lot_bid("alice".to_string().try_into().unwrap());
-        }
+        api_lot_bid(
+            &mut contract,
+            &"alice".parse().unwrap(),
+            &Bid {
+                bidder_id: "carol".parse().unwrap(),
+                amount: first_bid_amount,
+                timestamp: to_ts(10),
+            },
+        );
 
         let lot = contract.lots.get(&"alice".parse().unwrap()).unwrap();
         assert_eq!(lot.bids.len(), 1, "expected one bid for lot");
@@ -916,11 +810,7 @@ mod tests {
             "carol".parse().unwrap(),
             "expected carol as last bidder"
         );
-        assert_eq!(
-            last_bid.timestamp,
-            to_ts(10),
-            "expected start as timestamp"
-        );
+        assert_eq!(last_bid.timestamp, to_ts(10), "expected start as timestamp");
         {
             let profile_alice = contract.internal_profile_extract(&"alice".parse().unwrap());
             assert_eq!(
@@ -933,7 +823,7 @@ mod tests {
             let profile_bob = contract.internal_profile_extract(&"bob".parse().unwrap());
             let expected = subtract_seller_reward_commission(
                 first_bid_amount,
-                contract.seller_rewards_commission.clone(),
+                contract.seller_rewards_commission,
             );
             assert_eq!(
                 profile_bob.rewards_available, expected,
@@ -950,15 +840,15 @@ mod tests {
             contract.internal_profile_save(&profile_carol);
         }
 
-        {
-            let context = get_context_with_payer(
-                &"dan".parse().unwrap(),
-                second_bid_amount,
-                to_ts(10) + 1,
-            );
-            testing_env!(context);
-            contract.lot_bid("alice".to_string().try_into().unwrap());
-        }
+        api_lot_bid(
+            &mut contract,
+            &"alice".parse().unwrap(),
+            &Bid {
+                bidder_id: "dan".parse().unwrap(),
+                amount: second_bid_amount,
+                timestamp: to_ts(10) + 1,
+            },
+        );
 
         let lot = contract.lots.get(&"alice".parse().unwrap()).unwrap();
         let last_bid = lot.last_bid().unwrap();
@@ -988,7 +878,7 @@ mod tests {
             let profile_bob = contract.internal_profile_extract(&"bob".parse().unwrap());
             let expected = subtract_seller_reward_commission(
                 second_bid_amount,
-                contract.seller_rewards_commission.clone(),
+                contract.seller_rewards_commission,
             );
             assert_eq!(
                 profile_bob.rewards_available, expected,
@@ -997,14 +887,9 @@ mod tests {
             contract.internal_profile_save(&profile_bob);
         }
         {
-            let first_bidder_rewards = first_bid_amount +
-                contract.prev_bidder_commission_share.clone() *
-                (
-                    contract.seller_rewards_commission.clone() * (
-                        second_bid_amount -
-                        first_bid_amount
-                    )
-                );
+            let first_bidder_rewards = first_bid_amount
+                + contract.prev_bidder_commission_share
+                    * (contract.seller_rewards_commission * (second_bid_amount - first_bid_amount));
             let profile_carol = contract.internal_profile_extract(&"carol".parse().unwrap());
             assert_eq!(
                 profile_carol.rewards_available, first_bidder_rewards,
@@ -1023,47 +908,47 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Expected bigger bid")]
+    #[should_panic(expected = "bid: expected bigger bid")]
     pub fn api_lot_bid_fail_small_bid() {
         let context = get_context_simple(false);
         testing_env!(context);
         let mut contract = build_contract();
         {
-            let lot = create_lot_bob_sells_alice(&mut contract);
+            let lot = create_lot_bob_sells_alice();
             contract.internal_lot_save(&lot);
         }
 
-        {
-            let context = get_context_with_payer(
-                &"carol".parse().unwrap(),
-                to_yocto("4"),
-                to_ts(10),
-            );
-            testing_env!(context);
-            contract.lot_bid("alice".to_string().try_into().unwrap());
-        }
+        api_lot_bid(
+            &mut contract,
+            &"alice".parse().unwrap(),
+            &Bid {
+                bidder_id: "carol".parse().unwrap(),
+                amount: to_yocto("4"),
+                timestamp: to_ts(10),
+            },
+        );
     }
 
     #[test]
-    #[should_panic(expected = "Expected lot to be active")]
+    #[should_panic(expected = "bid: expected status active")]
     pub fn api_lot_bid_fail_inactive() {
         let context = get_context_simple(false);
         testing_env!(context);
         let mut contract = build_contract();
         {
-            let lot = create_lot_bob_sells_alice(&mut contract);
+            let lot = create_lot_bob_sells_alice();
             contract.internal_lot_save(&lot);
         }
 
-        {
-            let context = get_context_with_payer(
-                &"carol".parse().unwrap(),
-                to_yocto("6"),
-                to_ts(11),
-            );
-            testing_env!(context);
-            contract.lot_bid("alice".to_string().try_into().unwrap());
-        }
+        api_lot_bid(
+            &mut contract,
+            &"alice".parse().unwrap(),
+            &Bid {
+                bidder_id: "carol".parse().unwrap(),
+                amount: to_yocto("6"),
+                timestamp: to_ts(11),
+            },
+        );
     }
 
     #[test]
@@ -1072,7 +957,7 @@ mod tests {
         testing_env!(context);
         let mut contract = build_contract();
         {
-            let lot = create_lot_bob_sells_alice(&mut contract);
+            let lot = create_lot_bob_sells_alice();
             contract.internal_lot_save(&lot);
         }
 
@@ -1082,29 +967,13 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Only seller can withdraw")]
-    pub fn api_lot_withdraw_fail_not_seller() {
-        let context = get_context_simple(false);
-        testing_env!(context);
-        let mut contract = build_contract();
-        {
-            let lot = create_lot_bob_sells_alice(&mut contract);
-            contract.internal_lot_save(&lot);
-        }
-
-        let context = get_context_with_payer(&"carol".parse().unwrap(), 0, to_ts(13));
-        testing_env!(context);
-        contract.lot_withdraw("alice".to_string().try_into().unwrap());
-    }
-
-    #[test]
-    #[should_panic(expected = "Bid exists, cannot withdraw")]
+    #[should_panic(expected = "withdraw: expected no bids")]
     pub fn api_lot_withdraw_fail_has_bids() {
         let context = get_context_simple(false);
         testing_env!(context);
         let mut contract = build_contract();
         {
-            let lot = create_lot_bob_sells_alice(&mut contract);
+            let lot = create_lot_bob_sells_alice();
             contract.internal_lot_save(&lot);
         }
 
@@ -1113,27 +982,10 @@ mod tests {
             amount: to_yocto("7"),
             timestamp: to_ts(10),
         };
-        contract.internal_lot_bid(&"alice".parse().unwrap(), &bid);
+        internal_lot_bid(&mut contract, &"alice".parse().unwrap(), &bid);
 
         let context = get_context_with_payer(&"bob".parse().unwrap(), 0, to_ts(13));
         testing_env!(context);
-        contract.lot_withdraw("alice".to_string().try_into().unwrap());
-    }
-
-    #[test]
-    #[should_panic(expected = "Lot already withdrawn")]
-    pub fn api_lot_withdraw_fail_double() {
-        let context = get_context_simple(false);
-        testing_env!(context);
-        let mut contract = build_contract();
-        {
-            let lot = create_lot_bob_sells_alice(&mut contract);
-            contract.internal_lot_save(&lot);
-        }
-
-        let context = get_context_with_payer(&"bob".parse().unwrap(), 0, to_ts(13));
-        testing_env!(context);
-        contract.lot_withdraw("alice".to_string().try_into().unwrap());
         contract.lot_withdraw("alice".to_string().try_into().unwrap());
     }
 
@@ -1146,7 +998,7 @@ mod tests {
         testing_env!(context);
         let mut contract = build_contract();
         {
-            let lot = create_lot_bob_sells_alice(&mut contract);
+            let lot = create_lot_bob_sells_alice();
             contract.internal_lot_save(&lot);
         }
 
@@ -1156,15 +1008,12 @@ mod tests {
                 amount: to_yocto("7"),
                 timestamp: to_ts(10),
             };
-            contract.internal_lot_bid(&"alice".parse().unwrap(), &bid);
+            internal_lot_bid(&mut contract, &"alice".parse().unwrap(), &bid);
         }
 
         {
-            let context = get_context_with_payer(
-                &"carol".parse().unwrap(),
-                to_yocto("0"),
-                to_ts(11),
-            );
+            let context =
+                get_context_with_payer(&"carol".parse().unwrap(), to_yocto("0"), to_ts(11));
             testing_env!(context);
             let public_key: PublicKey = DEFAULT_PUBLIC_KEY.parse().unwrap();
 
@@ -1178,12 +1027,11 @@ mod tests {
         testing_env!(context);
         let mut contract = build_contract();
         {
-            let lot = create_lot_bob_sells_alice(&mut contract);
+            let lot = create_lot_bob_sells_alice();
             contract.internal_lot_save(&lot);
         }
 
-        let context =
-            get_context_with_payer(&"bob".parse().unwrap(), to_yocto("0"), to_ts(13));
+        let context = get_context_with_payer(&"bob".parse().unwrap(), to_yocto("0"), to_ts(13));
         testing_env!(context);
         contract.lot_withdraw("alice".to_string().try_into().unwrap());
         let public_key: PublicKey = DEFAULT_PUBLIC_KEY.parse().unwrap();
@@ -1191,22 +1039,19 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Expected lot to be not active")]
+    #[should_panic(expected = "claim by bidder: expected status sale success")]
     pub fn api_lot_claim_fail_still_active() {
         let context = get_context_simple(false);
         testing_env!(context);
         let mut contract = build_contract();
         {
-            let lot = create_lot_bob_sells_alice(&mut contract);
+            let lot = create_lot_bob_sells_alice();
             contract.internal_lot_save(&lot);
         }
 
         {
-            let context = get_context_with_payer(
-                &"carol".parse().unwrap(),
-                to_yocto("0"),
-                to_ts(10),
-            );
+            let context =
+                get_context_with_payer(&"carol".parse().unwrap(), to_yocto("0"), to_ts(10));
             testing_env!(context);
             let public_key: PublicKey = DEFAULT_PUBLIC_KEY.parse().unwrap();
 
@@ -1274,15 +1119,15 @@ mod tests {
             assert!(profile.lots_bidding.is_empty(), "must be empty for seller");
         }
 
-        {
-            let context = get_context_with_payer(
-                &"carol".parse().unwrap(),
-                to_yocto("7"),
-                to_ts(10),
-            );
-            testing_env!(context);
-            contract.lot_bid("alice".to_string().try_into().unwrap());
-        }
+        api_lot_bid(
+            &mut contract,
+            &"alice".parse().unwrap(),
+            &Bid {
+                bidder_id: "carol".parse().unwrap(),
+                amount: to_yocto("7"),
+                timestamp: to_ts(10),
+            },
+        );
 
         {
             let profile = contract.profiles.get(&"carol".parse().unwrap()).unwrap();
@@ -1314,10 +1159,15 @@ mod tests {
             &"lot_1".parse().unwrap(),
         );
 
-        let context =
-            get_context_with_payer(&"carol".parse().unwrap(), to_yocto("7"), to_ts(10));
-        testing_env!(context);
-        contract.lot_bid("alice".to_string().try_into().unwrap());
+        api_lot_bid(
+            &mut contract,
+            &"alice".parse().unwrap(),
+            &Bid {
+                bidder_id: "carol".parse().unwrap(),
+                amount: to_yocto("7"),
+                timestamp: to_ts(10),
+            },
+        );
 
         {
             let profile = contract.profiles.get(&"bob".parse().unwrap()).unwrap();
@@ -1392,56 +1242,5 @@ mod tests {
             let result = contract.lot_list_bidding_by("bob".parse().unwrap());
             assert!(result.is_empty(), "lot_bidding for bob must be empty");
         }
-    }
-
-    #[test]
-    pub fn test_fractions_new() {
-        {
-            Fraction::new(0, 1);
-            Fraction::new(1, 1);
-            Fraction::new(7, 13);
-            Fraction::new(13, 13);
-        }
-    }
-
-    #[test]
-    #[should_panic(expected = "expected denom > 0")]
-    pub fn test_fractions_new_fail_zero_denum() {
-        {
-            Fraction::new(0, 0);
-        }
-    }
-
-    #[test]
-    #[should_panic(expected = "expected num <= denom")]
-    pub fn test_fractions_new_fail_greater_than_one() {
-        {
-            Fraction::new(2, 1);
-        }
-    }
-
-    #[test]
-    pub fn test_fractions_mul() {
-        assert_eq!(
-            Fraction::new(0, 13) * 10,
-            0,
-            "expected zero mul for zero fraction"
-        );
-        assert_eq!(
-            Fraction::new(7, 13) * 0,
-            0,
-            "expected zero mul for zero balance"
-        );
-        assert_eq!(
-            Fraction::new(13, 13) * 100,
-            100,
-            "expected same mul one fraction"
-        );
-        assert_eq!(
-            Fraction::new(7, 13) * 100,
-            53,
-            "expected zero mul for zero balance"
-        );
-        assert_eq!(Fraction::new(1, 2) * 9, 4, "expected floor rounding");
     }
 }
