@@ -1,4 +1,5 @@
 mod lot;
+mod api_lot;
 mod profile;
 mod utils;
 mod fraction;
@@ -19,6 +20,7 @@ use uint::construct_uint;
 
 pub use crate::fraction::*;
 pub use crate::lot::*;
+pub use crate::api_lot::*;
 pub use crate::profile::*;
 pub use crate::utils::*;
 
