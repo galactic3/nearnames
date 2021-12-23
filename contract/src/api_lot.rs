@@ -95,9 +95,14 @@ impl Contract {
         lot.bids.iter().map(|v| v.into()).collect()
     }
 
-    pub fn lot_list(&self) -> Vec<LotView> {
+    pub fn lot_list(&self, limit: Option<usize>, offset: Option<usize>) -> Vec<LotView> {
         let now = env::block_timestamp();
-        self.lots.values().map(|v| (&v, now, self).into()).collect()
+
+        let values = self.lots.values()
+            .skip(offset.unwrap_or(0))
+            .take(limit.unwrap_or(usize::MAX));
+
+        values.map(|v| (&v, now, self).into()).collect()
     }
 
     pub fn lot_list_offering_by(&self, profile_id: ProfileId) -> Vec<LotView> {
