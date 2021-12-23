@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import ls from 'local-storage';
 import { customRequestSigninFullAccess, toNear, nearTo } from '../utils.js';
+import { Button } from '@mui/material';
 
 function OfferPage (props) {
 
   const accountSuffix = '.' + props.app.accountSuffix;
+  const [showAlert, setShowAlert] = useState(false);
+  const [contentAlert, setContentAlert] = useState('');
   const [offerButtonEnabled, setOfferButtonEnabled] = useState(true);
 
   const onSubmit = async (e) => {
@@ -126,9 +129,9 @@ function OfferPage (props) {
             type="number"
           /> hours
         </p>
-        <button disabled={!offerButtonEnabled} type="submit">
+        <Button variant="outlined" disabled={!offerButtonEnabled} type="submit">
           Create offer
-        </button>
+        </Button>
       </fieldset>
     </form>
     </div>

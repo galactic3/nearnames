@@ -1,13 +1,14 @@
 import 'regenerator-runtime/runtime';
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import * as nearAPI from 'near-api-js';
-import 'bootstrap/dist/css/bootstrap.min.css'
 import localStorage from 'local-storage'
-import { HashRouter as Router, Link, Route, Switch, Redirect } from 'react-router-dom'
+import { HashRouter as Router, NavLink, Route, Switch, Redirect } from 'react-router-dom'
 import OfferPage from './components/Offer';
 import OfferProcessPage from './components/OfferProcess';
 import Lots from './components/Lots';
 import ProfilePage from './components/Profile';
+// import { ReactComponent as LogoutIcon }from './assets/logout.svg';
+import LogoutIcon from '@mui/icons-material/Logout';
 
 class App extends React.Component {
   constructor(props) {
@@ -20,12 +21,13 @@ class App extends React.Component {
       wallet: props.wallet,
       config: props.nearConfig,
       contract: props.contract,
-      currentUser: props.currentUser
+      currentUser: props.currentUser,
     };
 
-    this.app.accountId = props.currentUser && props.currentUser.accountId;
     this.app.account = props.wallet.account();
-    this.app.accountSuffix = 'testnet';
+    this.app.accountId = props.currentUser && props.currentUser.accountId;
+    this.app.accountName = props.currentUser && props.currentUser.accountId && props.currentUser.accountId.split('.')[0];
+    this.app.accountSuffix = props.currentUser && props.currentUser.accountId && props.currentUser.accountId.split('.')[1];
     this.app.marketPublicKey = 'ed25519:Ga6C8S7jVG2inG88cos8UsdtGVWRFQasSdTdtHL7kBqL';
 
     this.state = {
@@ -44,6 +46,10 @@ class App extends React.Component {
       props.wallet.signOut();
       window.location.replace(window.location.origin + window.location.pathname);
     };
+
+    this.app.createOffer = () => {
+
+    }
 
     this.initApp().then(() => {
       this.setState({
@@ -175,29 +181,35 @@ class App extends React.Component {
       <main>
         <Router basename='/'>
           <header>
-            <h1>Name hub</h1>
+            <div className="container">
+              <h1><NavLink aria-current='page' to='/'>Near names</NavLink></h1>
 
-            { this.state.connected && <ul className='nav'>
-                <li className='nav-item'>
-                  <Link className='nav-link' aria-current='page' to='/lots'>Lots</Link>
-                </li>
-              { this.app.currentUser && (<li className='nav-item'>
-                  <Link className='nav-link' aria-current='page'
-                        to={`/profile/${this.app.currentUser.accountId}`}>Profile</Link>
-                </li>)}
-                <li className='nav-item'>
-                  <Link className='nav-link' aria-current='page' to='/offer'>Offer</Link>
-                </li>
-              </ul> }
-            { !this.state.connected ? (
-                <div className="auth"><span className='spinner-grow spinner-grow-sm' role='status' aria-hidden='true' /></div>
-              ) : this.app.currentUser
-              ? <div className="auth">
-                  <span className="current_name">{ this.app.currentUser.accountId }</span>
-                  <button onClick={this.app.signOut}>Log out</button>
-                </div>
-              : <div className="auth"><button onClick={this.app.signIn}>Log in</button></div>
-            }
+              { this.state.connected &&
+                <ul className='nav'>
+                  <li className='nav-item'>
+                    <NavLink activeClassName='active' className='nav-link' aria-current='page' to='/lots'>Lots</NavLink>
+                  </li>
+                { this.app.currentUser && (<li className='nav-item'>
+                    <NavLink activeClassName='active' className='nav-link' aria-current='page'
+                          to={`/profile/${this.app.currentUser.accountId}`}>Profile</NavLink>
+                  </li>)}
+                  <li className='nav-item'>
+                    <NavLink activeClassName='active' className='nav-link' aria-current='page' to='/offer'>Offer</NavLink>
+                  </li>
+                </ul> }
+                <button className="create_offer" onClick={this.app.createOffer}>Create new offer</button>
+                { !this.state.connected ? (
+                    <div className="auth">
+                      <span className='spinner-grow spinner-grow-sm' role='status' aria-hidden='true' />
+                    </div>
+                  ) : this.app.currentUser
+                  ? <div className="auth">
+                      <span className="current_name">{this.app.accountName}<span className="suffix">.{this.app.accountSuffix}</span></span>
+                      <a className="icon logout" onClick={this.app.signOut}><LogoutIcon/></a>
+                    </div>
+                  : <div className="auth"><button className="login" onClick={this.app.signIn}>Log in</button></div>
+                }
+            </div>
           </header>
           <Switch>
             <Route exact path='/'>

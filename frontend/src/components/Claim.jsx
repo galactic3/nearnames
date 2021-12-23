@@ -55,35 +55,31 @@ function ModalClaim(props) {
     >
       <Modal.Body>
         <div className='container'>
-          <h3 className="my-3">Claim <strong>{props.lot}</strong></h3>
+          <h3 className="my-3">Claim <strong>{props.lot.lot_id}</strong></h3>
           { showLoader && <Loader/> }
           { !showSuccess && !showLoader ? <div>
             <form onSubmit={(e) => claimBySeedPhrase(e)}>
-              <div className='d-flex my-3'>
-                <div className='form-group'>
-                  <label>Save this randomly generated seed phrase or choose your own</label>
-                  <textarea
-                    className='form-control my-2'
-                    defaultValue={seedPhrase}
-                    ref={seedPhraseRef}
-                  />
-                  <button className='w-100' type="submit">Claim using seed phrase</button>
-                </div>
+              <div className='form-group'>
+                <label>Save this randomly generated seed phrase or choose your own</label>
+                <textarea
+                  className='form-control my-2'
+                  defaultValue={seedPhrase}
+                  ref={seedPhraseRef}
+                />
+                <button className='w-100' type="submit">Claim using seed phrase</button>
               </div>
             </form>
 
             <form onSubmit={(e) => claimByPublicKey(e)}>
               <h3 className='text-center'>or</h3>
-              <div className='d-flex my-3'>
-                <div className='form-group'>
-                  <label>Put your base58 public key</label>
-                  <textarea
-                    className='form-control my-2'
-                    ref={publicKeyRef}
-                    required
-                  />
-                  <button className='w-100' type="submit">Claim using new public key</button>
-                </div>
+              <div className='form-group'>
+                <label>Put your base58 public key</label>
+                <textarea
+                  className='form-control my-2'
+                  ref={publicKeyRef}
+                  required
+                />
+                <button className='w-100' type="submit">Claim using new public key</button>
               </div>
             </form>
         </div> :
@@ -95,9 +91,6 @@ function ModalClaim(props) {
         }
         </div>
       </Modal.Body>
-      <Modal.Footer>
-        <button onClick={props.onHide}>Cancel</button>
-      </Modal.Footer>
     </Modal>
   );
 }

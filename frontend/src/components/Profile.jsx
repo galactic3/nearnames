@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 import Loader from './Loader';
-import {BOATLOAD_OF_GAS, nearTo} from "../utils";
+import {BOATLOAD_OF_GAS, nearTo, renderName} from "../utils";
 import {Spinner} from "react-bootstrap";
 import LotsList from "./LotsList";
 
@@ -49,12 +49,15 @@ function Profile (props) {
 
 
   return (
-    <div>
+    <div className="container">
     { loader ? <Loader/> : profile ?
       <div className="mt-3">
-        <h5><strong>{profileId}</strong></h5>
-        <p><strong>available:</strong> <span>{nearTo(profile.rewards_available)}</span><span title="NEAR Tokens">Ⓝ</span> <strong>claimed:</strong> <span>{nearTo(profile.rewards_claimed)}</span><span title="NEAR Tokens">Ⓝ</span></p>
-        {claimLoader ? <Spinner className="mb-5" animation="grow" /> : <button name="claim_rewards" className="mb-5" disabled={!parseFloat(profile.rewards_available)} onClick={(e) => claim()}>Claim rewards</button> }
+        <div className="profile-container">
+          <h5 className="profile-name"><strong>{renderName(profileId)}</strong></h5>
+          <div className="profile-block"><strong>Available:</strong> <span className="rewards near-icon">{nearTo(profile.rewards_available)}</span></div>
+          <div className="profile-block"><strong>Claimed:</strong> <span className="rewards near-icon">{nearTo(profile.rewards_claimed)}</span></div>
+          <div className="profile-block">{claimLoader ? <Spinner className="mb-5" animation="grow" /> : <button name="claim_rewards" className="mb-5" disabled={!parseFloat(profile.rewards_available)} onClick={(e) => claim(e)}>Claim rewards</button> }</div>
+        </div>
         <LotsList lots={lotsOffering} getLots={getLotsOffering} name={' offer'} {...props}/>
         <LotsList lots={lotsBidding} {...props} name={' bidding'}/>
       </div> :
