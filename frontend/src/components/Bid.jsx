@@ -52,9 +52,9 @@ function ModalBid (props) {
         <span className="countdown"><AccessTimeFilledIcon className="icon"/><Countdown daysInHours={true} date={getCountdownTime(lot)}/></span>
       </div>
       {(isNotSeller && props.currentUser) && <div className="bid_price">
-        <span className="buy-now_price">Buy now: <strong>4 Near</strong></span>
+        <span className="buy-now_price">Buy now: <strong className="near-icon">{getBuyNowPrice(lot)}</strong></span>
         <button name="buy_now" onClick={(e) => bid(e, lot, getBuyNowPrice(lot))}>Buy now</button>
-        <input type="number" name="bid_input" className="large" ref={bidPrice} defaultValue={getNextBidAmount(lot)}/>
+        <input type="number" name="bid_input" className="large" ref={bidPrice} min={getNextBidAmount(lot)} defaultValue={getNextBidAmount(lot)}/>
         <button name="bid" onClick={(e) => bid(e, lot, bidPrice.current.value)}>Bid</button>
       </div>}
       <div className="bid_list">

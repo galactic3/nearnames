@@ -29,7 +29,7 @@ function Lots(props) {
   const filterList = async (e) => {
     const value = e.target.value.toLowerCase();
     if(value !== '') {
-      const result = lots.filter((lot) => {
+      const result = cashLots.filter((lot) => {
         return lot.lot_id.toLowerCase().includes(value);
       })
       setLots(result);
