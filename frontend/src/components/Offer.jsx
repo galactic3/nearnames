@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
 import ls from 'local-storage';
 import { customRequestSigninFullAccess, toNear, nearTo } from '../utils.js';
+import {Box, IconButton, Modal} from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
 
-function OfferPage (props) {
+function Offer (props) {
 
   const accountSuffix = '.' + props.app.accountSuffix;
+  const [showAlert, setShowAlert] = useState(false);
+  const [contentAlert, setContentAlert] = useState('');
   const [offerButtonEnabled, setOfferButtonEnabled] = useState(true);
 
   const onSubmit = async (e) => {
@@ -66,74 +70,104 @@ function OfferPage (props) {
     await customRequestSigninFullAccess(
       props.app.wallet,
       props.app.config.contractName,
-      window.location.origin + '/#/offerProcess',
-      window.location.origin + '/#/offer'
+      window.location.origin + window.location.pathname + '/#/offerProcess',
+      window.location.origin + window.location.pathname + + '/#/lots'
     )
-
   };
 
   return (
-    <div className="form_offer">
-    <form onSubmit={onSubmit}>
-      <fieldset id="fieldset">
-        <p>
-          <label htmlFor="lot_id">Lot account:</label>
-          <input
-            autoComplete="off"
-            type="text"
-            id="lot_id"
-            required
-          /> {accountSuffix}
-        </p>
-        <p>
-          <label htmlFor="seller_id">Seller account:</label>
-          <input
-            autoComplete="off"
-            type="text"
-            id="seller_id"
-            required
-          /> {accountSuffix}
-        </p>
-        <p>
-          <label htmlFor="reserve_price">Min price:</label>
-          <input
-            autoComplete="off"
-            defaultValue="1.5"
-            id="reserve_price"
-            min="1.5"
-            step="0.01"
-            type="number"
-            required
-          />
-          <span title="NEAR Tokens">Ⓝ</span>
-        </p>
-        <p>
-          <label htmlFor="buy_now_price">Buy now price:</label>
-          <input
-            autoComplete="off"
-            id="buy_now_price"
-            min="1.5"
-            step="0.01"
-            type="number"
-            required
-          />
-          <span title="NEAR Tokens">Ⓝ</span>
-        </p>
-        <p>
-          <label htmlFor="buy_now_price">Duration:</label>
-          <input
-            autoComplete="off"
-            id="duration"
-            type="number"
-          /> hours
-        </p>
-        <button disabled={!offerButtonEnabled} type="submit">
-          Create offer
-        </button>
-      </fieldset>
-    </form>
-    </div>
+    <Modal onClose={props.onClose} open={props.open}>
+      <Box className="modal-container offer_modal">
+        <IconButton
+          aria-label="close"
+          onClick={props.onClose}
+          className="button-icon"
+          sx={{
+            position: 'absolute',
+            right: 8,
+            top: 8,
+            color: 'var(--gray)',
+          }}
+        >
+          <CloseIcon />
+        </IconButton>
+        <h3 className="title">Create offer</h3>
+        <form className="form_offer" onSubmit={onSubmit}>
+          <fieldset>
+            <div className='form-group'>
+              <label htmlFor="lot_id">Lot account:</label>
+              <div className="input-wrapper">
+                <input
+                  className="name"
+                  autoComplete="off"
+                  type="text"
+                  id="lot_id"
+                  required
+                /><span>{accountSuffix}</span>
+              </div>
+            </div>
+            <div className='form-group'>
+              <label htmlFor="seller_id">Seller account:</label>
+              <div className="input-wrapper">
+                <input
+                  className="name"
+                  autoComplete="off"
+                  type="text"
+                  id="seller_id"
+                  required
+                /><span>{accountSuffix}</span>
+              </div>
+            </div>
+            <div className='form-group'>
+              <label htmlFor="reserve_price">Min price:</label>
+              <div className="input-wrapper">
+                <input
+                  className="price"
+                  autoComplete="off"
+                  defaultValue="1.5"
+                  id="reserve_price"
+                  min="1.5"
+                  step="0.01"
+                  type="number"
+                  required
+                /><span>Near</span>
+              </div>
+            </div>
+            <div className='form-group'>
+              <label htmlFor="buy_now_price">Buy now price:</label>
+              <div className="input-wrapper">
+              <input
+                className="price"
+                autoComplete="off"
+                id="buy_now_price"
+                min="1.5"
+                step="0.01"
+                type="number"
+                required
+              /><span>Near</span>
+              </div>
+            </div>
+            <div className='form-group'>
+              <label htmlFor="buy_now_price">Duration:</label>
+              <div className="input-wrapper">
+              <input
+                className="duration"
+                autoComplete="off"
+                id="duration"
+                type="text"
+              /><span>hours</span>
+              </div>
+            </div>
+          </fieldset>
+          <div className="button_wrapper">
+            <button disabled={!offerButtonEnabled} type="submit" className="full-width">
+              Create offer
+            </button>
+          </div>
+        </form>
+      </Box>
+    </Modal>
   )
 }
 
-export default OfferPage;
+export default Offer;

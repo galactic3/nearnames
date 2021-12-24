@@ -1,0 +1,342 @@
+
+.container {
+  width: 100%;
+  padding-right: 32px;
+  padding-left: 32px;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.lots-container {
+  padding: 20px;
+  margin-bottom: 20px;
+  background-color: var(--fg);
+  border-radius: 10px;
+
+  .lots-title {
+    font-size: 22px;
+    line-height: 32px;
+    margin-bottom: 20px;
+  }
+
+  .lot_list {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    margin: 0;
+    padding: 0;
+  }
+
+  .lot_item {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    background-color: var(--main);
+    border-radius: 8px;
+    margin: 0 0 20px;
+    padding: 15px;
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  .lot_info {
+    margin-right: auto;
+    padding: 0 10px;
+    .lot_name {
+      display: block;
+      font-size: 32px;
+      line-height: 40px;
+    }
+    .seller_name {
+      .icon {
+        font-size: 1rem;
+        vertical-align: top;
+        margin-top: 4px;
+      }
+      .account-name {
+        margin-left: 5px;
+        color: var(--light-gray);
+      }
+    }
+  }
+
+  .lot_price {
+    height: 70px;
+    border-right: 1px solid var(--fg);
+    border-left: 1px solid var(--fg);
+    padding: 0 36px;
+    text-align: center;
+    .current_price {
+      display: block;
+      font-size: 22px;
+      line-height: 40px;
+      color: var(--link);
+      font-weight: 700;
+    }
+    .buy-now_price {
+      font-size: 12px;
+      color: var(--light-gray);
+      strong {
+        font-weight: 700;
+      }
+    }
+  }
+
+  .lot_status {
+    padding: 0 36px;
+  }
+
+  .lot_action {
+    padding: 0 36px;
+    text-align: center;
+    .countdown {
+      display: block;
+      margin: 5px auto 0;
+      line-height: 1;
+      max-width: 65px;
+      white-space: nowrap;
+      .icon {
+        font-size: 1rem;
+        margin-right: 5px;
+        margin-top: -1px;
+        vertical-align: top;
+      }
+    }
+  }
+}
+
+.profile-container {
+  display: flex;
+  align-items: center;
+  background: var(--fg);
+  margin: 24px 0 12px;
+  height: 92px;
+  padding: 12px 4px;
+  border-radius: 10px;
+  .profile-name {
+    font-size: 32px;
+    padding: 0 34px;
+  }
+  .profile-block {
+    border-left: 1px solid var(--gray);
+    padding: 10px 50px;
+    max-height: 70px;
+    strong {
+      display: block;
+      font-size: 12px;
+      color: var(--light-gray);
+    }
+    .rewards {
+      font-size: 22px;
+      color: var(--link);
+      font-weight: 700;
+    }
+  }
+}
+
+.search-wrapper {
+  position: relative;
+  width: 100%;
+  margin: 20px 0 70px;
+  .search-icon {
+    position: absolute;
+    top: 13px; left: 12px;
+    font-size: 1rem;
+    color: var(--gray);
+  }
+  .search-result {
+    position: absolute;
+    top: 100%;
+    left: 20px;
+    margin-top: 24px;
+    b {
+      color: var(--link);
+    }
+  }
+}
+
+.modal-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 20px 40px;
+  background: var(--fg);
+  border-radius: 10px;
+  width: 320px;
+}
+
+.modal-container {
+  .title {
+    margin: 20px 0 0;
+    padding: 0 0 24px;
+    border-bottom: 1px solid var(--gray);
+  }
+  .form-group {
+    display: flex;
+    flex-direction: column;
+  }
+  label {
+    margin: 5px 0;
+  }
+  textarea, .textarea {
+    margin: 5px 0 24px;
+  }
+  .button_wrapper {
+    padding: 24px 0 0;
+    margin: 12px 0 20px;
+    border-top: 1px solid var(--gray);
+  }
+}
+
+.offer_modal {
+  width: 410px;
+  .form-group {
+    margin: 12px 0;
+    width: 150px;
+  }
+  fieldset {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+}
+
+.claim_modal {
+  width: 410px;
+  .account-name {
+    color: var(--link);
+  }
+  .form-group {
+    margin: 20px 0;
+    width: 100%;
+  }
+  .claim-success {
+    .textarea {
+      display: block;
+      min-height: 60px;
+      padding: 8px 13px;
+      line-height: 24px;
+      border-radius: 6px;
+      &.green {
+        background-color: #384B4D;
+      }
+      &.red {
+        background-color: #45363F;
+      }
+    }
+    p {
+      margin: 20px 0;
+      padding: 24px 0;
+      border-top: 1px solid var(--gray);
+      border-bottom: 1px solid var(--gray);
+    }
+  }
+}
+
+.alert_modal {
+  h3 {
+    margin: 20px 0 24px;
+    font-weight: 400;
+  }
+  .alert-content {
+    padding: 24px 0;
+    border-top: 1px solid var(--gray);
+    border-bottom: 1px solid var(--gray);
+  }
+  .alert-button {
+    margin: 24px 0;
+  }
+}
+
+.bid_modal {
+  width: 360px;
+  .bid_info {
+    padding: 20px 0 24px;
+    border-bottom: 1px solid var(--gray);
+    .lot_name {
+      display: block;
+      font-size: 32px;
+      line-height: 40px;
+    }
+    .seller_name {
+      display: block;
+      margin: 12px 0;
+      .icon {
+        font-size: 1rem;
+        vertical-align: top;
+        margin-top: 4px;
+      }
+      .account-name {
+        color: var(--light-gray);
+        margin-left: 5px;
+      }
+    }
+    .countdown {
+      display: block;
+      margin: 5px 0 0;
+      line-height: 1;
+      max-width: 65px;
+      white-space: nowrap;
+      .icon {
+        font-size: 1rem;
+        margin-right: 5px;
+        margin-top: -1px;
+        vertical-align: top;
+      }
+    }
+  }
+  .bid_price {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--gray);
+    .buy-now_price {
+      font-size: 16px;
+      margin: 12px 0;
+      strong {
+        font-weight: 700;
+      }
+    }
+    input {
+      width: 120px;
+      text-align: left;
+      margin: 12px 0;
+    }
+    button {
+      width: 140px;
+      margin: 12px 0;
+    }
+  }
+  .bid_list {
+    text-align: center;
+    margin: 24px 0 12px;
+    li {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--gray);
+      &:last-child {
+        border: 0 none;
+      }
+    }
+    .bidder_name {
+      .icon {
+        color: var(--gray);
+        font-size: 1rem;
+        vertical-align: top;
+        margin-top: 4px;
+      }
+      .account-name {
+        margin-left: 5px;
+        color: var(--light-gray);
+      }
+    }
+    strong {
+      color: var(--light-gray);
+    }
+  }
+}

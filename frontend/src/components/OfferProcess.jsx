@@ -9,7 +9,7 @@ function OfferProcessPage (props) {
   }
 
   return (
-    <div className='container my-auto'>
+    <div className='container'>
       {finished
         ? (success
           ? (
