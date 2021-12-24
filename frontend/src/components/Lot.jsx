@@ -53,8 +53,8 @@ function Lot(props) {
         <span className={'badge ' + lot.status}>{lot.status}</span>
       </div>}
       <div className="lot_price">
-        <span className="current_price">{getCurrentPrice(lot)} Near</span>
-        <span className="buy-now_price">Buy now: <strong>{getBuyNowPrice(lot)} Near</strong></span>
+        <span className="current_price near-icon">{getCurrentPrice(lot)}</span>
+        <span className="buy-now_price">Buy now: <strong className="near-icon">{getBuyNowPrice(lot)}</strong></span>
       </div>
       <div className="lot_action">
         {renderButton(lot)}
