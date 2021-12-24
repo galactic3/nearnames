@@ -400,6 +400,10 @@ mod tests {
             assert_eq!(result[0].lot_id, "lot1".parse().unwrap());
             assert_eq!(result[1].lot_id, "lot2".parse().unwrap());
         }
+        {
+            let result = contract.lot_list(Some(5), Some(100));
+            assert_eq!(result.len(), 0, "wrong lot list size");
+        }
     }
 
     fn api_lot_bid(contract: &mut Contract, lot_id: &AccountId, bid: &Bid) {

@@ -95,14 +95,20 @@ impl Contract {
         lot.bids.iter().map(|v| v.into()).collect()
     }
 
-    pub fn lot_list(&self, limit: Option<usize>, offset: Option<usize>) -> Vec<LotView> {
+    pub fn lot_list(&self, limit: Option<u64>, offset: Option<u64>) -> Vec<LotView> {
         let now = env::block_timestamp();
 
-        let values = self.lots.values()
-            .skip(offset.unwrap_or(0))
-            .take(limit.unwrap_or(usize::MAX));
+        let idx_from = offset.unwrap_or(0);
+        let idx_to = limit.map (|x| idx_from + x).unwrap_or(u64::MAX);
+        let idx_to = std::cmp::min(idx_to, self.lots.len());
 
-        values.map(|v| (&v, now, self).into()).collect()
+        let values_as_vector = self.lots.values_as_vector();
+
+        (idx_from..idx_to)
+            .map(|x| {
+                let v = values_as_vector.get(x).unwrap();
+                (&v, now, self).into()
+            }).collect()
     }
 
     pub fn lot_list_offering_by(&self, profile_id: ProfileId) -> Vec<LotView> {
