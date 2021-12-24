@@ -6,7 +6,7 @@ import CloseIcon from "@mui/icons-material/Close";
 
 function Offer (props) {
 
-  const accountSuffix = '.' + props.app.accountSuffix;
+  const accountSuffix = '.' + 'testnet';
   const [showAlert, setShowAlert] = useState(false);
   const [contentAlert, setContentAlert] = useState('');
   const [offerButtonEnabled, setOfferButtonEnabled] = useState(true);
@@ -93,7 +93,7 @@ function Offer (props) {
         </IconButton>
         <h3 className="title">Create offer</h3>
         <form className="form_offer" onSubmit={onSubmit}>
-          <fieldset>
+          <fieldset id="fieldset">
             <div className='form-group'>
               <label htmlFor="lot_id">Lot account:</label>
               <div className="input-wrapper">
@@ -154,7 +154,7 @@ function Offer (props) {
                 className="duration"
                 autoComplete="off"
                 id="duration"
-                type="text"
+                type="number"
               /><span>hours</span>
               </div>
             </div>
