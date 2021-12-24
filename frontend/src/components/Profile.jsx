@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 import Loader from './Loader';
 import {BOATLOAD_OF_GAS, nearTo, renderName} from "../utils";
-import {Spinner} from "react-bootstrap";
 import LotsList from "./LotsList";
 
 function Profile (props) {

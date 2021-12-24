@@ -125,34 +125,6 @@ ul, dl {
   color: var(--gray);
 }
 
-@import 'buttons';
-@import 'inputs';
-@import 'header';
-@import 'main';
-
-.form_offer {
-  margin: 20px 0;
-  label {
-    width: 120px;
-  }
-  button {
-    margin: 20px 0;
-  }
-}
-
-.bids_list {
-  margin: 10px 0 0;
-  p {
-    margin: 0;
-    font-size: 12px;
-  }
-}
-
-.offer_name {
-  margin: 0 1em;
-  padding-left: 0.5em;
-}
-
 .near-icon {
   &:after {
     display: inline-block;
@@ -162,3 +134,26 @@ ul, dl {
     margin-left: 3px;
   }
 }
+
+.or {
+  position: relative;
+  display: block;
+  padding-top: 10px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--gray);
+  &:after {
+    position: absolute;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 50px;
+    text-align: center;
+    background: var(--fg);
+    content: "OR";
+  }
+}
+
+@import 'buttons';
+@import 'inputs';
+@import 'header';
+@import 'main';
+

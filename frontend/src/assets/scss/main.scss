@@ -167,20 +167,39 @@
   width: 320px;
 }
 
-.or {
-  position: relative;
-  display: block;
-  padding-top: 10px;
-  margin-bottom: 10px;
-  border-bottom: 1px solid var(--gray);
-  &:after {
-    position: absolute;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 50px;
-    text-align: center;
-    background: var(--fg);
-    content: "OR";
+.modal-container {
+  .title {
+    margin: 20px 0 0;
+    padding: 0 0 24px;
+    border-bottom: 1px solid var(--gray);
+  }
+  .form-group {
+    display: flex;
+    flex-direction: column;
+  }
+  label {
+    margin: 5px 0;
+  }
+  textarea, .textarea {
+    margin: 5px 0 24px;
+  }
+  .button_wrapper {
+    padding: 24px 0 0;
+    margin: 12px 0 20px;
+    border-top: 1px solid var(--gray);
+  }
+}
+
+.offer_modal {
+  width: 410px;
+  .form-group {
+    margin: 12px 0;
+    width: 150px;
+  }
+  fieldset {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
   }
 }
 
@@ -191,42 +210,28 @@
   }
   .form-group {
     margin: 20px 0;
-  }
-}
-
-.claim-success {
-  .textarea {
-    display: block;
-    min-height: 60px;
-    padding: 8px 13px;
-    line-height: 24px;
-    border-radius: 6px;
-    &.green {
-      background-color: #384B4D;
-    }
-    &.red {
-      background-color: #45363F;
-    }
-  }
-  p {
-    margin: 20px 0;
-    padding: 24px 0;
-    border-top: 1px solid var(--gray);
-    border-bottom: 1px solid var(--gray);
-  }
-}
-
-.modal-container {
-  .form-group {
-    display: flex;
-    flex-direction: column;
     width: 100%;
   }
-  label {
-    margin: 5px 0;
-  }
-  textarea, .textarea {
-    margin: 5px 0 24px;
+  .claim-success {
+    .textarea {
+      display: block;
+      min-height: 60px;
+      padding: 8px 13px;
+      line-height: 24px;
+      border-radius: 6px;
+      &.green {
+        background-color: #384B4D;
+      }
+      &.red {
+        background-color: #45363F;
+      }
+    }
+    p {
+      margin: 20px 0;
+      padding: 24px 0;
+      border-top: 1px solid var(--gray);
+      border-bottom: 1px solid var(--gray);
+    }
   }
 }
 

@@ -7,8 +7,8 @@ import OfferPage from './components/Offer';
 import OfferProcessPage from './components/OfferProcess';
 import Lots from './components/Lots';
 import ProfilePage from './components/Profile';
-// import { ReactComponent as LogoutIcon }from './assets/logout.svg';
 import LogoutIcon from '@mui/icons-material/Logout';
+import CreateOffer from "./components/CreateOffer";
 
 class App extends React.Component {
   constructor(props) {
@@ -46,10 +46,6 @@ class App extends React.Component {
       props.wallet.signOut();
       window.location.replace(window.location.origin + window.location.pathname);
     };
-
-    this.app.createOffer = () => {
-
-    }
 
     this.initApp().then(() => {
       this.setState({
@@ -165,6 +161,10 @@ class App extends React.Component {
     }
   }
 
+  createOffer = () => {
+
+  }
+
   render () {
     const passProps = {
       app: this.app,
@@ -188,11 +188,8 @@ class App extends React.Component {
                     <NavLink activeClassName='active' className='nav-link' aria-current='page'
                           to={`/profile/${this.app.currentUser.accountId}`}>Profile</NavLink>
                   </li>)}
-                  <li className='nav-item'>
-                    <NavLink activeClassName='active' className='nav-link' aria-current='page' to='/offer'>Offer</NavLink>
-                  </li>
                 </ul> }
-                <button className="create_offer" onClick={this.app.createOffer}>Create new offer</button>
+                <CreateOffer {...passProps}/>
                 { !this.state.connected ? (
                     <div className="auth">
                       <span className='spinner-grow spinner-grow-sm' role='status' aria-hidden='true' />
@@ -212,9 +209,6 @@ class App extends React.Component {
             </Route>
             <Route exact path='/lots'>
               <Lots {...passProps}/>
-            </Route>
-            <Route exact path='/offer'>
-              <OfferPage {...passProps}/>
             </Route>
             <Route exact path='/offerProcess'>
               <OfferProcessPage {...passProps} />
