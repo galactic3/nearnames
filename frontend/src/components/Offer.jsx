@@ -76,7 +76,7 @@ function Offer (props) {
   };
 
   return (
-    <Modal {...props}>
+    <Modal onClose={props.onClose} open={props.open}>
       <Box className="modal-container offer_modal">
         <IconButton
           aria-label="close"
