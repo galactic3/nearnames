@@ -1,8 +1,9 @@
 import React, {useRef, useState} from 'react';
-import { Modal } from "react-bootstrap";
 import { generateSeedPhrase, parseSeedPhrase } from 'near-seed-phrase';
 import Loader from "./Loader";
-import { BOATLOAD_OF_GAS } from "../utils";
+import {BOATLOAD_OF_GAS, renderName} from "../utils";
+import {Modal, Box, IconButton} from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
 
 function ModalClaim(props) {
 
@@ -18,7 +19,7 @@ function ModalClaim(props) {
   const recoverLink = props.config.walletUrl + '/recover-seed-phrase'
 
   const claimLot = async (publicKey) => {
-    await props.contract.lot_claim({'lot_id': props.lot, 'public_key': publicKey}, BOATLOAD_OF_GAS).then((lot) => {
+    await props.contract.lot_claim({'lot_id': props.lot.lot_id, 'public_key': publicKey}, BOATLOAD_OF_GAS).then((lot) => {
       console.log(lot);
       setShowLoader(false);
     });
@@ -47,50 +48,57 @@ function ModalClaim(props) {
   }
 
   return (
-    <Modal
-      {...props}
-      size='lg'
-      aria-labelledby="contained-modal-title-vcenter"
-      centered
-    >
-      <Modal.Body>
-        <div className='container'>
-          <h3 className="my-3">Claim <strong>{props.lot.lot_id}</strong></h3>
+    <Modal {...props}>
+      <Box className="modal-container claim_modal">
+        <IconButton
+          aria-label="close"
+          onClick={props.onClose}
+          className="button-icon"
+          sx={{
+            position: 'absolute',
+            right: 8,
+            top: 8,
+            color: 'var(--gray)',
+          }}
+        >
+          <CloseIcon />
+        </IconButton>
+        <div>
+          <h3>Claim <strong>{renderName(props.lot.lot_id)}</strong></h3>
           { showLoader && <Loader/> }
           { !showSuccess && !showLoader ? <div>
-            <form onSubmit={(e) => claimBySeedPhrase(e)}>
-              <div className='form-group'>
-                <label>Save this randomly generated seed phrase or choose your own</label>
-                <textarea
-                  className='form-control my-2'
-                  defaultValue={seedPhrase}
-                  ref={seedPhraseRef}
-                />
-                <button className='w-100' type="submit">Claim using seed phrase</button>
-              </div>
-            </form>
-
-            <form onSubmit={(e) => claimByPublicKey(e)}>
-              <h3 className='text-center'>or</h3>
-              <div className='form-group'>
-                <label>Put your base58 public key</label>
-                <textarea
-                  className='form-control my-2'
-                  ref={publicKeyRef}
-                  required
-                />
-                <button className='w-100' type="submit">Claim using new public key</button>
-              </div>
-            </form>
-        </div> :
-        <div>
-          {claimedBySeedPhrase && <div><p>Seed phrase used:</p><h5 className='alert alert-info' role='alert'>{seedPhrase}</h5></div>}
-          {claimedBySeedPhrase && <p>Go to <a target="_blank" href={recoverLink}>wallet</a> and restore your account</p>}
-          {showSuccess && <p>Successfully Added public key <span className='link-danger text-break'>{publicKey}</span></p>}
+              <form onSubmit={(e) => claimBySeedPhrase(e)}>
+                <div className='form-group'>
+                  <label>Save this randomly generated seed phrase or choose your own</label>
+                  <textarea
+                    className='form-control'
+                    defaultValue={seedPhrase}
+                    ref={seedPhraseRef}
+                  />
+                  <button className='full-width' type="submit">Claim using seed phrase</button>
+                </div>
+              </form>
+              <span className="or"></span>
+              <form onSubmit={(e) => claimByPublicKey(e)}>
+                <div className='form-group'>
+                  <label>Put your base58 public key</label>
+                  <textarea
+                    className='form-control'
+                    ref={publicKeyRef}
+                    required
+                  />
+                  <button className='full-width' type="submit">Claim using new public key</button>
+                </div>
+              </form>
+            </div> :
+            <div className="claim-success">
+              {claimedBySeedPhrase && <div><label>Seed phrase used:</label><span className='textarea green'>{seedPhrase}</span></div>}
+              {claimedBySeedPhrase && <p>Go to <a target="_blank" href={recoverLink}>wallet</a> and restore your account</p>}
+              {showSuccess && <div><label>Successfully Added public key </label><span className='textarea red'>{publicKey}</span></div>}
+            </div>
+          }
         </div>
-        }
-        </div>
-      </Modal.Body>
+      </Box>
     </Modal>
   );
 }

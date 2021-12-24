@@ -2,15 +2,20 @@ import React, { useState } from 'react';
 import Lot from "./Lot";
 import ModalClaim from "./Claim";
 import ModalBid from "./Bid";
-import { BOATLOAD_OF_GAS } from "../utils";
+import {BOATLOAD_OF_GAS, fetchBidSafety, toNear} from "../utils";
+import ModalAlert from "./Alert";
+import ls from "local-storage";
 
 function LotsList(props) {
 
   const contract = props.app.contract;
   const config = props.app.config;
+  const notSafeLots = ls.get('NotSafeLots') || '';
 
   const [modalClaimShow, setModalClaimShow] = useState(false);
   const [modalBidShow, setModalBidShow] = useState(false);
+  const [modalAlertShow, setModalAlertShow] = useState(false);
+  const [alertContent, setAlertContent] = useState('');
   const [loaderShow, setLoaderShow] = useState(false);
   const [selectedLot, setSelectedLot] = useState(false);
   const [selectedLotBids, setSelectedLotBids] = useState([]);
@@ -24,7 +29,17 @@ function LotsList(props) {
     props.getLots();
   };
 
-  const claimOpen = async (lot) => {
+  const alertOpen = (text) => {
+    setModalAlertShow(true);
+    setAlertContent(text);
+  };
+
+  const alertHide = () => {
+    setModalAlertShow(false);
+  };
+
+
+  const claimOpen = (lot) => {
     setModalClaimShow(true);
     setSelectedLot(lot);
   };
@@ -40,9 +55,45 @@ function LotsList(props) {
     setSelectedLotBids(bids);
   }
 
-  const closeBid = () => {
+  const closeBid = async () => {
     setModalBidShow(false);
+    // props.getLots();
   }
+
+  const setLotNotSafe = (lot) => {
+    ls.set('NotSafeLots', notSafeLots + ', ' + lot.lot_id);
+  }
+
+  const bid = async (e, lot, value) => {
+    console.log(lot, value);
+    const isBuyNowButton = e.target.name === 'buy_now';
+    let nValue = toNear(value);
+    if (nValue < lot.reserve_price) {
+      alert ("enter value more than: " + lot.reserve_price);
+      return;
+    } else if (lot.next_bid_amount && nValue < lot.next_bid_amount) {
+      alert ("enter value more than: " + lot.next_bid_amount);
+      return;
+    }
+    e.target.disabled = true;
+    const bid_price = isBuyNowButton ? lot.buy_now_price : nValue;
+    const { codeHash, accessKeysLen, lockerOwner } = await fetchBidSafety(lot.lot_id, props.app.near);
+    const isSafe = codeHash === 'DKUq738xnns9pKjpv9GifM68UoFSmfnBYNp3hsfkkUFa' &&
+      accessKeysLen === 0 &&
+      lockerOwner === props.app.config.contractName;
+    console.log(codeHash, accessKeysLen, lockerOwner);
+    if (!isSafe) {
+      alertOpen('account is not safe');
+      setLotNotSafe(lot);
+      await closeBid();
+      e.target.disabled = false;
+      return;
+    }
+    console.log(lot.lot_id, bid_price);
+    contract.lot_bid({'lot_id': lot.lot_id}, BOATLOAD_OF_GAS, bid_price).then(() => {
+      props.getLots();
+    });
+  };
 
 
   return (
@@ -56,24 +107,29 @@ function LotsList(props) {
         </div> :
         <ul className="lot_list">
           {props.lots.map((lot, i) =>
-            <Lot lot={lot} key={i} bid={openBid} withdraw={withdraw} claim={claimOpen} contract={contract} loader={loaderShow} currentUser={props.app.accountId}/>
+            <Lot lot={lot} key={i} openBid={openBid} withdraw={withdraw} claim={claimOpen} contract={contract} loader={loaderShow} currentUser={props.app.accountId}/>
           )}
         </ul>
       }
       <ModalClaim
-        show={modalClaimShow}
+        open={modalClaimShow}
         lot={selectedLot}
         config={config}
         contract={contract}
-        onHide={() => claimHide()}
+        onClose={() => claimHide()}
       />
       <ModalBid
         open={modalBidShow}
         lot={selectedLot}
+        bid={bid}
         bids={selectedLotBids}
-        config={config}
-        contract={contract}
+        currentUser={props.app.accountId}
         onClose={() => closeBid()}
+      />
+      <ModalAlert
+        open={modalAlertShow}
+        content={alertContent}
+        onClose={() => alertHide()}
       />
     </div>
   );

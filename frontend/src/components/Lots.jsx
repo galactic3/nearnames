@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import LotsList from "./LotsList";
 import SearchIcon from '@mui/icons-material/Search';
+import ls from 'local-storage'
 
 
 
@@ -8,10 +9,15 @@ function Lots(props) {
 
   const contract = props.app.contract;
 
+  const notSafeLots = ls.get('NotSafeLots') || '';
+
   const getLots = async () => {
     setLoader(true);
     await contract.lot_list().then((lots) => {
       const result = lots.filter((lot) => {
+        if (notSafeLots.includes(lot.lot_id)) {
+          lot.status = 'NotSafe';
+        }
         return lot.status === 'OnSale';
       })
       setCashLots(result);
@@ -47,8 +53,9 @@ function Lots(props) {
       <div className="search-wrapper">
         <SearchIcon className="search-icon"/>
         <input type="text" className="search" onChange={(e) => filterList(e)} value={filter}/>
+        {filter && <span className="search-result">{lots.length} results <b>"{filter}"</b> found</span>}
       </div>
-      <LotsList lots={lots} getLots={getLots} loader={loader} {...props} />
+      <LotsList lots={lots} getLots={getLots} showStatus={false} loader={loader} {...props} />
     </div>
   );
 }

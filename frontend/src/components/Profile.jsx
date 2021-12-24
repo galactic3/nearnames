@@ -56,10 +56,10 @@ function Profile (props) {
           <h5 className="profile-name"><strong>{renderName(profileId)}</strong></h5>
           <div className="profile-block"><strong>Available:</strong> <span className="rewards near-icon">{nearTo(profile.rewards_available)}</span></div>
           <div className="profile-block"><strong>Claimed:</strong> <span className="rewards near-icon">{nearTo(profile.rewards_claimed)}</span></div>
-          <div className="profile-block">{claimLoader ? <Spinner className="mb-5" animation="grow" /> : <button name="claim_rewards" className="mb-5" disabled={!parseFloat(profile.rewards_available)} onClick={(e) => claim(e)}>Claim rewards</button> }</div>
+          <div className="profile-block"><button name="claim_rewards" className="mb-5" disabled={!parseFloat(profile.rewards_available) || claimLoader} onClick={(e) => claim(e)}>{claimLoader ? 'Claiming...' : 'Claim rewards'}</button></div>
         </div>
-        <LotsList lots={lotsOffering} getLots={getLotsOffering} name={' offer'} {...props}/>
-        <LotsList lots={lotsBidding} {...props} name={' bidding'}/>
+        <LotsList lots={lotsOffering} getLots={getLotsOffering} showStatus={true} name={' offer'} {...props}/>
+        <LotsList lots={lotsBidding} showStatus={true} name={' bidding'} {...props}/>
       </div> :
       <div>Profile not found</div>
     }

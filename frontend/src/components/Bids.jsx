@@ -1,9 +1,10 @@
 import React from 'react';
-import {nearTo} from "../utils";
+import {nearTo, renderName} from "../utils";
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 
 function Bids(props) {
   return (
-    <p>{props.bid.bidder_id}: <strong>{nearTo(props.bid.amount)}</strong> <span title="NEAR Tokens">Ⓝ</span></p>
+    <li><span className="bidder_name"><AccountCircleIcon className="icon"/>{renderName(props.bid.bidder_id)}</span> <strong className="near-icon">{nearTo(props.bid.amount)}</strong></li>
   )
 }
 

@@ -81,8 +81,6 @@ class App extends React.Component {
     if (this.app.accountId) {
       const accessKeys = await this.app.account.getAccessKeys();
 
-      console.log(accessKeys);
-
       let foundMarketKey = false;
       accessKeys.forEach(key => {
         if (key.public_key === this.app.marketPublicKey) {
@@ -90,12 +88,8 @@ class App extends React.Component {
         }
       });
 
-      console.log(foundMarketKey);
-
       const lotAccountId = localStorage.get(this.app.lsLotAccountId);
       const offerData = JSON.parse(localStorage.get(this.app.config.contractName + ':lotOffer: ' + this.app.accountId));
-
-      console.log(offerData);
 
       if (!foundMarketKey) {
         try {
@@ -159,6 +153,7 @@ class App extends React.Component {
             await account.deleteKey(lastKey);
             console.log('deleting ', lastKey, 'done');
 
+            localStorage.remove(this.app.config.contractName + ':lotOffer: ' + this.app.accountId);
             this.setState({ offerFinished: true, offerSuccess: true })
           }
           this.app.signOut()

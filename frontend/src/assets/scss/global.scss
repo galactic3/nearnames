@@ -125,7 +125,6 @@ ul, dl {
   color: var(--gray);
 }
 
-@import "modal";
 @import 'buttons';
 @import 'inputs';
 @import 'header';
@@ -152,21 +151,6 @@ ul, dl {
 .offer_name {
   margin: 0 1em;
   padding-left: 0.5em;
-}
-
-.modal-body {
-  .form-group {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-  }
-  label {
-    color: var(--gray);
-    margin: 5px 0;
-  }
-  textarea {
-    margin: 5px 0 24px;
-  }
 }
 
 .near-icon {

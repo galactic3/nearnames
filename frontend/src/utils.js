@@ -54,6 +54,26 @@ export const renderName = (accountId) => {
   )
 }
 
+export function getCountdownTime(lot) {
+  return new Date(tsNear2JS(lot.finish_timestamp)).getTime();
+}
+
+export function getNextBidAmount(lot) {
+  return lot.next_bid_amount ? nearTo(lot.next_bid_amount, 2) : getReservePrice(lot);
+}
+
+export function getReservePrice(lot) {
+  return nearTo(lot.reserve_price, 2);
+}
+
+export function getCurrentPrice(lot) {
+  return lot.last_bid_amount ? nearTo(lot.last_bid_amount, 2) : getReservePrice(lot);
+}
+
+export function getBuyNowPrice(lot) {
+  return lot.buy_now_price ? nearTo(lot.buy_now_price, 2) : getReservePrice(lot);
+}
+
 export const fetchBidSafety = async (lot_id, near) => {
   const account = await near.account(lot_id);
   try {

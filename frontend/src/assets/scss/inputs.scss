@@ -25,10 +25,6 @@ input[type="number"] {
     &:hover, &:focus {
         border-color: var(--secondary);
     }
-    &.large {
-        width: 12em;
-        text-align: left;
-    }
 }
 
 textarea {

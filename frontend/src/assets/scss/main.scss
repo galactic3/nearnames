@@ -35,10 +35,14 @@
     border-radius: 8px;
     margin: 0 0 20px;
     padding: 15px;
+    &:last-child {
+      margin-bottom: 0;
+    }
   }
 
   .lot_info {
     margin-right: auto;
+    padding: 0 10px;
     .lot_name {
       display: block;
       font-size: 32px;
@@ -52,12 +56,14 @@
       }
       .account-name {
         margin-left: 5px;
+        color: var(--light-gray);
       }
     }
   }
 
   .lot_price {
     height: 70px;
+    border-right: 1px solid var(--fg);
     border-left: 1px solid var(--fg);
     padding: 0 36px;
     text-align: center;
@@ -82,25 +88,20 @@
   }
 
   .lot_action {
-    height: 70px;
-    border-left: 1px solid var(--fg);
     padding: 0 36px;
     text-align: center;
-    .button_wrapper {
-      margin: 10px 0 0;
-    }
     .countdown {
       display: block;
       margin: 5px auto 0;
       line-height: 1;
       max-width: 65px;
       white-space: nowrap;
-    }
-    .icon {
-      font-size: 1rem;
-      margin-right: 5px;
-      margin-top: -1px;
-      vertical-align: top;
+      .icon {
+        font-size: 1rem;
+        margin-right: 5px;
+        margin-top: -1px;
+        vertical-align: top;
+      }
     }
   }
 }
@@ -134,15 +135,203 @@
   }
 }
 
-
 .search-wrapper {
   position: relative;
   width: 100%;
-  margin: 20px 0 20px;
+  margin: 20px 0 70px;
   .search-icon {
     position: absolute;
     top: 13px; left: 12px;
     font-size: 1rem;
     color: var(--gray);
+  }
+  .search-result {
+    position: absolute;
+    top: 100%;
+    left: 20px;
+    margin-top: 24px;
+    b {
+      color: var(--link);
+    }
+  }
+}
+
+.modal-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 20px 40px;
+  background: var(--fg);
+  border-radius: 10px;
+  width: 320px;
+}
+
+.or {
+  position: relative;
+  display: block;
+  padding-top: 10px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--gray);
+  &:after {
+    position: absolute;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 50px;
+    text-align: center;
+    background: var(--fg);
+    content: "OR";
+  }
+}
+
+.claim_modal {
+  width: 410px;
+  .account-name {
+    color: var(--link);
+  }
+  .form-group {
+    margin: 20px 0;
+  }
+}
+
+.claim-success {
+  .textarea {
+    display: block;
+    min-height: 60px;
+    padding: 8px 13px;
+    line-height: 24px;
+    border-radius: 6px;
+    &.green {
+      background-color: #384B4D;
+    }
+    &.red {
+      background-color: #45363F;
+    }
+  }
+  p {
+    margin: 20px 0;
+    padding: 24px 0;
+    border-top: 1px solid var(--gray);
+    border-bottom: 1px solid var(--gray);
+  }
+}
+
+.modal-container {
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+  label {
+    margin: 5px 0;
+  }
+  textarea, .textarea {
+    margin: 5px 0 24px;
+  }
+}
+
+.alert_modal {
+  h3 {
+    margin: 20px 0 24px;
+    font-weight: 400;
+  }
+  .alert-content {
+    padding: 24px 0;
+    border-top: 1px solid var(--gray);
+    border-bottom: 1px solid var(--gray);
+  }
+  .alert-button {
+    margin: 24px 0;
+  }
+}
+
+.bid_modal {
+  width: 360px;
+  .bid_info {
+    padding: 20px 0 24px;
+    border-bottom: 1px solid var(--gray);
+    .lot_name {
+      display: block;
+      font-size: 32px;
+      line-height: 40px;
+    }
+    .seller_name {
+      display: block;
+      margin: 12px 0;
+      .icon {
+        font-size: 1rem;
+        vertical-align: top;
+        margin-top: 4px;
+      }
+      .account-name {
+        color: var(--light-gray);
+        margin-left: 5px;
+      }
+    }
+    .countdown {
+      display: block;
+      margin: 5px 0 0;
+      line-height: 1;
+      max-width: 65px;
+      white-space: nowrap;
+      .icon {
+        font-size: 1rem;
+        margin-right: 5px;
+        margin-top: -1px;
+        vertical-align: top;
+      }
+    }
+  }
+  .bid_price {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--gray);
+    .buy-now_price {
+      font-size: 16px;
+      margin: 12px 0;
+      strong {
+        font-weight: 700;
+      }
+    }
+    input {
+      width: 120px;
+      text-align: left;
+      margin: 12px 0;
+    }
+    button {
+      width: 140px;
+      margin: 12px 0;
+    }
+  }
+  .bid_list {
+    text-align: center;
+    margin: 24px 0 12px;
+    li {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--gray);
+      &:last-child {
+        border: 0 none;
+      }
+    }
+    .bidder_name {
+      .icon {
+        color: var(--gray);
+        font-size: 1rem;
+        vertical-align: top;
+        margin-top: 4px;
+      }
+      .account-name {
+        margin-left: 5px;
+        color: var(--light-gray);
+      }
+    }
+    strong {
+      color: var(--light-gray);
+    }
   }
 }

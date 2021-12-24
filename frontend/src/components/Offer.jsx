@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import ls from 'local-storage';
 import { customRequestSigninFullAccess, toNear, nearTo } from '../utils.js';
-import { Button } from '@mui/material';
 
 function OfferPage (props) {
 
@@ -70,13 +69,13 @@ function OfferPage (props) {
       props.app.wallet,
       props.app.config.contractName,
       window.location.origin + window.location.pathname + '/#/offerProcess',
-      window.location.origin + window.location.pathname + + '/#/offer'
+      window.location.origin + window.location.pathname + + '/#/lots'
     )
   };
 
   return (
-    <div className="form_offer">
-    <form onSubmit={onSubmit}>
+    <div className="container">
+    <form className="form_offer" onSubmit={onSubmit}>
       <fieldset id="fieldset">
         <p>
           <label htmlFor="lot_id">Lot account:</label>
@@ -129,9 +128,9 @@ function OfferPage (props) {
             type="number"
           /> hours
         </p>
-        <Button variant="outlined" disabled={!offerButtonEnabled} type="submit">
+        <button disabled={!offerButtonEnabled} type="submit">
           Create offer
-        </Button>
+        </button>
       </fieldset>
     </form>
     </div>
