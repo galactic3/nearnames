@@ -330,7 +330,7 @@ mod tests {
         let contract = build_contract();
 
         assert!(
-            contract.lot_list().is_empty(),
+            contract.lot_list(None, None).is_empty(),
             "Expected lot_list to be empty",
         );
     }
@@ -343,7 +343,7 @@ mod tests {
         let lot_bob_sells_alice = create_lot_bob_sells_alice();
         contract.internal_lot_save(&lot_bob_sells_alice);
 
-        let response: Vec<LotView> = contract.lot_list();
+        let response: Vec<LotView> = contract.lot_list(None, None);
         assert!(!response.is_empty());
         let response: &LotView = &response[0];
 
@@ -360,6 +360,50 @@ mod tests {
         );
         assert_eq!(response.is_active, false);
         assert_eq!(response.is_withdrawn, false);
+    }
+
+    #[test]
+    fn lot_list_present_limit_offset() {
+        let context = get_context_simple(false);
+        testing_env!(context);
+        let mut contract = build_contract();
+
+        for i in 0..3 {
+            create_lot_x_sells_y_api(
+                &mut contract,
+                &"seller".parse().unwrap(),
+                &format!("lot{}", i).parse().unwrap(),
+            );
+        };
+
+        {
+            let result = contract.lot_list(None, None);
+            assert_eq!(result.len(), 3, "wrong lot list size");
+            assert_eq!(result[0].lot_id, "lot0".parse().unwrap());
+            assert_eq!(result[1].lot_id, "lot1".parse().unwrap());
+            assert_eq!(result[2].lot_id, "lot2".parse().unwrap());
+        }
+        {
+            let result = contract.lot_list(Some(2), None);
+            assert_eq!(result.len(), 2, "wrong lot list size");
+            assert_eq!(result[0].lot_id, "lot0".parse().unwrap());
+            assert_eq!(result[1].lot_id, "lot1".parse().unwrap());
+        }
+        {
+            let result = contract.lot_list(None, Some(2));
+            assert_eq!(result.len(), 1, "wrong lot list size");
+            assert_eq!(result[0].lot_id, "lot2".parse().unwrap());
+        }
+        {
+            let result = contract.lot_list(Some(2), Some(1));
+            assert_eq!(result.len(), 2, "wrong lot list size");
+            assert_eq!(result[0].lot_id, "lot1".parse().unwrap());
+            assert_eq!(result[1].lot_id, "lot2".parse().unwrap());
+        }
+        {
+            let result = contract.lot_list(Some(5), Some(100));
+            assert_eq!(result.len(), 0, "wrong lot list size");
+        }
     }
 
     fn api_lot_bid(contract: &mut Contract, lot_id: &AccountId, bid: &Bid) {
@@ -434,7 +478,7 @@ mod tests {
         let context = get_context_pred_alice(true);
         testing_env!(context);
 
-        let response: Vec<LotView> = contract.lot_list();
+        let response: Vec<LotView> = contract.lot_list(None, None);
         assert!(!response.is_empty());
         let response: &LotView = &response[0];
 
@@ -470,7 +514,7 @@ mod tests {
         let context = get_context_pred_alice(true);
         testing_env!(context);
 
-        let response: Vec<LotView> = contract.lot_list();
+        let response: Vec<LotView> = contract.lot_list(None, None);
         assert!(!response.is_empty());
         let response: &LotView = &response[0];
 

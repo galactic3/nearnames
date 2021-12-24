@@ -125,7 +125,7 @@ fn simulate_lot_offer_buy_now() {
     );
     assert!(result.is_ok());
 
-    let result = view!(contract.lot_list());
+    let result = view!(contract.lot_list(None, None));
     assert!(result.is_ok());
 
     let result: Vec<LotView> = result.unwrap_json();
@@ -148,7 +148,7 @@ fn simulate_lot_offer_buy_now() {
     );
     assert!(result.is_ok());
 
-    let result = view!(contract.lot_list());
+    let result = view!(contract.lot_list(None, None));
     assert!(result.is_ok());
     let result: Vec<LotView> = result.unwrap_json();
     assert!(
@@ -217,7 +217,7 @@ fn simulate_lot_offer_withdraw() {
     let result = call!(bob, contract.lot_withdraw(alice.account_id.clone()));
     assert!(result.is_ok());
 
-    let result = view!(contract.lot_list());
+    let result = view!(contract.lot_list(None, None));
     assert!(result.is_ok());
 
     let result: Vec<LotView> = result.unwrap_json();
@@ -235,7 +235,7 @@ fn simulate_lot_offer_withdraw() {
     );
     assert!(result.is_ok());
 
-    let result = view!(contract.lot_list());
+    let result = view!(contract.lot_list(None, None));
     assert!(result.is_ok());
     let result: Vec<LotView> = result.unwrap_json();
     assert!(
