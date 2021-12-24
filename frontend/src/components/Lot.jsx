@@ -1,6 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
 import {getBuyNowPrice, getCountdownTime, getCurrentPrice, nearTo, renderName, tsNear2JS} from "../utils";
-import {Spinner} from "react-bootstrap";
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import Countdown from "react-countdown";
 import AccessTimeFilledIcon from '@mui/icons-material/AccessTimeFilled';
@@ -35,7 +34,7 @@ function Lot(props) {
         </div>)
       case 'SaleFailure':
         return (!isNotSeller && <div className="button_wrapper">
-          {props.loader ? <Spinner animation="border" /> : <button name="withdraw" className="outlined" onClick={(e) => props.withdraw(lot, e)}>Withdraw</button>}
+          <button name="withdraw" className="outlined" disabled={props.loader} onClick={(e) => props.withdraw(lot, e)}>{props.loader ? 'Loading...' : 'Withdraw'}</button>
         </div>)
       case 'Withdrawn':
         return (!isNotSeller && <div className="button_wrapper">
