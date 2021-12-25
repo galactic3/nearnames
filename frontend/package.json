@@ -4,8 +4,8 @@
   "license": "UNLICENSED",
   "scripts": {
     "build": "npm run build:web",
-    "build:contract": "node contract/compile.js",
-    "build:contract:dev": "node contract/compile.js",
+    "build:contract": "../contract/build.sh",
+    "build:contract:dev": "../contract/build.sh",
     "build:web": "mkdir -p dist && cp CNAME dist/CNAME && parcel build src/index.html --public-url ./",
     "deploy:contract:dev": "npm run build:contract:dev && near dev-deploy --wasmFile ../contract/res/marketplace.wasm --initFunction new --initArgs '{\"seller_rewards_commission\":{\"num\":1,\"denom\":10},\"bid_step\":{\"num\":1,\"denom\":5},\"prev_bidder_commission_share\":{\"num\":1,\"denom\":2}}'",
     "deploy:contract": "npm run build:contract && near deploy --wasmFile ../contract/res/marketplace.wasm --initFunction new --initArgs '{\"seller_rewards_commission\":{\"num\":1,\"denom\":10},\"bid_step\":{\"num\":1,\"denom\":5},\"prev_bidder_commission_share\":{\"num\":1,\"denom\":2}}'",
