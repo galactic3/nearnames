@@ -1240,7 +1240,7 @@ mod tests {
         }
 
         {
-            let result = contract.lot_list_offering_by("bob".parse().unwrap());
+            let result = contract.lot_list_offering_by("bob".parse().unwrap(), None, None);
             assert_eq!(result.len(), 1, "lot_offering must contain 1 lot");
             let result = result.get(0).unwrap();
             assert_eq!(
@@ -1259,7 +1259,7 @@ mod tests {
                 "expected status on sale",
             );
 
-            let result = contract.lot_list_offering_by("carol".parse().unwrap());
+            let result = contract.lot_list_offering_by("carol".parse().unwrap(), None, None);
             assert!(result.is_empty(), "lot_offering for carol must be empty");
         }
 
