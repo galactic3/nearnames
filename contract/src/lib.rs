@@ -406,6 +406,52 @@ mod tests {
         }
     }
 
+    #[test]
+    fn lot_list_offering_by_present_limit_offset() {
+        let context = get_context_simple(false);
+        testing_env!(context);
+        let mut contract = build_contract();
+
+        let seller_id: ProfileId = "seller".parse().unwrap();
+
+        for i in 0..3 {
+            create_lot_x_sells_y_api(
+                &mut contract,
+                &seller_id,
+                &format!("lot{}", i).parse().unwrap(),
+            );
+        };
+
+        {
+            let result = contract.lot_list_offering_by(seller_id.clone(), None, None);
+            assert_eq!(result.len(), 3, "wrong lot list size");
+            assert_eq!(result[0].lot_id, "lot0".parse().unwrap());
+            assert_eq!(result[1].lot_id, "lot1".parse().unwrap());
+            assert_eq!(result[2].lot_id, "lot2".parse().unwrap());
+        }
+        {
+            let result = contract.lot_list_offering_by(seller_id.clone(), Some(2), None);
+            assert_eq!(result.len(), 2, "wrong lot list size");
+            assert_eq!(result[0].lot_id, "lot0".parse().unwrap());
+            assert_eq!(result[1].lot_id, "lot1".parse().unwrap());
+        }
+        {
+            let result = contract.lot_list_offering_by(seller_id.clone(), None, Some(2));
+            assert_eq!(result.len(), 1, "wrong lot list size");
+            assert_eq!(result[0].lot_id, "lot2".parse().unwrap());
+        }
+        {
+            let result = contract.lot_list_offering_by(seller_id.clone(), Some(2), Some(1));
+            assert_eq!(result.len(), 2, "wrong lot list size");
+            assert_eq!(result[0].lot_id, "lot1".parse().unwrap());
+            assert_eq!(result[1].lot_id, "lot2".parse().unwrap());
+        }
+        {
+            let result = contract.lot_list_offering_by(seller_id.clone(), Some(5), Some(100));
+            assert_eq!(result.len(), 0, "wrong lot list size");
+        }
+    }
+
     fn api_lot_bid(contract: &mut Contract, lot_id: &AccountId, bid: &Bid) {
         let context = get_context_with_payer(&bid.bidder_id, bid.amount, bid.timestamp);
         testing_env!(context);
