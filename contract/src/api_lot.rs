@@ -112,7 +112,7 @@ impl Contract {
     }
 
     pub fn lot_list_offering_by(&self, profile_id: ProfileId, limit: Option<u64>, offset: Option<u64>) -> Vec<LotView> {
-        let profile = self.profiles.get(&profile_id).unwrap();
+        let profile = self.internal_profile_get(&profile_id);
         let time_now = env::block_timestamp();
         let vector = profile.lots_offering.as_vector();
 
@@ -130,7 +130,7 @@ impl Contract {
     }
 
     pub fn lot_list_bidding_by(&self, profile_id: ProfileId, limit: Option<u64>, offset: Option<u64>) -> Vec<LotView> {
-        let profile = self.profiles.get(&profile_id).unwrap();
+        let profile = self.internal_profile_get(&profile_id);
         let time_now = env::block_timestamp();
         let vector = profile.lots_bidding.as_vector();
 
