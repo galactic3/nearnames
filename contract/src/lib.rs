@@ -450,6 +450,11 @@ mod tests {
             let result = contract.lot_list_offering_by(seller_id.clone(), Some(5), Some(100));
             assert_eq!(result.len(), 0, "wrong lot list size");
         }
+
+        {
+            let result = contract.lot_list_offering_by("nonexistent".parse().unwrap(), None, None);
+            assert_eq!(result.len(), 0, "should be zero for non existing profile");
+        }
     }
 
     #[test]
@@ -503,6 +508,11 @@ mod tests {
         {
             let result = contract.lot_list_bidding_by(bidder_id.clone(), Some(5), Some(100));
             assert_eq!(result.len(), 0, "wrong lot list size");
+        }
+
+        {
+            let result = contract.lot_list_bidding_by("nonexistent".parse().unwrap(), None, None);
+            assert_eq!(result.len(), 0, "should be zero for non existing profile");
         }
     }
 
