@@ -54,7 +54,7 @@ jobs:
       run: RUSTFLAGS='-C link-arg=-s' cargo build --target wasm32-unknown-unknown --release
     - name: Copy wasm
       working-directory: contract
-      run: cp target/wasm32-unknown-unknown/release/marketplace.wasm res/marketplace.wasm
+      run: rsync -t target/wasm32-unknown-unknown/release/marketplace.wasm res/marketplace.wasm
     - name: Cargo test
       working-directory: contract
       run: cargo test -- --nocapture
