@@ -114,12 +114,11 @@ impl Contract {
     pub fn lot_list_offering_by(&self, profile_id: ProfileId, limit: Option<u64>, offset: Option<u64>) -> Vec<LotView> {
         let profile = self.profiles.get(&profile_id).unwrap();
         let time_now = env::block_timestamp();
+        let vector = profile.lots_offering.as_vector();
 
         let idx_from = offset.unwrap_or(0);
         let idx_to = limit.map (|x| idx_from + x).unwrap_or(u64::MAX);
-        let idx_to = std::cmp::min(idx_to, profile.lots_offering.len());
-
-        let vector = profile.lots_offering.as_vector();
+        let idx_to = std::cmp::min(idx_to, vector.len());
 
         (idx_from..idx_to)
             .map(|idx| {
@@ -130,14 +129,18 @@ impl Contract {
             .collect()
     }
 
-    pub fn lot_list_bidding_by(&self, profile_id: ProfileId) -> Vec<LotView> {
+    pub fn lot_list_bidding_by(&self, profile_id: ProfileId, limit: Option<u64>, offset: Option<u64>) -> Vec<LotView> {
         let profile = self.profiles.get(&profile_id).unwrap();
         let time_now = env::block_timestamp();
+        let vector = profile.lots_bidding.as_vector();
 
-        profile
-            .lots_bidding
-            .iter()
-            .map(|lot_id| {
+        let idx_from = offset.unwrap_or(0);
+        let idx_to = limit.map (|x| idx_from + x).unwrap_or(u64::MAX);
+        let idx_to = std::cmp::min(idx_to, vector.len());
+
+        (idx_from..idx_to)
+            .map(|idx| {
+                let lot_id = vector.get(idx).unwrap();
                 let lot = self.lots.get(&lot_id).unwrap();
                 (&lot, time_now, self).into()
             })
