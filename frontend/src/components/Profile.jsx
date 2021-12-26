@@ -57,8 +57,8 @@ function Profile (props) {
           <div className="profile-block"><strong>Claimed:</strong> <span className="rewards near-icon">{nearTo(profile.rewards_claimed)}</span></div>
           <div className="profile-block"><button name="claim_rewards" className="mb-5" disabled={!parseFloat(profile.rewards_available) || claimLoader} onClick={(e) => claim(e)}>{claimLoader ? 'Claiming...' : 'Claim rewards'}</button></div>
         </div>
-        <LotsList lots={lotsOffering} getLots={getLotsOffering} showStatus={true} name={' offer'} {...props}/>
-        <LotsList lots={lotsBidding} showStatus={true} name={' bidding'} {...props}/>
+        <LotsList lots={lotsOffering} getLots={getLotsOffering} showStatus={true} name={' you are selling'} {...props}/>
+        <LotsList lots={lotsBidding} showStatus={true} name={' you are bidding on'} {...props}/>
       </div> :
       <div>Profile not found</div>
     }

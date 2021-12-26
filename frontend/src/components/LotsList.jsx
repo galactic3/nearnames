@@ -98,7 +98,7 @@ function LotsList(props) {
 
   return (
     <div className="lots-container">
-      { props.lots.length && props.name ? <h5 className="lots-title">Lots {props.name}</h5> : ''}
+      { props.name ? <h5 className="lots-title">Lots {props.name}</h5> : ''}
       { props.loader ?
         <div className='d-flex m-5 justify-content-center' key='1'>
           <div className='spinner-grow' role='status'>

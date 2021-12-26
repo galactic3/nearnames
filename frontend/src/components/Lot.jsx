@@ -26,7 +26,7 @@ function Lot(props) {
       case 'OnSale':
         return (
           <div className="button_wrapper">
-            <button name="bid" className="outlined" onClick={(e) => props.openBid(lot, bids, e)}>{isNotSeller && props.currentUser ? 'Buy or bid' : 'Show bid list'}</button>
+            <button name="bid" className="outlined" onClick={(e) => props.openBid(lot, bids, e)}>{isNotSeller && props.currentUser ? 'Buy or bid' : 'Show details'}</button>
           </div>)
       case 'SaleSuccess':
         return (isLastBidder && <div className="button_wrapper">
@@ -58,7 +58,7 @@ function Lot(props) {
       </div>
       <div className="lot_action">
         {renderButton(lot)}
-        {getCountdownTime(lot) > Date.now() && <span className="countdown"><AccessTimeFilledIcon className="icon"/><Countdown daysInHours={true} date={getCountdownTime(lot)}/></span>}
+        {getCountdownTime(lot) > Date.now() && <span className="countdown"><AccessTimeFilledIcon className="icon"/><Countdown date={getCountdownTime(lot)}/></span>}
       </div>
     </li>
   );

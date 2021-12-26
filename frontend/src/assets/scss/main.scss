@@ -5,6 +5,7 @@
   padding-left: 32px;
   margin-right: auto;
   margin-left: auto;
+  max-width: 1440px;
 }
 
 .lots-container {
@@ -17,6 +18,7 @@
     font-size: 22px;
     line-height: 32px;
     margin-bottom: 20px;
+    padding-left: 17px;
   }
 
   .lot_list {
@@ -94,7 +96,7 @@
       display: block;
       margin: 5px auto 0;
       line-height: 1;
-      max-width: 65px;
+      max-width: 80px;
       white-space: nowrap;
       .icon {
         font-size: 1rem;

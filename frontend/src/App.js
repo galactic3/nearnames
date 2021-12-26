@@ -159,10 +159,6 @@ class App extends React.Component {
     }
   }
 
-  createOffer = () => {
-
-  }
-
   render () {
     const passProps = {
       app: this.app,

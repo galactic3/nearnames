@@ -49,7 +49,7 @@ function ModalBid (props) {
       <div className="bid_info">
         <span className="lot_name">{renderName(lot.lot_id)}</span>
         <span className="seller_name"><AccountCircle className="icon"/>{renderName(lot.seller_id)}</span>
-        <span className="countdown"><AccessTimeFilledIcon className="icon"/><Countdown daysInHours={true} date={getCountdownTime(lot)}/></span>
+        <span className="countdown"><AccessTimeFilledIcon className="icon"/><Countdown date={getCountdownTime(lot)}/></span>
       </div>
       {(isNotSeller && props.currentUser) && <div className="bid_price">
         <span className="buy-now_price">Buy now: <strong className="near-icon">{getBuyNowPrice(lot)}</strong></span>
