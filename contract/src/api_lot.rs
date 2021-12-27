@@ -1,5 +1,9 @@
 use crate::*;
 
+pub const NO_DEPOSIT: Balance = 0;
+pub const GAS_EXT_CALL_UNLOCK: u64 = 40_000_000_000_000;
+pub const GAS_EXT_CALL_CLEAN_UP: u64 = 100_000_000_000_000;
+
 #[derive(Deserialize, Serialize, Debug)]
 #[serde(crate = "near_sdk::serde")]
 pub struct LotView {
