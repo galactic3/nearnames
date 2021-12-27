@@ -537,7 +537,7 @@ mod tests {
     }
 
     #[test]
-    fn lot_list_offering_by_limit_offset() {
+    fn test_api_lot_list_offering_by_limit_offset() {
         let mut contract = build_contract();
         let seller_id: ProfileId = "seller".parse().unwrap();
         for i in 0..3 {
@@ -584,7 +584,7 @@ mod tests {
     }
 
     #[test]
-    fn lot_list_bidding_by_limit_offset() {
+    fn test_api_lot_list_bidding_by_limit_offset() {
         let mut contract = build_contract();
         let seller_id: ProfileId = "seller".parse().unwrap();
         let bidder_id: ProfileId = "bidder".parse().unwrap();
