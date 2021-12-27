@@ -189,39 +189,26 @@ impl Contract {
     }
 
     #[payable]
-    pub fn lot_bid(&mut self, lot_id: AccountId) -> bool {
-        let lot_id: ProfileId = lot_id.into();
-        let lot = self.lots.get(&lot_id).unwrap();
-        let last_bid: Option<Bid> = lot.last_bid();
-
+    pub fn lot_bid(&mut self, lot_id: ProfileId) -> bool {
         let bidder_id: ProfileId = env::predecessor_account_id();
         let amount: Balance = env::attached_deposit();
         let timestamp = env::block_timestamp();
+        let bid: Bid = Bid { bidder_id: bidder_id.clone(), amount, timestamp };
 
-        let bid: Bid = Bid {
-            bidder_id: bidder_id.clone(),
-            amount,
-            timestamp,
-        };
-
-        // TODO: rewrite to elliminate double read
-        {
-            let mut lot = self.internal_lot_extract(&lot_id);
-            lot.place_bid(&bid, self.bid_step);
-            self.internal_lot_save(&lot);
-        }
+        let mut lot = self.internal_lot_extract(&lot_id);
+        let prev_bid: Option<Bid> = lot.last_bid();
+        lot.place_bid(&bid, self.bid_step);
+        self.internal_lot_save(&lot);
 
         // update associations
-        {
-            let mut bidder = self.internal_profile_extract(&bidder_id);
-            bidder.lots_bidding.insert(&lot_id);
-            self.internal_profile_save(&bidder);
-        }
+        let mut bidder = self.internal_profile_extract(&bidder_id);
+        bidder.lots_bidding.insert(&lot_id);
+        self.internal_profile_save(&bidder);
 
         // redistribute balances
-        match last_bid {
-            Some(last_bid) => {
-                let to_prev_bider = last_bid.amount;
+        match prev_bid {
+            Some(prev_bid) => {
+                let to_prev_bider = prev_bid.amount;
                 let to_seller = amount - to_prev_bider;
                 let commission = self.seller_rewards_commission * to_seller;
                 let to_seller = to_seller - commission;
@@ -229,7 +216,7 @@ impl Contract {
                 let prev_bidder_reward = self.prev_bidder_commission_share * commission;
 
                 self.internal_profile_rewards_transfer(
-                    &last_bid.bidder_id,
+                    &prev_bid.bidder_id,
                     to_prev_bider + prev_bidder_reward,
                 );
                 self.internal_profile_rewards_transfer(&lot.seller_id, to_seller);
