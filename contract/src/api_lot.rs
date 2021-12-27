@@ -320,7 +320,7 @@ mod tests {
 
     use near_sdk::test_utils::VMContextBuilder;
     use near_sdk::{testing_env, VMContext};
-    use near_sdk_sim::{to_ts, to_yocto};
+    use near_sdk_sim::{to_nanos, to_ts, to_yocto};
 
     use crate::lot::tests::*;
     use crate::tests::{api_lot_bid, build_contract, create_lot_x_sells_y_api};
@@ -643,6 +643,35 @@ mod tests {
             let result = contract.lot_list_bidding_by("nonexistent".parse().unwrap(), None, None);
             assert_eq!(result.len(), 0, "should be zero for non existing profile");
         }
+    }
+
+    #[test]
+    fn test_api_lot_create() {
+        let mut contract = build_contract();
+
+        let lot_id: ProfileId = "alice".parse().unwrap();
+        let seller_id: ProfileId = "bob".parse().unwrap();
+        let reserve_price = to_yocto("2");
+        let buy_now_price = to_yocto("10");
+        let duration = to_nanos(7);
+        let time_now = to_ts(10);
+
+        testing_env!(get_context_call(time_now, &lot_id));
+        contract.lot_offer(
+            seller_id.clone(),
+            reserve_price.into(),
+            buy_now_price.into(),
+            WrappedDuration::from(duration),
+        );
+
+        let result = contract.internal_lot_extract(&lot_id);
+
+        assert_eq!(result.lot_id, lot_id.clone());
+        assert_eq!(result.seller_id, seller_id.clone());
+        assert_eq!(result.start_timestamp, time_now);
+        assert_eq!(result.finish_timestamp, time_now + duration);
+        assert_eq!(result.reserve_price, reserve_price.into());
+        assert_eq!(result.buy_now_price, buy_now_price.into());
     }
 
     #[test]

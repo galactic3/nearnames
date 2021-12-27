@@ -447,42 +447,6 @@ mod tests {
     }
 
     #[test]
-    fn lot_create_api() {
-        let context = get_context_pred_alice(false);
-        testing_env!(context);
-
-        let mut contract = build_contract();
-
-        let lot_id: ProfileId = "alice".parse().unwrap();
-        let seller_id: ProfileId = "bob".parse().unwrap();
-        let reserve_price = to_yocto("5");
-        let buy_now_price = to_yocto("10");
-        let duration = to_nanos(1);
-
-        contract.lot_offer(
-            seller_id,
-            reserve_price.into(),
-            buy_now_price.into(),
-            WrappedDuration::from(duration),
-        );
-
-        let result = contract.lots.get(&lot_id);
-        assert!(result.is_some(), "expected lot_saved is present");
-        let result = result.unwrap();
-
-        assert_eq!(result.lot_id, "alice".parse().unwrap());
-        assert_eq!(result.seller_id, "bob".parse().unwrap());
-        assert_eq!(result.start_timestamp, to_ts(10), "expected start day ten");
-        assert_eq!(
-            result.finish_timestamp,
-            to_ts(11),
-            "expected finish day eleven"
-        );
-        assert_eq!(result.reserve_price, to_yocto("5").into());
-        assert_eq!(result.buy_now_price, to_yocto("10").into());
-    }
-
-    #[test]
     fn internal_transfer() {
         let context = get_context_simple(false);
         testing_env!(context);
