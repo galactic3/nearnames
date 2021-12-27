@@ -197,6 +197,11 @@ impl Lot {
         );
     }
 
+    pub fn withdraw(&mut self, withdrawer_id: &ProfileId) {
+        self.validate_withdraw(withdrawer_id);
+        self.is_withdrawn = true;
+    }
+
     pub fn validate_place_bid(&mut self, bid: &Bid, bid_step: Fraction) {
         assert!(
             self.is_active(bid.timestamp),
@@ -519,34 +524,35 @@ mod tests {
     }
 
     #[test]
-    fn test_lot_validate_withdraw() {
-        let lot = create_lot_bob_sells_alice();
+    fn test_lot_withdraw() {
+        let mut lot = create_lot_bob_sells_alice();
         let withdrawer_id: AccountId = "bob".parse().unwrap();
-        lot.validate_withdraw(&withdrawer_id);
+        lot.withdraw(&withdrawer_id);
+        assert_eq!(lot.is_withdrawn, true, "expected lot to be withdrawn");
     }
 
     #[test]
     #[should_panic(expected = "withdraw: already withdrawn")]
-    fn test_lot_validate_withdraw_fail_already_withdrawn() {
-        let (lot, _tm) = create_lot_alice_withdrawn();
+    fn test_lot_withdraw_fail_already_withdrawn() {
+        let (mut lot, _tm) = create_lot_alice_withdrawn();
         let withdrawer_id: AccountId = "bob".parse().unwrap();
-        lot.validate_withdraw(&withdrawer_id);
+        lot.withdraw(&withdrawer_id);
     }
 
     #[test]
     #[should_panic(expected = "withdraw: expected no bids")]
-    fn test_lot_validate_withdraw_fail_has_bids() {
-        let (lot, _tm) = create_lot_alice_with_bids(); // dan is the last bidder
+    fn test_lot_withdraw_fail_has_bids() {
+        let (mut lot, _tm) = create_lot_alice_with_bids(); // dan is the last bidder
         let withdrawer_id: AccountId = "bob".parse().unwrap();
-        lot.validate_withdraw(&withdrawer_id);
+        lot.withdraw(&withdrawer_id);
     }
 
     #[test]
     #[should_panic(expected = "withdraw: wrong withdrawer")]
-    fn test_lot_validate_withdraw_fail_wrong_withdrawer() {
-        let lot = create_lot_bob_sells_alice();
+    fn test_lot_withdraw_fail_wrong_withdrawer() {
+        let mut lot = create_lot_bob_sells_alice();
         let not_withdrawer_id: AccountId = "alice".parse().unwrap();
-        lot.validate_withdraw(&not_withdrawer_id);
+        lot.withdraw(&not_withdrawer_id);
     }
 
     #[test]

@@ -78,13 +78,6 @@ impl Contract {
     pub(crate) fn internal_lot_save(&mut self, lot: &Lot) {
         assert!(self.lots.insert(&lot.lot_id, lot).is_none());
     }
-
-    pub(crate) fn internal_lot_withdraw(&mut self, lot_id: &LotId, withdrawer_id: &ProfileId) {
-        let mut lot = self.internal_lot_extract(lot_id);
-        lot.validate_withdraw(withdrawer_id);
-        lot.is_withdrawn = true;
-        self.internal_lot_save(&lot);
-    }
 }
 
 #[near_bindgen]
@@ -296,7 +289,10 @@ impl Contract {
     pub fn lot_withdraw(&mut self, lot_id: AccountId) -> bool {
         let lot_id: ProfileId = lot_id.into();
         let withdrawer_id: ProfileId = env::predecessor_account_id();
-        self.internal_lot_withdraw(&lot_id, &withdrawer_id);
+        let mut lot = self.internal_lot_extract(&lot_id);
+        lot.withdraw(&withdrawer_id);
+        self.internal_lot_save(&lot);
+
         true
     }
 }
