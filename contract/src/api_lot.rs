@@ -328,12 +328,11 @@ mod tests {
 
     #[test]
     fn test_api_lot_bid_list() {
-        // let context = get_context_simple(false);
-        // testing_env!(context);
         let mut contract = build_contract();
         let (lot, _time_now) = create_lot_alice_with_bids();
         contract.internal_lot_save(&lot);
 
+        testing_env!(get_context_view(to_ts(16)));
         let response: Vec<BidView> = contract.lot_bid_list("alice".parse().unwrap());
         let expected: Vec<BidView> = vec![
             BidView {
