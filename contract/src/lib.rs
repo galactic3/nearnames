@@ -740,31 +740,6 @@ mod tests {
         );
     }
 
-    #[test]
-    fn last_bid_amount() {
-        let mut lot = create_lot_bob_sells_alice();
-        assert!(
-            lot.last_bid_amount().is_none(),
-            "expected last_bid_amount to be None"
-        );
-
-        let bid = Bid {
-            bidder_id: "carol".parse().unwrap(),
-            timestamp: to_ts(10),
-            amount: to_yocto("6"),
-        };
-        lot.bids.push(&bid);
-        assert_eq!(lot.last_bid_amount().unwrap(), to_yocto("6"));
-
-        let bid = Bid {
-            bidder_id: "carol".parse().unwrap(),
-            timestamp: to_ts(10),
-            amount: to_yocto("7"),
-        };
-        lot.bids.push(&bid);
-        assert_eq!(lot.last_bid_amount().unwrap(), to_yocto("7"));
-    }
-
     // checks:
     //   - lot cannot bid
     //   - seller cannot bid
@@ -791,9 +766,9 @@ mod tests {
         };
         internal_lot_bid(&mut contract, &"alice".parse().unwrap(), &bid);
         let lot = contract.lots.get(&"alice".parse().unwrap()).unwrap();
-        assert_eq!(lot.bids.len(), 1, "expected one bid for lot");
+        assert_eq!(lot.bids().len(), 1, "expected one bid for lot");
 
-        let last_bid = lot.bids.get(lot.bids.len() - 1).unwrap();
+        let last_bid = lot.last_bid().unwrap();
         assert_eq!(last_bid.amount, first_bid_amount, "wrong first bid amount");
         assert_eq!(
             last_bid.bidder_id,
@@ -813,9 +788,9 @@ mod tests {
         };
         internal_lot_bid(&mut contract, &"alice".parse().unwrap(), &bid);
         let lot = contract.lots.get(&"alice".parse().unwrap()).unwrap();
-        assert_eq!(lot.bids.len(), 2, "wrong bids length");
+        assert_eq!(lot.bids().len(), 2, "wrong bids length");
 
-        let last_bid = lot.bids.get(lot.bids.len() - 1).unwrap();
+        let last_bid = lot.last_bid().unwrap();
         assert_eq!(
             last_bid.amount, second_bid_amount,
             "expected last bid to be 6 near"
@@ -955,7 +930,7 @@ mod tests {
         );
 
         let lot = contract.lots.get(&"alice".parse().unwrap()).unwrap();
-        assert_eq!(lot.bids.len(), 1, "expected one bid for lot");
+        assert_eq!(lot.bids().len(), 1, "expected one bid for lot");
 
         let last_bid = lot.last_bid().unwrap();
         assert_eq!(last_bid.amount, first_bid_amount, "wrong_first_bid");

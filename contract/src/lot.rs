@@ -51,7 +51,7 @@ pub struct Lot {
     pub finish_timestamp: Timestamp,
     pub is_withdrawn: bool,
 
-    pub bids: Vector<Bid>,
+    bids: Vector<Bid>,
 }
 
 impl Lot {
@@ -85,6 +85,10 @@ impl Lot {
             is_withdrawn: false,
             bids: Vector::new(prefix),
         }
+    }
+
+    pub fn bids(&self) -> Vec<Bid> {
+        self.bids.to_vec()
     }
 
     pub fn is_active(&self, time_now: Timestamp) -> bool {

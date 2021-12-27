@@ -60,8 +60,8 @@ impl PartialEq for BidView {
 
 impl Eq for BidView {}
 
-impl From<Bid> for BidView {
-    fn from(bid: Bid) -> Self {
+impl From<&Bid> for BidView {
+    fn from(bid: &Bid) -> Self {
         Self {
             bidder_id: bid.bidder_id.clone(),
             amount: bid.amount.into(),
@@ -85,7 +85,7 @@ impl Contract {
     pub fn lot_bid_list(&self, lot_id: AccountId) -> Vec<BidView> {
         let lot: Lot = self.lots.get(&lot_id).unwrap();
 
-        lot.bids.iter().map(|v| v.into()).collect()
+        lot.bids().iter().map(|v| v.into()).collect()
     }
 
     pub fn lot_list(&self, limit: Option<u64>, offset: Option<u64>) -> Vec<LotView> {
@@ -265,7 +265,9 @@ impl Contract {
             "{}",
             ERR_LOT_CLEAN_UP_STILL_ACTIVE
         );
-        let bidder_ids_unique: HashSet<ProfileId> = lot.bids.iter().map(|x| x.bidder_id).collect();
+
+        let bidder_ids_unique: HashSet<ProfileId> =
+            lot.bids().into_iter().map(|x| x.bidder_id.clone()).collect();
 
         bidder_ids_unique.iter().for_each(|bidder_id| {
             // TODO: validate bid exists
