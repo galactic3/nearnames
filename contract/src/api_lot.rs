@@ -342,24 +342,12 @@ mod tests {
         ];
 
         assert_eq!(response.len(), expected.len(), "wrong bids length");
-        assert_eq!(
-            response[0].bidder_id, expected[0].bidder_id,
-            "wrong bids list"
-        );
-        assert_eq!(response[0].amount, expected[0].amount, "wrong bids list");
-        assert_eq!(
-            response[0].timestamp, expected[0].timestamp,
-            "wrong bids list"
-        );
+        assert_eq!(response[0].bidder_id, expected[0].bidder_id);
+        assert_eq!(response[0].amount, expected[0].amount);
+        assert_eq!(response[0].timestamp, expected[0].timestamp);
 
-        assert_eq!(
-            response[1].bidder_id, expected[1].bidder_id,
-            "wrong bids list"
-        );
-        assert_eq!(response[1].amount, expected[1].amount, "wrong bids list");
-        assert_eq!(
-            response[1].timestamp, expected[1].timestamp,
-            "wrong bids list"
-        );
+        assert_eq!(response[1].bidder_id, expected[1].bidder_id);
+        assert_eq!(response[1].amount, expected[1].amount);
+        assert_eq!(response[1].timestamp, expected[1].timestamp);
     }
 }
