@@ -57,16 +57,6 @@ pub struct BidView {
     pub timestamp: WrappedTimestamp,
 }
 
-impl PartialEq for BidView {
-    fn eq(&self, other: &Self) -> bool {
-        self.bidder_id == other.bidder_id
-            && self.amount.0 == other.amount.0
-            && self.timestamp.0 == other.timestamp.0
-    }
-}
-
-impl Eq for BidView {}
-
 impl From<&Bid> for BidView {
     fn from(bid: &Bid) -> Self {
         Self {
