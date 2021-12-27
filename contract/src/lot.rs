@@ -155,7 +155,7 @@ impl Lot {
         self.bids.clear()
     }
 
-    pub fn validate_claim_by_buyer(&self, claimer_id: &ProfileId, time_now: Timestamp) {
+    fn validate_claim_by_buyer(&self, claimer_id: &ProfileId, time_now: Timestamp) {
         assert!(
             !self.is_active(time_now),
             "{}",
@@ -169,7 +169,7 @@ impl Lot {
         );
     }
 
-    pub fn validate_claim_by_seller(&self, claimer_id: &ProfileId) {
+    fn validate_claim_by_seller(&self, claimer_id: &ProfileId) {
         assert!(
             self.is_withdrawn,
             "{}",
@@ -191,7 +191,7 @@ impl Lot {
     }
 
     // add status
-    pub fn validate_withdraw(&self, withdrawer_id: &ProfileId) {
+    fn validate_withdraw(&self, withdrawer_id: &ProfileId) {
         assert!(!self.is_withdrawn, "{}", ERR_LOT_WITHDRAW_WRONG_STATUS);
         assert!(self.last_bid().is_none(), "{}", ERR_LOT_WITHDRAW_HAS_BID);
         assert_eq!(
@@ -206,7 +206,7 @@ impl Lot {
         self.is_withdrawn = true;
     }
 
-    pub fn validate_place_bid(&mut self, bid: &Bid, bid_step: Fraction) {
+    fn validate_place_bid(&mut self, bid: &Bid, bid_step: Fraction) {
         assert!(
             self.is_active(bid.timestamp),
             "{}",
