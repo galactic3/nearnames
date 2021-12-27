@@ -295,3 +295,45 @@ impl Contract {
         true
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use near_sdk_sim::{to_ts, to_yocto};
+
+    use crate::lot::tests::{create_lot_alice_with_bids};
+    use crate::tests::build_contract;
+
+    #[test]
+    fn lot_bid_list() {
+        // let context = get_context_simple(false);
+        // testing_env!(context);
+        let mut contract = build_contract();
+        let (lot, _time_now) = create_lot_alice_with_bids();
+        contract.internal_lot_save(&lot);
+
+        let response: Vec<BidView> = contract.lot_bid_list("alice".parse().unwrap());
+        let expected: Vec<BidView> = vec![
+            BidView {
+                bidder_id: "carol".parse().unwrap(),
+                amount: WrappedBalance::from(to_yocto("3")),
+                timestamp: WrappedTimestamp::from(to_ts(11)),
+            },
+            BidView {
+                bidder_id: "dan".parse().unwrap(),
+                amount: WrappedBalance::from(to_yocto("6")),
+                timestamp: WrappedTimestamp::from(to_ts(12)),
+            },
+        ];
+
+        assert_eq!(response.len(), expected.len(), "wrong bids length");
+        assert_eq!(response[0].bidder_id, expected[0].bidder_id, "wrong bids list");
+        assert_eq!(response[0].amount, expected[0].amount, "wrong bids list");
+        assert_eq!(response[0].timestamp, expected[0].timestamp, "wrong bids list");
+
+        assert_eq!(response[1].bidder_id, expected[1].bidder_id, "wrong bids list");
+        assert_eq!(response[1].amount, expected[1].amount, "wrong bids list");
+        assert_eq!(response[1].timestamp, expected[1].timestamp, "wrong bids list");
+    }
+}

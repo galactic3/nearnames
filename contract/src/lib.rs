@@ -151,7 +151,7 @@ mod tests {
             .build()
     }
 
-    fn build_contract() -> Contract {
+    pub fn build_contract() -> Contract {
         Contract::new(
             FractionView { num: 1, denom: 10 },
             FractionView { num: 1, denom: 5 },
@@ -526,52 +526,6 @@ mod tests {
         let mut lot = contract.internal_lot_extract(lot_id);
         lot.place_bid(bid, contract.bid_step);
         contract.internal_lot_save(&lot);
-    }
-
-    #[test]
-    fn lot_bid_list() {
-        let context = get_context_simple(false);
-        testing_env!(context);
-        let mut contract = build_contract();
-        let lot_bob_sells_alice = create_lot_bob_sells_alice();
-        contract.internal_lot_save(&lot_bob_sells_alice);
-
-        let bid: Bid = Bid {
-            bidder_id: "carol".parse().unwrap(),
-            amount: to_yocto("7"),
-            timestamp: to_ts(10),
-        };
-        internal_lot_bid(&mut contract, &"alice".parse().unwrap(), &bid);
-
-        let bid: Bid = Bid {
-            bidder_id: "dan".parse().unwrap(),
-            amount: to_yocto("9"),
-            timestamp: to_ts(10) + 1,
-        };
-        internal_lot_bid(&mut contract, &"alice".parse().unwrap(), &bid);
-
-        let response: Vec<BidView> = contract.lot_bid_list("alice".parse().unwrap());
-        let expected: Vec<BidView> = vec![
-            BidView {
-                bidder_id: "carol".parse().unwrap(),
-                amount: WrappedBalance::from(to_yocto("7")),
-                timestamp: WrappedTimestamp::from(to_ts(10)),
-            },
-            BidView {
-                bidder_id: "dan".parse().unwrap(),
-                amount: WrappedBalance::from(to_yocto("9")),
-                timestamp: WrappedTimestamp::from(to_ts(10) + 1),
-            },
-        ];
-
-        assert_eq!(response.len(), expected.len(), "wrong bids length");
-        assert_eq!(response[0].bidder_id, expected[0].bidder_id, "wrong bids list");
-        assert_eq!(response[0].amount, expected[0].amount, "wrong bids list");
-        assert_eq!(response[0].timestamp, expected[0].timestamp, "wrong bids list");
-
-        assert_eq!(response[1].bidder_id, expected[1].bidder_id, "wrong bids list");
-        assert_eq!(response[1].amount, expected[1].amount, "wrong bids list");
-        assert_eq!(response[1].timestamp, expected[1].timestamp, "wrong bids list");
     }
 
     #[test]

@@ -227,12 +227,12 @@ impl Lot {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use super::*;
 
     use near_sdk_sim::{to_nanos, to_ts, to_yocto};
 
-    fn create_lot_bob_sells_alice() -> Lot {
+    pub fn create_lot_bob_sells_alice() -> Lot {
         let reserve_price = to_yocto("2");
         let buy_now_price = to_yocto("10");
 
@@ -257,10 +257,10 @@ mod tests {
         (lot, time_now)
     }
 
-    fn create_lot_alice_with_bids() -> (Lot, Timestamp) {
+    pub fn create_lot_alice_with_bids() -> (Lot, Timestamp) {
         let mut lot = create_lot_bob_sells_alice();
         lot.bids.push(&Bid {
-            bidder_id: "dan".parse().unwrap(),
+            bidder_id: "carol".parse().unwrap(),
             amount: to_yocto("3"),
             timestamp: to_ts(11),
         });
