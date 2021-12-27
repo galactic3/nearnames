@@ -249,24 +249,29 @@ pub mod tests {
         )
     }
 
-    pub fn create_lot_bob_sells_alice() -> Lot {
-        create_lot_x_sells_y(&"bob".parse().unwrap(), &"alice".parse().unwrap())
+    pub fn create_lot_alice() -> (Lot, Timestamp) {
+        let lot = create_lot_x_sells_y(&"bob".parse().unwrap(), &"alice".parse().unwrap());
+        let time_now = to_ts(16);
+
+        (lot, time_now)
     }
 
     pub fn create_lot_alice_withdrawn() -> (Lot, Timestamp) {
-        let mut lot = create_lot_bob_sells_alice();
+        let (mut lot, time_now) = create_lot_alice();
         lot.is_withdrawn = true;
-        let time_now = to_ts(10);
 
         (lot, time_now)
     }
 
     pub fn create_lot_alice_sale_failure() -> (Lot, Timestamp) {
-        (create_lot_bob_sells_alice(), to_ts(18))
+        let (lot, _) = create_lot_alice();
+        let time_now = to_ts(18);
+
+        (lot, time_now)
     }
 
     pub fn create_lot_alice_with_bids() -> (Lot, Timestamp) {
-        let mut lot = create_lot_bob_sells_alice();
+        let (mut lot, time_now) = create_lot_alice();
         lot.bids.push(&Bid {
             bidder_id: "carol".parse().unwrap(),
             amount: to_yocto("3"),
@@ -277,33 +282,31 @@ pub mod tests {
             amount: to_yocto("6"),
             timestamp: to_ts(12),
         });
-        let time_now = to_ts(13);
 
         (lot, time_now)
     }
 
     pub fn create_lot_alice_with_bids_sale_success() -> (Lot, Timestamp) {
-        let (lot, _tm) = create_lot_alice_with_bids();
-        let time_now = to_ts(20);
+        let (lot, _) = create_lot_alice_with_bids();
+        let time_now = to_ts(18);
 
         (lot, time_now)
     }
 
     pub fn create_lot_alice_buy_now_bid() -> (Lot, Timestamp) {
-        let (mut lot, _tm) = create_lot_alice_with_bids();
+        let (mut lot, time_now) = create_lot_alice_with_bids();
         lot.bids.push(&Bid {
             bidder_id: "carol".parse().unwrap(),
             amount: to_yocto("10"),
             timestamp: to_ts(13),
         });
-        let time_now = to_ts(14);
 
         (lot, time_now)
     }
 
     #[test]
     fn test_lot_new() {
-        let lot = create_lot_bob_sells_alice();
+        let (lot, _) = create_lot_alice();
         assert_eq!(lot.lot_id, "alice".parse().unwrap(), "wrong lot_id");
         assert_eq!(lot.seller_id, "bob".parse().unwrap(), "wrong seller_id");
         assert_eq!(lot.reserve_price, to_yocto("2"), "wrong reserve_price");
@@ -342,7 +345,7 @@ pub mod tests {
 
     #[test]
     fn test_lot_is_active_by_time_now() {
-        let lot = create_lot_bob_sells_alice();
+        let (lot, _) = create_lot_alice();
         assert_eq!(lot.is_active(to_ts(10) - 1), true);
         assert_eq!(lot.is_active(to_ts(10)), true);
         assert_eq!(lot.is_active(to_ts(17) - 1), true);
@@ -352,9 +355,8 @@ pub mod tests {
 
     #[test]
     fn test_lot_is_active_by_is_withdrawn() {
-        let mut lot = create_lot_bob_sells_alice();
-        lot.is_withdrawn = true;
-        assert_eq!(lot.is_active(to_ts(10)), false);
+        let (lot, time_now) = create_lot_alice_withdrawn();
+        assert_eq!(lot.is_active(time_now), false);
     }
 
     #[test]
@@ -369,10 +371,10 @@ pub mod tests {
 
     #[test]
     fn test_lot_last_bid() {
-        let lot = create_lot_bob_sells_alice();
+        let (lot, _) = create_lot_alice();
         assert_eq!(lot.last_bid().map(|x| x.bidder_id), None);
 
-        let (lot, _tm) = create_lot_alice_with_bids();
+        let (lot, _) = create_lot_alice_with_bids();
         assert_eq!(
             lot.last_bid().map(|x| x.bidder_id),
             Some("dan".parse().unwrap())
@@ -381,10 +383,10 @@ pub mod tests {
 
     #[test]
     fn test_lot_last_bid_amount() {
-        let lot = create_lot_bob_sells_alice();
+        let (lot, _) = create_lot_alice();
         assert_eq!(lot.last_bid_amount(), None, "expected none bid amount");
 
-        let (lot, _tm) = create_lot_alice_with_bids();
+        let (lot, _) = create_lot_alice_with_bids();
         assert_eq!(
             lot.last_bid_amount(),
             Some(to_yocto("6")),
@@ -394,9 +396,9 @@ pub mod tests {
 
     #[test]
     fn test_lot_next_bid_amount() {
-        let lot = create_lot_bob_sells_alice();
+        let (lot, time_now) = create_lot_alice();
         assert_eq!(
-            lot.next_bid_amount(to_ts(10), Fraction::new(0, 1)).unwrap(),
+            lot.next_bid_amount(time_now, Fraction::new(0, 1)).unwrap(),
             to_yocto("2"),
             "expected reserve_price for new lot"
         );
@@ -442,18 +444,19 @@ pub mod tests {
 
     #[test]
     fn test_lot_potential_claimer_id() {
-        let lot = create_lot_bob_sells_alice();
+        let (lot, _) = create_lot_alice();
         assert_eq!(lot.potential_claimer_id(), None);
 
-        let (lot, _tm) = create_lot_alice_with_bids();
+        let (lot, _) = create_lot_alice_with_bids();
         assert_eq!(lot.potential_claimer_id(), Some("dan".parse().unwrap()));
     }
 
     #[test]
     fn test_lot_status() {
-        let lot = create_lot_bob_sells_alice();
-        assert_eq!(lot.status(to_ts(10)), LotStatus::OnSale);
-        assert_eq!(lot.status(to_ts(20)), LotStatus::SaleFailure);
+        let (lot, time_now) = create_lot_alice();
+        assert_eq!(lot.status(time_now), LotStatus::OnSale);
+        let (lot, time_now) = create_lot_alice_sale_failure();
+        assert_eq!(lot.status(time_now), LotStatus::SaleFailure);
 
         let (lot, time_now) = create_lot_alice_with_bids();
         assert_eq!(lot.status(time_now), LotStatus::OnSale);
@@ -470,7 +473,7 @@ pub mod tests {
 
     #[test]
     fn test_lot_clean_up() {
-        let (mut lot, _tm) = create_lot_alice_with_bids();
+        let (mut lot, _) = create_lot_alice_with_bids();
         lot.clean_up();
         assert!(lot.bids.is_empty(), "expected bids empty after clean up");
     }
@@ -485,9 +488,9 @@ pub mod tests {
     #[test]
     #[should_panic(expected = "claim by seller: expected status withdrawn")]
     fn test_lot_validate_claim_by_seller_fail_lot_active() {
-        let lot = create_lot_bob_sells_alice();
+        let (lot, time_now) = create_lot_alice();
         let seller_id: AccountId = "bob".parse().unwrap();
-        lot.validate_claim(&seller_id, to_ts(10));
+        lot.validate_claim(&seller_id, time_now);
     }
 
     #[test]
@@ -501,7 +504,7 @@ pub mod tests {
     #[test]
     #[should_panic(expected = "claim by seller: wrong claimer")]
     fn test_lot_validate_claim_by_seller_fail_wrong_claimer() {
-        let (lot, _tm) = create_lot_alice_withdrawn();
+        let (lot, _) = create_lot_alice_withdrawn();
         let fake_seller_id: AccountId = "carol".parse().unwrap();
         lot.validate_claim_by_seller(&fake_seller_id);
     }
@@ -531,7 +534,7 @@ pub mod tests {
 
     #[test]
     fn test_lot_withdraw() {
-        let mut lot = create_lot_bob_sells_alice();
+        let (mut lot, _) = create_lot_alice();
         let withdrawer_id: AccountId = "bob".parse().unwrap();
         lot.withdraw(&withdrawer_id);
         assert_eq!(lot.is_withdrawn, true, "expected lot to be withdrawn");
@@ -548,7 +551,7 @@ pub mod tests {
     #[test]
     #[should_panic(expected = "withdraw: expected no bids")]
     fn test_lot_withdraw_fail_has_bids() {
-        let (mut lot, _tm) = create_lot_alice_with_bids(); // dan is the last bidder
+        let (mut lot, _) = create_lot_alice_with_bids(); // dan is the last bidder
         let withdrawer_id: AccountId = "bob".parse().unwrap();
         lot.withdraw(&withdrawer_id);
     }
@@ -556,18 +559,18 @@ pub mod tests {
     #[test]
     #[should_panic(expected = "withdraw: wrong withdrawer")]
     fn test_lot_withdraw_fail_wrong_withdrawer() {
-        let mut lot = create_lot_bob_sells_alice();
+        let (mut lot, _) = create_lot_alice();
         let not_withdrawer_id: AccountId = "alice".parse().unwrap();
         lot.withdraw(&not_withdrawer_id);
     }
 
     #[test]
     fn test_lot_place_bid() {
-        let mut lot = create_lot_bob_sells_alice();
+        let (mut lot, time_now) = create_lot_alice();
         let bid = Bid {
             bidder_id: "dan".parse().unwrap(),
             amount: to_yocto("3"),
-            timestamp: to_ts(11),
+            timestamp: time_now,
         };
         lot.place_bid(&bid, Fraction::new(0, 1));
         assert_eq!(lot.bids.len(), 1, "{}", "expected bids size 1");
@@ -575,12 +578,12 @@ pub mod tests {
 
     #[test]
     #[should_panic(expected = "bid: expected status active")]
-    fn test_lot_place_bid_fail_has_bids() {
-        let mut lot = create_lot_bob_sells_alice();
+    fn test_lot_place_bid_fail_inactive() {
+        let (mut lot, time_now) = create_lot_alice_sale_failure();
         let bid = Bid {
             bidder_id: "dan".parse().unwrap(),
             amount: to_yocto("3"),
-            timestamp: to_ts(18),
+            timestamp: time_now,
         };
         lot.place_bid(&bid, Fraction::new(0, 1));
     }
@@ -600,11 +603,11 @@ pub mod tests {
     #[test]
     #[should_panic(expected = "bid: seller and lot cannot bid")]
     fn test_lot_place_bid_fail_bid_from_seller() {
-        let mut lot = create_lot_bob_sells_alice();
+        let (mut lot, time_now) = create_lot_alice();
         let bid = Bid {
             bidder_id: "bob".parse().unwrap(),
             amount: to_yocto("3"),
-            timestamp: to_ts(11),
+            timestamp: time_now,
         };
         lot.place_bid(&bid, Fraction::new(0, 1));
     }
@@ -612,11 +615,11 @@ pub mod tests {
     #[test]
     #[should_panic(expected = "bid: seller and lot cannot bid")]
     fn test_lot_place_bid_fail_bid_from_lot() {
-        let mut lot = create_lot_bob_sells_alice();
+        let (mut lot, time_now) = create_lot_alice();
         let bid = Bid {
             bidder_id: "alice".parse().unwrap(),
             amount: to_yocto("3"),
-            timestamp: to_ts(11),
+            timestamp: time_now,
         };
         lot.place_bid(&bid, Fraction::new(0, 1));
     }

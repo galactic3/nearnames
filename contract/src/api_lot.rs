@@ -335,7 +335,7 @@ mod tests {
     #[test]
     fn test_api_internal_save() {
         let mut contract = build_contract();
-        let lot = create_lot_bob_sells_alice();
+        let (lot, _) = create_lot_alice();
         contract.internal_lot_save(&lot);
         let lot_extracted = contract.internal_lot_extract(&lot.lot_id);
         assert_eq!(lot_extracted.seller_id, lot.seller_id);
@@ -345,7 +345,7 @@ mod tests {
     #[should_panic(expected = "internal_lot_save: lot already exists")]
     fn test_api_internal_save_fail_already_exists() {
         let mut contract = build_contract();
-        let lot = create_lot_bob_sells_alice();
+        let (lot, _) = create_lot_alice();
 
         contract.internal_lot_save(&lot);
         contract.internal_lot_save(&lot);
@@ -370,7 +370,7 @@ mod tests {
     #[should_panic(expected = "internal_lot_extract: lot does not exist")]
     fn test_api_internal_extract_fail_not_exists() {
         let mut contract = build_contract();
-        let lot = create_lot_bob_sells_alice();
+        let (lot, _) = create_lot_alice();
         contract.internal_lot_save(&lot);
 
         contract.internal_lot_extract(&"nonexistent".parse().unwrap());
@@ -379,10 +379,10 @@ mod tests {
     #[test]
     fn test_api_lot_bid_list() {
         let mut contract = build_contract();
-        let (lot, _time_now) = create_lot_alice_with_bids();
+        let (lot, time_now) = create_lot_alice_with_bids();
         contract.internal_lot_save(&lot);
 
-        testing_env!(get_context_view(to_ts(16)));
+        testing_env!(get_context_view(time_now));
         let response: Vec<BidView> = contract.lot_bid_list("alice".parse().unwrap());
         let expected: Vec<BidView> = vec![
             BidView {
@@ -505,7 +505,7 @@ mod tests {
             contract.internal_lot_save(&lot);
         }
 
-        testing_env!(get_context_view(to_ts(11)));
+        testing_env!(get_context_view(to_ts(16)));
         {
             let result = contract.lot_list(None, None);
             assert_eq!(result.len(), 3, "wrong lot list size");
