@@ -8,11 +8,11 @@ edition = "2021"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-near-sdk = "4.0.0-pre.4"
+near-sdk = "4.0.0-pre.5"
 uint = "0.9.1"
 
 [dev-dependencies]
-near-sdk-sim = "4.0.0-pre.4"
+near-sdk-sim = "4.0.0-pre.5"
 
 [profile.release]
 codegen-units = 1
