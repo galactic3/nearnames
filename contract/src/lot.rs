@@ -232,7 +232,7 @@ pub mod tests {
 
     use near_sdk_sim::{to_nanos, to_ts, to_yocto};
 
-    pub fn create_lot_bob_sells_alice() -> Lot {
+    pub fn create_lot_x_sells_y(seller_id: &ProfileId, lot_id: &LotId) -> Lot {
         let reserve_price = to_yocto("2");
         let buy_now_price = to_yocto("10");
 
@@ -240,13 +240,17 @@ pub mod tests {
         let duration = to_nanos(7);
 
         Lot::new(
-            "alice".parse().unwrap(),
-            "bob".parse().unwrap(),
+            lot_id.clone(),
+            seller_id.clone(),
             reserve_price,
             buy_now_price,
             time_now,
             duration,
         )
+    }
+
+    pub fn create_lot_bob_sells_alice() -> Lot {
+        create_lot_x_sells_y(&"bob".parse().unwrap(), &"alice".parse().unwrap())
     }
 
     fn create_lot_alice_withdrawn() -> (Lot, Timestamp) {
