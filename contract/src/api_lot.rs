@@ -6,6 +6,8 @@ pub const GAS_EXT_CALL_CLEAN_UP: u64 = 100_000_000_000_000;
 
 pub const ERR_LOT_CLEAN_UP_STILL_ACTIVE: &str = "UNREACHABLE: cannot clean up still active lot";
 pub const ERR_LOT_CLEAN_UP_UNLOCK_FAILED: &str = "Expected unlock promise to be successful";
+pub const ERR_INTERNAL_LOT_SAVE_ALREADY_EXISTS: &str = "internal_lot_save: lot already exists";
+pub const ERR_INTERNAL_LOT_EXTRACT_NOT_EXIST: &str = "internal_lot_extract: lot does not exist";
 
 #[derive(Deserialize, Serialize, Debug)]
 #[serde(crate = "near_sdk::serde")]
@@ -69,11 +71,15 @@ impl From<&Bid> for BidView {
 
 impl Contract {
     pub(crate) fn internal_lot_extract(&mut self, lot_id: &LotId) -> Lot {
-        self.lots.remove(&lot_id).unwrap()
+        self.lots.remove(&lot_id).expect(ERR_INTERNAL_LOT_EXTRACT_NOT_EXIST)
     }
 
     pub(crate) fn internal_lot_save(&mut self, lot: &Lot) {
-        assert!(self.lots.insert(&lot.lot_id, lot).is_none());
+        assert!(
+            self.lots.insert(&lot.lot_id, lot).is_none(),
+            "{}",
+            ERR_INTERNAL_LOT_SAVE_ALREADY_EXISTS,
+        );
     }
 }
 
@@ -324,6 +330,50 @@ mod tests {
             .is_view(true)
             .block_timestamp(time_now)
             .build()
+    }
+
+    #[test]
+    fn test_api_internal_save() {
+        let mut contract = build_contract();
+        let lot = create_lot_bob_sells_alice();
+        contract.internal_lot_save(&lot);
+        let lot_extracted = contract.internal_lot_extract(&lot.lot_id);
+        assert_eq!(lot_extracted.seller_id, lot.seller_id);
+    }
+
+    #[test]
+    #[should_panic(expected = "internal_lot_save: lot already exists")]
+    fn test_api_internal_save_fail_already_exists() {
+        let mut contract = build_contract();
+        let lot = create_lot_bob_sells_alice();
+
+        contract.internal_lot_save(&lot);
+        contract.internal_lot_save(&lot);
+    }
+
+    #[test]
+    fn test_api_internal_extract() {
+        let mut contract = build_contract();
+        for i in 0..3 {
+            let lot = create_lot_x_sells_y(
+                &format!("seller{}", i).parse().unwrap(),
+                &format!("lot{}", i).parse().unwrap(),
+            );
+            contract.internal_lot_save(&lot);
+        }
+
+        let lot_extracted = contract.internal_lot_extract(&"lot1".parse().unwrap());
+        assert_eq!(lot_extracted.seller_id, "seller1".parse().unwrap());
+    }
+
+    #[test]
+    #[should_panic(expected = "internal_lot_extract: lot does not exist")]
+    fn test_api_internal_extract_fail_not_exists() {
+        let mut contract = build_contract();
+        let lot = create_lot_bob_sells_alice();
+        contract.internal_lot_save(&lot);
+
+        contract.internal_lot_extract(&"nonexistent".parse().unwrap());
     }
 
     #[test]
