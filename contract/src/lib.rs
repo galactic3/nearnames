@@ -460,7 +460,7 @@ mod tests {
         let duration = to_nanos(1);
 
         contract.lot_offer(
-            seller_id.try_into().unwrap(),
+            seller_id,
             reserve_price.into(),
             buy_now_price.into(),
             WrappedDuration::from(duration),
@@ -846,44 +846,6 @@ mod tests {
                 timestamp: to_ts(11),
             },
         );
-    }
-
-    #[test]
-    pub fn api_lot_withdraw_success() {
-        let context = get_context_simple(false);
-        testing_env!(context);
-        let mut contract = build_contract();
-        {
-            let lot = create_lot_bob_sells_alice();
-            contract.internal_lot_save(&lot);
-        }
-
-        let context = get_context_with_payer(&"bob".parse().unwrap(), 0, to_ts(13));
-        testing_env!(context);
-        contract.lot_withdraw("alice".to_string().try_into().unwrap());
-    }
-
-    #[test]
-    #[should_panic(expected = "withdraw: expected no bids")]
-    pub fn api_lot_withdraw_fail_has_bids() {
-        let context = get_context_simple(false);
-        testing_env!(context);
-        let mut contract = build_contract();
-        {
-            let lot = create_lot_bob_sells_alice();
-            contract.internal_lot_save(&lot);
-        }
-
-        let bid: Bid = Bid {
-            bidder_id: "carol".parse().unwrap(),
-            amount: to_yocto("7"),
-            timestamp: to_ts(10),
-        };
-        internal_lot_bid(&mut contract, &"alice".parse().unwrap(), &bid);
-
-        let context = get_context_with_payer(&"bob".parse().unwrap(), 0, to_ts(13));
-        testing_env!(context);
-        contract.lot_withdraw("alice".to_string().try_into().unwrap());
     }
 
     // derived from empty string

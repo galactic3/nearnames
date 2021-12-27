@@ -29,3 +29,5 @@ Adopt single strategy for ref vs value arg passing
 make fraction dumb again
 use standard to_yocto
 use macro for promise result
+unify parse vs to string
+get rid of AccountId, convert to LotId or ProfileId

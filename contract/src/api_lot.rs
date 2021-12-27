@@ -332,6 +332,14 @@ mod tests {
             .build()
     }
 
+    fn get_context_call(time_now: Timestamp, caller_id: &LotId) -> VMContext {
+        VMContextBuilder::new()
+            .predecessor_account_id(caller_id.clone())
+            .is_view(false)
+            .block_timestamp(time_now)
+            .build()
+    }
+
     #[test]
     fn test_api_internal_save() {
         let mut contract = build_contract();
@@ -635,5 +643,26 @@ mod tests {
             let result = contract.lot_list_bidding_by("nonexistent".parse().unwrap(), None, None);
             assert_eq!(result.len(), 0, "should be zero for non existing profile");
         }
+    }
+
+    #[test]
+    pub fn test_api_lot_withdraw_success() {
+        let mut contract = build_contract();
+        let (lot, time_now) = create_lot_alice();
+        contract.internal_lot_save(&lot);
+
+        testing_env!(get_context_call(time_now, &"bob".parse().unwrap()));
+        contract.lot_withdraw("alice".parse().unwrap());
+    }
+
+    #[test]
+    #[should_panic(expected = "withdraw: expected no bids")]
+    pub fn api_lot_withdraw_fail_has_bids() {
+        let mut contract = build_contract();
+        let (lot, time_now) = create_lot_alice_with_bids();
+        contract.internal_lot_save(&lot);
+
+        testing_env!(get_context_call(time_now, &"bob".parse().unwrap()));
+        contract.lot_withdraw("alice".parse().unwrap());
     }
 }
