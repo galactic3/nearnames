@@ -10,15 +10,9 @@ pub const ERR_LOT_CLAIM_BY_BIDDER_WRONG_STATUS: &str =
 pub const ERR_LOT_CLAIM_BY_BIDDER_WRONG_CLAIMER: &str = "claim by bidder: wrong claimer";
 pub const ERR_LOT_CLAIM_BY_SELLER_WRONG_STATUS: &str = "claim by seller: expected status withdrawn";
 pub const ERR_LOT_CLAIM_BY_SELLER_WRONG_CLAIMER: &str = "claim by seller: wrong claimer";
-pub const ERR_LOT_CLEAN_UP_STILL_ACTIVE: &str = "UNREACHABLE: cannot clean up still active lot";
-pub const ERR_LOT_CLEAN_UP_UNLOCK_FAILED: &str = "Expected unlock promise to be successful";
 pub const ERR_LOT_WITHDRAW_HAS_BID: &str = "withdraw: expected no bids";
 pub const ERR_LOT_WITHDRAW_WRONG_STATUS: &str = "withdraw: already withdrawn";
 pub const ERR_LOT_WITHDRAW_WRONG_WITHDRAWER: &str = "withdraw: wrong withdrawer";
-
-pub const NO_DEPOSIT: Balance = 0;
-pub const GAS_EXT_CALL_UNLOCK: u64 = 40_000_000_000_000;
-pub const GAS_EXT_CALL_CLEAN_UP: u64 = 100_000_000_000_000;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum LotStatus {
