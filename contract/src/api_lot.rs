@@ -323,7 +323,7 @@ mod tests {
     use near_sdk_sim::{to_ts, to_yocto};
 
     use crate::lot::tests::*;
-    use crate::tests::build_contract;
+    use crate::tests::{api_lot_bid, build_contract, create_lot_x_sells_y_api};
 
     fn get_context_view(time_now: Timestamp) -> VMContext {
         VMContextBuilder::new()
@@ -533,6 +533,107 @@ mod tests {
         {
             let result = contract.lot_list(Some(5), Some(100));
             assert_eq!(result.len(), 0, "wrong lot list size");
+        }
+    }
+
+    #[test]
+    fn lot_list_offering_by_limit_offset() {
+        let mut contract = build_contract();
+        let seller_id: ProfileId = "seller".parse().unwrap();
+        for i in 0..3 {
+            create_lot_x_sells_y_api(
+                &mut contract,
+                &seller_id,
+                &format!("lot{}", i).parse().unwrap(),
+            );
+        }
+
+        testing_env!(get_context_view(to_ts(16)));
+        {
+            let result = contract.lot_list_offering_by(seller_id.clone(), None, None);
+            assert_eq!(result.len(), 3, "wrong lot list size");
+            assert_eq!(result[0].lot_id, "lot0".parse().unwrap());
+            assert_eq!(result[1].lot_id, "lot1".parse().unwrap());
+            assert_eq!(result[2].lot_id, "lot2".parse().unwrap());
+        }
+        {
+            let result = contract.lot_list_offering_by(seller_id.clone(), Some(2), None);
+            assert_eq!(result.len(), 2, "wrong lot list size");
+            assert_eq!(result[0].lot_id, "lot0".parse().unwrap());
+            assert_eq!(result[1].lot_id, "lot1".parse().unwrap());
+        }
+        {
+            let result = contract.lot_list_offering_by(seller_id.clone(), None, Some(2));
+            assert_eq!(result.len(), 1, "wrong lot list size");
+            assert_eq!(result[0].lot_id, "lot2".parse().unwrap());
+        }
+        {
+            let result = contract.lot_list_offering_by(seller_id.clone(), Some(2), Some(1));
+            assert_eq!(result.len(), 2, "wrong lot list size");
+            assert_eq!(result[0].lot_id, "lot1".parse().unwrap());
+            assert_eq!(result[1].lot_id, "lot2".parse().unwrap());
+        }
+        {
+            let result = contract.lot_list_offering_by(seller_id.clone(), Some(5), Some(100));
+            assert_eq!(result.len(), 0, "wrong lot list size");
+        }
+        {
+            let result = contract.lot_list_offering_by("nonexistent".parse().unwrap(), None, None);
+            assert_eq!(result.len(), 0, "should be zero for non existing profile");
+        }
+    }
+
+    #[test]
+    fn lot_list_bidding_by_limit_offset() {
+        let mut contract = build_contract();
+        let seller_id: ProfileId = "seller".parse().unwrap();
+        let bidder_id: ProfileId = "bidder".parse().unwrap();
+        for i in 0..3 {
+            let lot_id = format!("lot{}", i).parse().unwrap();
+            create_lot_x_sells_y_api(&mut contract, &seller_id, &lot_id);
+            api_lot_bid(
+                &mut contract,
+                &lot_id,
+                &Bid {
+                    bidder_id: bidder_id.clone(),
+                    amount: to_yocto("6"),
+                    timestamp: to_ts(11),
+                },
+            );
+        }
+
+        testing_env!(get_context_view(to_ts(16)));
+        {
+            let result = contract.lot_list_bidding_by(bidder_id.clone(), None, None);
+            assert_eq!(result.len(), 3, "wrong lot list size");
+            assert_eq!(result[0].lot_id, "lot0".parse().unwrap());
+            assert_eq!(result[1].lot_id, "lot1".parse().unwrap());
+            assert_eq!(result[2].lot_id, "lot2".parse().unwrap());
+        }
+        {
+            let result = contract.lot_list_bidding_by(bidder_id.clone(), Some(2), None);
+            assert_eq!(result.len(), 2, "wrong lot list size");
+            assert_eq!(result[0].lot_id, "lot0".parse().unwrap());
+            assert_eq!(result[1].lot_id, "lot1".parse().unwrap());
+        }
+        {
+            let result = contract.lot_list_bidding_by(bidder_id.clone(), None, Some(2));
+            assert_eq!(result.len(), 1, "wrong lot list size");
+            assert_eq!(result[0].lot_id, "lot2".parse().unwrap());
+        }
+        {
+            let result = contract.lot_list_bidding_by(bidder_id.clone(), Some(2), Some(1));
+            assert_eq!(result.len(), 2, "wrong lot list size");
+            assert_eq!(result[0].lot_id, "lot1".parse().unwrap());
+            assert_eq!(result[1].lot_id, "lot2".parse().unwrap());
+        }
+        {
+            let result = contract.lot_list_bidding_by(bidder_id.clone(), Some(5), Some(100));
+            assert_eq!(result.len(), 0, "wrong lot list size");
+        }
+        {
+            let result = contract.lot_list_bidding_by("nonexistent".parse().unwrap(), None, None);
+            assert_eq!(result.len(), 0, "should be zero for non existing profile");
         }
     }
 }
