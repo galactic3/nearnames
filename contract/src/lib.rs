@@ -374,7 +374,7 @@ mod tests {
                 &"seller".parse().unwrap(),
                 &format!("lot{}", i).parse().unwrap(),
             );
-        };
+        }
 
         {
             let result = contract.lot_list(None, None);
@@ -420,7 +420,7 @@ mod tests {
                 &seller_id,
                 &format!("lot{}", i).parse().unwrap(),
             );
-        };
+        }
 
         {
             let result = contract.lot_list_offering_by(seller_id.clone(), None, None);
@@ -468,18 +468,18 @@ mod tests {
 
         for i in 0..3 {
             let lot_id = format!("lot{}", i).parse().unwrap();
-            create_lot_x_sells_y_api(
-                &mut contract,
-                &seller_id,
-                &lot_id,
-            );
+            create_lot_x_sells_y_api(&mut contract, &seller_id, &lot_id);
 
-            api_lot_bid(&mut contract, &lot_id, &Bid {
-                bidder_id: bidder_id.clone(),
-                amount: to_yocto("6"),
-                timestamp: to_ts(11),
-            });
-        };
+            api_lot_bid(
+                &mut contract,
+                &lot_id,
+                &Bid {
+                    bidder_id: bidder_id.clone(),
+                    amount: to_yocto("6"),
+                    timestamp: to_ts(11),
+                },
+            );
+        }
 
         {
             let result = contract.lot_list_bidding_by(bidder_id.clone(), None, None);

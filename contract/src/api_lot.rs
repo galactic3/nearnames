@@ -89,7 +89,7 @@ impl Contract {
         let now = env::block_timestamp();
 
         let idx_from = offset.unwrap_or(0);
-        let idx_to = limit.map (|x| idx_from + x).unwrap_or(u64::MAX);
+        let idx_to = limit.map(|x| idx_from + x).unwrap_or(u64::MAX);
         let idx_to = std::cmp::min(idx_to, self.lots.len());
 
         let values_as_vector = self.lots.values_as_vector();
@@ -98,16 +98,22 @@ impl Contract {
             .map(|x| {
                 let v = values_as_vector.get(x).unwrap();
                 (&v, now, self).into()
-            }).collect()
+            })
+            .collect()
     }
 
-    pub fn lot_list_offering_by(&self, profile_id: ProfileId, limit: Option<u64>, offset: Option<u64>) -> Vec<LotView> {
+    pub fn lot_list_offering_by(
+        &self,
+        profile_id: ProfileId,
+        limit: Option<u64>,
+        offset: Option<u64>,
+    ) -> Vec<LotView> {
         let profile = self.internal_profile_get(&profile_id);
         let time_now = env::block_timestamp();
         let vector = profile.lots_offering.as_vector();
 
         let idx_from = offset.unwrap_or(0);
-        let idx_to = limit.map (|x| idx_from + x).unwrap_or(u64::MAX);
+        let idx_to = limit.map(|x| idx_from + x).unwrap_or(u64::MAX);
         let idx_to = std::cmp::min(idx_to, vector.len());
 
         (idx_from..idx_to)
@@ -119,13 +125,18 @@ impl Contract {
             .collect()
     }
 
-    pub fn lot_list_bidding_by(&self, profile_id: ProfileId, limit: Option<u64>, offset: Option<u64>) -> Vec<LotView> {
+    pub fn lot_list_bidding_by(
+        &self,
+        profile_id: ProfileId,
+        limit: Option<u64>,
+        offset: Option<u64>,
+    ) -> Vec<LotView> {
         let profile = self.internal_profile_get(&profile_id);
         let time_now = env::block_timestamp();
         let vector = profile.lots_bidding.as_vector();
 
         let idx_from = offset.unwrap_or(0);
-        let idx_to = limit.map (|x| idx_from + x).unwrap_or(u64::MAX);
+        let idx_to = limit.map(|x| idx_from + x).unwrap_or(u64::MAX);
         let idx_to = std::cmp::min(idx_to, vector.len());
 
         (idx_from..idx_to)
@@ -263,8 +274,11 @@ impl Contract {
             ERR_LOT_CLEAN_UP_STILL_ACTIVE
         );
 
-        let bidder_ids_unique: HashSet<ProfileId> =
-            lot.bids().into_iter().map(|x| x.bidder_id.clone()).collect();
+        let bidder_ids_unique: HashSet<ProfileId> = lot
+            .bids()
+            .into_iter()
+            .map(|x| x.bidder_id.clone())
+            .collect();
 
         bidder_ids_unique.iter().for_each(|bidder_id| {
             // TODO: validate bid exists
@@ -302,7 +316,7 @@ mod tests {
 
     use near_sdk_sim::{to_ts, to_yocto};
 
-    use crate::lot::tests::{create_lot_alice_with_bids};
+    use crate::lot::tests::create_lot_alice_with_bids;
     use crate::tests::build_contract;
 
     #[test]
@@ -328,12 +342,24 @@ mod tests {
         ];
 
         assert_eq!(response.len(), expected.len(), "wrong bids length");
-        assert_eq!(response[0].bidder_id, expected[0].bidder_id, "wrong bids list");
+        assert_eq!(
+            response[0].bidder_id, expected[0].bidder_id,
+            "wrong bids list"
+        );
         assert_eq!(response[0].amount, expected[0].amount, "wrong bids list");
-        assert_eq!(response[0].timestamp, expected[0].timestamp, "wrong bids list");
+        assert_eq!(
+            response[0].timestamp, expected[0].timestamp,
+            "wrong bids list"
+        );
 
-        assert_eq!(response[1].bidder_id, expected[1].bidder_id, "wrong bids list");
+        assert_eq!(
+            response[1].bidder_id, expected[1].bidder_id,
+            "wrong bids list"
+        );
         assert_eq!(response[1].amount, expected[1].amount, "wrong bids list");
-        assert_eq!(response[1].timestamp, expected[1].timestamp, "wrong bids list");
+        assert_eq!(
+            response[1].timestamp, expected[1].timestamp,
+            "wrong bids list"
+        );
     }
 }
