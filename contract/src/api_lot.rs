@@ -244,8 +244,6 @@ impl Contract {
         let time_now = env::block_timestamp();
         let lot: Lot = self.lots.get(&lot_id).unwrap();
 
-        println!("{}", &claimer_id);
-
         lot.validate_claim(&claimer_id, time_now);
 
         ext_lock_contract::unlock(
@@ -314,13 +312,22 @@ impl Contract {
 mod tests {
     use super::*;
 
+    use near_sdk::test_utils::VMContextBuilder;
+    use near_sdk::{testing_env, VMContext};
     use near_sdk_sim::{to_ts, to_yocto};
 
-    use crate::lot::tests::create_lot_alice_with_bids;
+    use crate::lot::tests::*;
     use crate::tests::build_contract;
 
+    fn get_context_view(time_now: Timestamp) -> VMContext {
+        VMContextBuilder::new()
+            .is_view(true)
+            .block_timestamp(time_now)
+            .build()
+    }
+
     #[test]
-    fn lot_bid_list() {
+    fn test_api_lot_bid_list() {
         // let context = get_context_simple(false);
         // testing_env!(context);
         let mut contract = build_contract();
@@ -349,5 +356,134 @@ mod tests {
         assert_eq!(response[1].bidder_id, expected[1].bidder_id);
         assert_eq!(response[1].amount, expected[1].amount);
         assert_eq!(response[1].timestamp, expected[1].timestamp);
+    }
+
+    #[test]
+    fn test_api_lot_list_empty() {
+        let contract = build_contract();
+        testing_env!(get_context_view(to_ts(10)));
+        let response: Vec<LotView> = contract.lot_list(None, None);
+        assert_eq!(response.len(), 0, "expected empty lot list");
+    }
+
+    #[test]
+    fn test_api_lot_list_fields_generic_active() {
+        let mut contract = build_contract();
+        let (lot, time_now) = create_lot_alice_with_bids();
+        contract.internal_lot_save(&lot);
+
+        testing_env!(get_context_view(time_now));
+        let response: Vec<LotView> = contract.lot_list(None, None);
+        assert_eq!(response.len(), 1, "expected response length 1");
+        let response = response.into_iter().next().unwrap();
+
+        assert_eq!(response.lot_id, "alice".parse().unwrap());
+        assert_eq!(response.seller_id, "bob".parse().unwrap());
+        assert_eq!(response.start_timestamp, (to_ts(10)).into());
+        assert_eq!(response.finish_timestamp, (to_ts(17)).into());
+        assert_eq!(response.reserve_price, to_yocto("2").into());
+        assert_eq!(response.buy_now_price, to_yocto("10").into());
+        assert_eq!(response.last_bid_amount, Some(to_yocto("6").into()));
+        assert_eq!(response.next_bid_amount, Some(to_yocto("7.2").into()));
+        assert_eq!(response.is_active, true);
+        assert_eq!(response.is_withdrawn, false);
+        assert_eq!(response.status, "OnSale");
+    }
+
+    #[test]
+    fn test_api_lot_fields_status_withdrawn() {
+        let mut contract = build_contract();
+        let (lot, time_now) = create_lot_alice_withdrawn();
+        contract.internal_lot_save(&lot);
+
+        testing_env!(get_context_view(time_now));
+        let response: Vec<LotView> = contract.lot_list(None, None);
+        assert_eq!(response.len(), 1, "expected response length 1");
+        let response = response.into_iter().next().unwrap();
+
+        assert_eq!(response.last_bid_amount, None);
+        assert_eq!(response.next_bid_amount, None);
+        assert_eq!(response.is_active, false);
+        assert_eq!(response.is_withdrawn, true);
+        assert_eq!(response.status, "Withdrawn");
+    }
+
+    #[test]
+    fn test_api_lot_fields_status_sale_success() {
+        let mut contract = build_contract();
+        let (lot, time_now) = create_lot_alice_with_bids_sale_success();
+        contract.internal_lot_save(&lot);
+
+        testing_env!(get_context_view(time_now));
+        let response: Vec<LotView> = contract.lot_list(None, None);
+        assert_eq!(response.len(), 1, "expected response length 1");
+        let response = response.into_iter().next().unwrap();
+
+        assert_eq!(response.last_bid_amount, Some((to_yocto("6")).into()));
+        assert_eq!(response.next_bid_amount, None);
+        assert_eq!(response.is_active, false);
+        assert_eq!(response.is_withdrawn, false);
+        assert_eq!(response.status, "SaleSuccess");
+    }
+
+    #[test]
+    fn test_api_lot_fields_status_sale_failure() {
+        let mut contract = build_contract();
+        let (lot, time_now) = create_lot_alice_sale_failure();
+        contract.internal_lot_save(&lot);
+
+        testing_env!(get_context_view(time_now));
+        let response: Vec<LotView> = contract.lot_list(None, None);
+        assert_eq!(response.len(), 1, "expected response length 1");
+        let response = response.into_iter().next().unwrap();
+
+        assert_eq!(response.last_bid_amount, None);
+        assert_eq!(response.next_bid_amount, None);
+        assert_eq!(response.is_active, false);
+        assert_eq!(response.is_withdrawn, false);
+        assert_eq!(response.status, "SaleFailure");
+    }
+
+    #[test]
+    fn test_api_lot_list_present_limit_offset() {
+        let mut contract = build_contract();
+
+        for i in 0..3 {
+            let lot = create_lot_x_sells_y(
+                &"seller".parse().unwrap(),
+                &format!("lot{}", i).parse().unwrap(),
+            );
+            contract.internal_lot_save(&lot);
+        }
+
+        testing_env!(get_context_view(to_ts(11)));
+        {
+            let result = contract.lot_list(None, None);
+            assert_eq!(result.len(), 3, "wrong lot list size");
+            assert_eq!(result[0].lot_id, "lot0".parse().unwrap());
+            assert_eq!(result[1].lot_id, "lot1".parse().unwrap());
+            assert_eq!(result[2].lot_id, "lot2".parse().unwrap());
+        }
+        {
+            let result = contract.lot_list(Some(2), None);
+            assert_eq!(result.len(), 2, "wrong lot list size");
+            assert_eq!(result[0].lot_id, "lot0".parse().unwrap());
+            assert_eq!(result[1].lot_id, "lot1".parse().unwrap());
+        }
+        {
+            let result = contract.lot_list(None, Some(2));
+            assert_eq!(result.len(), 1, "wrong lot list size");
+            assert_eq!(result[0].lot_id, "lot2".parse().unwrap());
+        }
+        {
+            let result = contract.lot_list(Some(2), Some(1));
+            assert_eq!(result.len(), 2, "wrong lot list size");
+            assert_eq!(result[0].lot_id, "lot1".parse().unwrap());
+            assert_eq!(result[1].lot_id, "lot2".parse().unwrap());
+        }
+        {
+            let result = contract.lot_list(Some(5), Some(100));
+            assert_eq!(result.len(), 0, "wrong lot list size");
+        }
     }
 }

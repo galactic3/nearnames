@@ -253,12 +253,16 @@ pub mod tests {
         create_lot_x_sells_y(&"bob".parse().unwrap(), &"alice".parse().unwrap())
     }
 
-    fn create_lot_alice_withdrawn() -> (Lot, Timestamp) {
+    pub fn create_lot_alice_withdrawn() -> (Lot, Timestamp) {
         let mut lot = create_lot_bob_sells_alice();
         lot.is_withdrawn = true;
         let time_now = to_ts(10);
 
         (lot, time_now)
+    }
+
+    pub fn create_lot_alice_sale_failure() -> (Lot, Timestamp) {
+        (create_lot_bob_sells_alice(), to_ts(18))
     }
 
     pub fn create_lot_alice_with_bids() -> (Lot, Timestamp) {
@@ -278,14 +282,14 @@ pub mod tests {
         (lot, time_now)
     }
 
-    fn create_lot_alice_with_bids_sale_success() -> (Lot, Timestamp) {
+    pub fn create_lot_alice_with_bids_sale_success() -> (Lot, Timestamp) {
         let (lot, _tm) = create_lot_alice_with_bids();
         let time_now = to_ts(20);
 
         (lot, time_now)
     }
 
-    fn create_lot_alice_buy_now_bid() -> (Lot, Timestamp) {
+    pub fn create_lot_alice_buy_now_bid() -> (Lot, Timestamp) {
         let (mut lot, _tm) = create_lot_alice_with_bids();
         lot.bids.push(&Bid {
             bidder_id: "carol".parse().unwrap(),

@@ -265,7 +265,7 @@ mod tests {
         let context = get_context_pred_x(&lot_id, false);
         testing_env!(context);
 
-        let reserve_price = to_yocto("5");
+        let reserve_price = to_yocto("2");
         let buy_now_price = to_yocto("10");
         let duration = to_nanos(7);
 
@@ -321,89 +321,6 @@ mod tests {
             "{}",
             "expected lot_id == alice"
         );
-    }
-
-    #[test]
-    fn lot_get_missing() {
-        let context = get_context_simple(false);
-        testing_env!(context);
-        let contract = build_contract();
-
-        assert!(
-            contract.lot_list(None, None).is_empty(),
-            "Expected lot_list to be empty",
-        );
-    }
-
-    #[test]
-    fn lot_list_present() {
-        let context = get_context_simple(false);
-        testing_env!(context);
-        let mut contract = build_contract();
-        let lot_bob_sells_alice = create_lot_bob_sells_alice();
-        contract.internal_lot_save(&lot_bob_sells_alice);
-
-        let response: Vec<LotView> = contract.lot_list(None, None);
-        assert!(!response.is_empty());
-        let response: &LotView = &response[0];
-
-        assert_eq!(response.lot_id, "alice".parse().unwrap());
-        assert_eq!(response.seller_id, "bob".parse().unwrap());
-        assert_eq!(response.start_timestamp, (to_ts(10)).into());
-        assert_eq!(response.finish_timestamp, (to_ts(11)).into());
-        assert_eq!(response.reserve_price, to_yocto("5").into());
-        assert_eq!(response.buy_now_price, to_yocto("10").into());
-        assert_eq!(response.last_bid_amount, None);
-        assert_eq!(
-            response.next_bid_amount, None,
-            "expected none next price for inactive lot"
-        );
-        assert_eq!(response.is_active, false);
-        assert_eq!(response.is_withdrawn, false);
-    }
-
-    #[test]
-    fn lot_list_present_limit_offset() {
-        let context = get_context_simple(false);
-        testing_env!(context);
-        let mut contract = build_contract();
-
-        for i in 0..3 {
-            create_lot_x_sells_y_api(
-                &mut contract,
-                &"seller".parse().unwrap(),
-                &format!("lot{}", i).parse().unwrap(),
-            );
-        }
-
-        {
-            let result = contract.lot_list(None, None);
-            assert_eq!(result.len(), 3, "wrong lot list size");
-            assert_eq!(result[0].lot_id, "lot0".parse().unwrap());
-            assert_eq!(result[1].lot_id, "lot1".parse().unwrap());
-            assert_eq!(result[2].lot_id, "lot2".parse().unwrap());
-        }
-        {
-            let result = contract.lot_list(Some(2), None);
-            assert_eq!(result.len(), 2, "wrong lot list size");
-            assert_eq!(result[0].lot_id, "lot0".parse().unwrap());
-            assert_eq!(result[1].lot_id, "lot1".parse().unwrap());
-        }
-        {
-            let result = contract.lot_list(None, Some(2));
-            assert_eq!(result.len(), 1, "wrong lot list size");
-            assert_eq!(result[0].lot_id, "lot2".parse().unwrap());
-        }
-        {
-            let result = contract.lot_list(Some(2), Some(1));
-            assert_eq!(result.len(), 2, "wrong lot list size");
-            assert_eq!(result[0].lot_id, "lot1".parse().unwrap());
-            assert_eq!(result[1].lot_id, "lot2".parse().unwrap());
-        }
-        {
-            let result = contract.lot_list(Some(5), Some(100));
-            assert_eq!(result.len(), 0, "wrong lot list size");
-        }
     }
 
     #[test]
