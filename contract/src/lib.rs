@@ -118,7 +118,7 @@ mod tests {
 
     use near_sdk::test_utils::VMContextBuilder;
     use near_sdk::{testing_env, VMContext};
-    use near_sdk_sim::{to_ts, to_yocto};
+    use near_sdk_sim::to_ts;
 
     fn get_context_simple(is_view: bool) -> VMContext {
         VMContextBuilder::new()
@@ -169,56 +169,6 @@ mod tests {
             config.prev_bidder_commission_share,
             FractionView { num: 4, denom: 5 },
             "wrong seller rewards commission",
-        );
-    }
-
-    #[test]
-    fn profile_get_missing() {
-        let context = get_context_simple(false);
-        testing_env!(context);
-        let contract = build_contract();
-
-        let profile = contract.profile_get("alice".parse().unwrap());
-
-        assert_eq!(
-            profile.profile_id,
-            "alice".parse().unwrap(),
-            "Expected profile_id alice"
-        );
-        assert_eq!(
-            profile.rewards_available.0, 0,
-            "Expected zero rewards_available"
-        );
-        assert_eq!(
-            profile.rewards_claimed.0, 0,
-            "Expected zero rewards_claimed"
-        );
-    }
-
-    #[test]
-    fn profile_get_present() {
-        let context = get_context_simple(false);
-        testing_env!(context);
-        let mut contract = build_contract();
-
-        let rewards_available: u128 = to_yocto("2");
-        let rewards_claimed: u128 = to_yocto("3");
-        // TODO: make params constructor private
-        let mut profile: Profile = contract.internal_profile_extract(&"alice".parse().unwrap());
-        profile.rewards_available = rewards_available;
-        profile.rewards_claimed = rewards_claimed;
-        contract.internal_profile_save(&profile);
-
-        let response: ProfileView = contract.profile_get("alice".parse().unwrap());
-        assert_eq!(
-            response.rewards_available,
-            rewards_available.into(),
-            "rewards_available mismatch"
-        );
-        assert_eq!(
-            response.rewards_claimed,
-            rewards_claimed.into(),
-            "rewards_claimed mismatch"
         );
     }
 

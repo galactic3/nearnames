@@ -183,4 +183,38 @@ mod tests {
         let profile = contract.profiles.get(&profile_id).unwrap();
         assert_eq!(profile.rewards_available, to_yocto("5"), "wrong amount");
     }
+
+    #[test]
+    fn test_api_profile_get_missing() {
+        let contract = build_contract();
+        let profile_id: ProfileId = "alice".parse().unwrap();
+
+        testing_env!(get_context_view(to_ts(11)));
+        let profile = contract.profile_get(profile_id.clone());
+        assert_eq!(profile.profile_id, profile_id, "wrong profile_id");
+    }
+
+    #[test]
+    fn profile_get_present() {
+        let mut contract = build_contract();
+        let profile_id: ProfileId = "alice".parse().unwrap();
+        let mut profile = Profile::new(&profile_id);
+        let rewards_available: Balance = to_yocto("3");
+        let rewards_claimed: Balance = to_yocto("0");
+        profile.rewards_transfer(rewards_available);
+        contract.internal_profile_save(&profile);
+
+        testing_env!(get_context_view(to_ts(11)));
+        let response: ProfileView = contract.profile_get(profile_id.clone());
+        assert_eq!(
+            response.rewards_available,
+            rewards_available.into(),
+            "wrong rewards_available",
+        );
+        assert_eq!(
+            response.rewards_claimed,
+            rewards_claimed.into(),
+            "wrong rewards_claimed",
+        );
+    }
 }
