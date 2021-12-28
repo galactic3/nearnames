@@ -609,6 +609,18 @@ pub mod tests {
 
     #[test]
     #[should_panic(expected = "bid: expected bigger bid")]
+    fn test_lot_place_bid_fail_below_reserve_price() {
+        let (mut lot, time_now) = create_lot_alice();
+        let bid = Bid {
+            bidder_id: "dan".parse().unwrap(),
+            amount: to_yocto("1"),
+            timestamp: time_now,
+        };
+        lot.place_bid(&bid, Fraction::new(0, 1));
+    }
+
+    #[test]
+    #[should_panic(expected = "bid: expected bigger bid")]
     fn test_lot_place_bid_fail_too_small() {
         let (mut lot, time_now) = create_lot_alice_with_bids();
         let bid = Bid {

@@ -697,6 +697,106 @@ mod tests {
         assert_eq!(result.buy_now_price, buy_now_price.into());
     }
 
+    fn check_rewards(contract: &Contract, profile_id: &ProfileId) -> Balance {
+        contract.internal_profile_get(profile_id).rewards_available
+    }
+
+    #[test]
+    pub fn test_api_lot_bid() {
+        let mut contract = build_contract();
+        let (lot, _) = create_lot_alice();
+        contract.internal_lot_save(&lot);
+
+        let alice: LotId = "alice".parse().unwrap();
+        let bob: ProfileId = "bob".parse().unwrap();
+        let carol: ProfileId = "carol".parse().unwrap();
+        let dan: ProfileId = "dan".parse().unwrap();
+
+        let first_bid_amount = to_yocto("6");
+        let second_bid_amount = to_yocto("8");
+        let one_bid_seller_reward = to_yocto("5.4");
+        let two_bids_seller_reward = to_yocto("7.2");
+        let first_bidder_reward = to_yocto("6.16");
+
+        api_lot_bid(
+            &mut contract,
+            &alice,
+            &Bid {
+                bidder_id: carol.clone(),
+                amount: first_bid_amount,
+                timestamp: to_ts(11),
+            },
+        );
+
+        let lot = contract.lots.get(&"alice".parse().unwrap()).unwrap();
+        assert_eq!(lot.bids().len(), 1, "expected one bid");
+        let last_bid = lot.last_bid().unwrap();
+        assert_eq!(last_bid.amount, first_bid_amount, "wrong first bid");
+        assert_eq!(last_bid.bidder_id, carol, "wrong first bidder");
+        assert_eq!(last_bid.timestamp, to_ts(11), "expected start as timestamp");
+        assert_eq!(check_rewards(&contract, &alice), to_yocto("0"));
+        assert_eq!(check_rewards(&contract, &bob), one_bid_seller_reward);
+        assert_eq!(check_rewards(&contract, &carol), to_yocto("0"));
+
+        api_lot_bid(
+            &mut contract,
+            &alice,
+            &Bid {
+                bidder_id: dan.clone(),
+                amount: second_bid_amount,
+                timestamp: to_ts(12),
+            },
+        );
+
+        let lot = contract.lots.get(&"alice".parse().unwrap()).unwrap();
+        assert_eq!(lot.bids().len(), 2, "expected two bids");
+        let last_bid = lot.last_bid().unwrap();
+        assert_eq!(last_bid.amount, second_bid_amount, "wrong amount");
+        assert_eq!(last_bid.bidder_id, dan, "wrong bidder");
+        assert_eq!(last_bid.timestamp, to_ts(12), "wrong timestamp");
+
+        assert_eq!(check_rewards(&contract, &alice), to_yocto("0"));
+        assert_eq!(check_rewards(&contract, &bob), two_bids_seller_reward);
+        assert_eq!(check_rewards(&contract, &carol), first_bidder_reward);
+        assert_eq!(check_rewards(&contract, &dan), to_yocto("0"));
+    }
+
+    #[test]
+    #[should_panic(expected = "bid: expected bigger bid")]
+    pub fn tewt_api_lot_bid_fail_small_bid() {
+        let mut contract = build_contract();
+        let (lot, time_now) = create_lot_alice();
+        contract.internal_lot_save(&lot);
+
+        api_lot_bid(
+            &mut contract,
+            &"alice".parse().unwrap(),
+            &Bid {
+                bidder_id: "carol".parse().unwrap(),
+                amount: to_yocto("1"),
+                timestamp: time_now,
+            },
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "bid: expected status active")]
+    pub fn test_api_lot_bid_fail_inactive() {
+        let mut contract = build_contract();
+        let (lot, time_now) = create_lot_alice_with_bids_sale_success();
+        contract.internal_lot_save(&lot);
+
+        api_lot_bid(
+            &mut contract,
+            &"alice".parse().unwrap(),
+            &Bid {
+                bidder_id: "carol".parse().unwrap(),
+                amount: to_yocto("10"),
+                timestamp: time_now,
+            },
+        );
+    }
+
     const NEW_PUBLIC_KEY: &str = "ed25519:KEYKEYKEYKEYKEYKEYKEYKEYKEYKEYKEYKEYKEYKEYK";
 
     #[test]
