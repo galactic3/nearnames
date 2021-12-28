@@ -113,7 +113,8 @@ fn simulate_lot_offer_buy_now() {
             bob.account_id.clone(),
             to_yocto("3").into(),
             to_yocto("10").into(),
-            (to_nanos(10)).into()
+            None,
+            Some((to_nanos(10)).into())
         )
     );
     assert!(result.is_ok());
@@ -207,7 +208,8 @@ fn simulate_lot_offer_withdraw() {
             bob.account_id.clone(),
             to_yocto("3").into(),
             to_yocto("10").into(),
-            (to_nanos(10)).into()
+            None,
+            Some((to_nanos(10)).into())
         )
     );
     assert!(result.is_ok());

@@ -159,16 +159,21 @@ impl Contract {
         seller_id: AccountId,
         reserve_price: WrappedBalance,
         buy_now_price: WrappedBalance,
-        duration: WrappedDuration,
+        finish_timestamp: Option<WrappedTimestamp>,
+        duration: Option<WrappedDuration>,
     ) -> bool {
         let lot_id: LotId = env::predecessor_account_id();
         let seller_id: ProfileId = seller_id.into();
         let reserve_price: Balance = reserve_price.into();
         let buy_now_price: Balance = buy_now_price.into();
-        let duration: Duration = duration.into();
 
         let start_timestamp: Timestamp = env::block_timestamp();
-        let finish_timestamp: Timestamp = start_timestamp + duration;
+        let finish_timestamp: Timestamp = if let Some(finish_timestamp) = finish_timestamp {
+            finish_timestamp.into()
+        } else {
+            let duration: Duration = duration.unwrap().into();
+            start_timestamp + duration
+        };
 
         let lot = Lot::new(
             lot_id.clone(),
@@ -642,6 +647,36 @@ mod tests {
         let seller_id: ProfileId = "bob".parse().unwrap();
         let reserve_price = to_yocto("2");
         let buy_now_price = to_yocto("10");
+        let start_timestamp = to_ts(10);
+        let finish_timestamp = to_ts(17);
+
+        testing_env!(get_context_call(start_timestamp, &lot_id));
+        contract.lot_offer(
+            seller_id.clone(),
+            reserve_price.into(),
+            buy_now_price.into(),
+            Some(WrappedTimestamp::from(finish_timestamp)),
+            None,
+        );
+
+        let result = contract.internal_lot_extract(&lot_id);
+
+        assert_eq!(result.lot_id, lot_id.clone());
+        assert_eq!(result.seller_id, seller_id.clone());
+        assert_eq!(result.start_timestamp, start_timestamp);
+        assert_eq!(result.finish_timestamp, finish_timestamp);
+        assert_eq!(result.reserve_price, reserve_price.into());
+        assert_eq!(result.buy_now_price, buy_now_price.into());
+    }
+
+    #[test]
+    fn test_api_lot_create_old() {
+        let mut contract = build_contract();
+
+        let lot_id: ProfileId = "alice".parse().unwrap();
+        let seller_id: ProfileId = "bob".parse().unwrap();
+        let reserve_price = to_yocto("2");
+        let buy_now_price = to_yocto("10");
         let duration = to_nanos(7);
         let time_now = to_ts(10);
 
@@ -650,7 +685,8 @@ mod tests {
             seller_id.clone(),
             reserve_price.into(),
             buy_now_price.into(),
-            WrappedDuration::from(duration),
+            None,
+            Some(WrappedDuration::from(duration)),
         );
 
         let result = contract.internal_lot_extract(&lot_id);

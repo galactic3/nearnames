@@ -116,7 +116,7 @@ mod tests {
 
     use near_sdk::test_utils::VMContextBuilder;
     use near_sdk::{testing_env, VMContext};
-    use near_sdk_sim::{to_nanos, to_ts, to_yocto};
+    use near_sdk_sim::{to_ts, to_yocto};
 
     fn get_context_simple(is_view: bool) -> VMContext {
         VMContextBuilder::new()
@@ -267,13 +267,14 @@ mod tests {
 
         let reserve_price = to_yocto("2");
         let buy_now_price = to_yocto("10");
-        let duration = to_nanos(7);
+        let finish_timestamp = to_ts(17);
 
         contract.lot_offer(
             seller_id.clone(),
             reserve_price.into(),
             buy_now_price.into(),
-            WrappedDuration::from(duration),
+            Some(WrappedTimestamp::from(finish_timestamp)),
+            None,
         );
 
         contract.lots.get(&lot_id).unwrap()
