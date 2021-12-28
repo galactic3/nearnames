@@ -853,7 +853,7 @@ mod tests {
 
     #[test]
     #[should_panic(expected = "bid: expected bigger bid")]
-    pub fn tewt_api_lot_bid_fail_small_bid() {
+    pub fn test_api_lot_bid_fail_small_bid() {
         let mut contract = build_contract();
         let (lot, time_now) = create_lot_alice();
         contract.internal_lot_save(&lot);
@@ -947,7 +947,7 @@ mod tests {
 
     #[test]
     #[should_panic(expected = "withdraw: expected no bids")]
-    pub fn api_lot_withdraw_fail_has_bids() {
+    fn test_api_lot_withdraw_fail_has_bids() {
         let mut contract = build_contract();
         let (lot, time_now) = create_lot_alice_with_bids();
         contract.internal_lot_save(&lot);
