@@ -46,7 +46,7 @@ impl Contract {
             .unwrap_or_else(|| self.internal_profile_new(&profile_id))
     }
 
-    pub(crate) fn internal_profile_new(&self, profile_id: &ProfileId) -> Profile {
+    fn internal_profile_new(&self, profile_id: &ProfileId) -> Profile {
         let mut prefix_offering: Vec<u8> = Vec::with_capacity(33);
         prefix_offering.extend(PREFIX_PROFILE_LOTS_OFFERING.as_bytes());
         prefix_offering.extend(env::sha256(profile_id.as_bytes()));
@@ -137,6 +137,16 @@ mod tests {
 
     use crate::tests::build_contract;
     #[test]
+
+    fn test_profile_new() {
+        let mut contract = build_contract();
+        let profile_id: ProfileId = "bob".parse().unwrap();
+        let profile = contract.internal_profile_new(&profile_id);
+
+        assert_eq!(profile.profile_id, profile_id, "wrong profile_id");
+        assert_eq!(profile.rewards_available, to_yocto("0"), "wrong rewards_available");
+        assert_eq!(profile.rewards_claimed, to_yocto("0"), "wrong rewards_claimed");
+    }
 
     fn test_profile_internal_profile_rewards_transfer() {
         let mut contract = build_contract();
