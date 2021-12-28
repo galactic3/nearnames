@@ -366,6 +366,8 @@ mod tests {
 
         let lot_extracted = contract.internal_lot_extract(&"lot1".parse().unwrap());
         assert_eq!(lot_extracted.seller_id, "seller1".parse().unwrap());
+
+        assert_eq!(contract.lots.len(), 2, "wrong lots len after extract");
     }
 
     #[test]

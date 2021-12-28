@@ -233,13 +233,6 @@ mod tests {
         );
     }
 
-    #[test]
-    #[should_panic]
-    fn internal_lot_extract_missing() {
-        let mut contract = build_contract();
-        contract.internal_lot_extract(&"alice".parse().unwrap());
-    }
-
     fn create_lot_bob_sells_alice() -> Lot {
         let reserve_price = to_yocto("5");
         let buy_now_price = to_yocto("10");
@@ -287,43 +280,6 @@ mod tests {
         create_lot_x_sells_y_api(contract, &seller_id, &lot_id)
     }
 
-    #[test]
-    fn internal_lot_create_save_extract() {
-        let context = get_context_simple(false);
-        testing_env!(context);
-        let mut contract = build_contract();
-        assert_eq!(
-            contract.lots.len(),
-            0,
-            "{}",
-            "expected contract.lots.len() == 0 after extract"
-        );
-
-        let lot_bob_sells_alice = create_lot_bob_sells_alice();
-        contract.internal_lot_save(&lot_bob_sells_alice);
-        assert_eq!(
-            contract.lots.len(),
-            1,
-            "{}",
-            "expected contract.lots.len() == 1"
-        );
-
-        let lot_found: Lot = contract.internal_lot_extract(&lot_bob_sells_alice.lot_id);
-        assert_eq!(
-            contract.lots.len(),
-            0,
-            "{}",
-            "expected contract.lots.len() == 0 after extract"
-        );
-
-        assert_eq!(
-            lot_found.lot_id,
-            "alice".parse().unwrap(),
-            "{}",
-            "expected lot_id == alice"
-        );
-    }
-
     pub fn api_lot_bid(contract: &mut Contract, lot_id: &LotId, bid: &Bid) {
         let context = get_context_with_payer(&bid.bidder_id, bid.amount, bid.timestamp);
         testing_env!(context);
@@ -334,117 +290,6 @@ mod tests {
         let mut lot = contract.internal_lot_extract(lot_id);
         lot.place_bid(bid, contract.bid_step);
         contract.internal_lot_save(&lot);
-    }
-
-    #[test]
-    fn api_lot_list_present_active() {
-        let context = get_context_simple(false);
-        testing_env!(context);
-        let mut contract = build_contract();
-        let lot_bob_sells_alice = create_lot_bob_sells_alice();
-        contract.internal_lot_save(&lot_bob_sells_alice);
-
-        let first_bid_amount = to_yocto("6");
-        let next_bid_amount = first_bid_amount + contract.bid_step * first_bid_amount;
-
-        let bid: Bid = Bid {
-            bidder_id: "carol".parse().unwrap(),
-            amount: first_bid_amount,
-            timestamp: to_ts(10),
-        };
-        internal_lot_bid(&mut contract, &"alice".parse().unwrap(), &bid);
-
-        let context = get_context_pred_alice(true);
-        testing_env!(context);
-
-        let response: Vec<LotView> = contract.lot_list(None, None);
-        assert!(!response.is_empty());
-        let response: &LotView = &response[0];
-
-        assert_eq!(response.lot_id, "alice".parse().unwrap());
-        assert_eq!(response.seller_id, "bob".parse().unwrap());
-        assert_eq!(response.start_timestamp, (to_ts(10)).into());
-        assert_eq!(response.finish_timestamp, (to_ts(11)).into());
-        assert_eq!(response.reserve_price, to_yocto("5").into());
-        assert_eq!(response.buy_now_price, to_yocto("10").into());
-        assert_eq!(
-            response.last_bid_amount,
-            Some(first_bid_amount.into()),
-            "wrong last_bid for active lot"
-        );
-        assert_eq!(
-            response.next_bid_amount,
-            Some(next_bid_amount.into()),
-            "wrong next bid for active lot"
-        );
-        assert_eq!(response.is_active, true);
-        assert_eq!(response.is_withdrawn, false);
-    }
-
-    #[test]
-    fn lot_list_present_withdrawn() {
-        let context = get_context_simple(false);
-        testing_env!(context);
-        let mut contract = build_contract();
-        let mut lot = create_lot_bob_sells_alice();
-        lot.is_withdrawn = true;
-        contract.internal_lot_save(&lot);
-
-        let context = get_context_pred_alice(true);
-        testing_env!(context);
-
-        let response: Vec<LotView> = contract.lot_list(None, None);
-        assert!(!response.is_empty());
-        let response: &LotView = &response[0];
-
-        assert_eq!(response.is_withdrawn, true);
-    }
-
-    #[test]
-    fn lot_is_active_buy_now() {
-        let context = get_context_simple(false);
-        testing_env!(context);
-        let mut contract = build_contract();
-        {
-            let lot = create_lot_bob_sells_alice();
-            contract.internal_lot_save(&lot);
-        }
-        let lot = contract.lots.get(&"alice".parse().unwrap()).unwrap();
-        assert!(lot.is_active(to_ts(10)), "must be active with no bids",);
-
-        let bid: Bid = Bid {
-            bidder_id: "carol".parse().unwrap(),
-            amount: to_yocto("10"),
-            timestamp: to_ts(10),
-        };
-        internal_lot_bid(&mut contract, &"alice".parse().unwrap(), &bid);
-        let lot = contract.lots.get(&"alice".parse().unwrap()).unwrap();
-
-        assert!(
-            !lot.is_active(to_ts(10) + 1),
-            "must be inactive with buy now bid",
-        );
-    }
-
-    #[test]
-    fn lot_is_active_withdrawn() {
-        let context = get_context_simple(false);
-        testing_env!(context);
-        let mut contract = build_contract();
-        {
-            let lot = create_lot_bob_sells_alice();
-            contract.internal_lot_save(&lot);
-        }
-        let mut lot = contract.lots.get(&"alice".parse().unwrap()).unwrap();
-        assert!(lot.is_active(to_ts(10)), "must be active with no bids",);
-
-        lot.is_withdrawn = true;
-
-        assert_eq!(
-            lot.is_active(to_ts(10) + 1),
-            false,
-            "must be inactive with buy now bid",
-        );
     }
 
     #[test]
