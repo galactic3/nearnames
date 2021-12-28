@@ -120,7 +120,7 @@ mod tests {
     #[test]
     fn test_api_profile_internal_get() {
         let mut contract = build_contract();
-        let profile_id: ProfileId = "alice".parse().unwrap();
+        let profile_id: ProfileId = "bob".parse().unwrap();
 
         let mut profile = contract.internal_profile_get(&profile_id);
 
@@ -136,7 +136,7 @@ mod tests {
     #[test]
     fn test_api_profile_internal_extract() {
         let mut contract = build_contract();
-        let profile_id: ProfileId = "alice".parse().unwrap();
+        let profile_id: ProfileId = "bob".parse().unwrap();
 
         let mut profile = contract.internal_profile_extract(&profile_id);
         profile.rewards_transfer(to_yocto("3"));
@@ -150,7 +150,7 @@ mod tests {
     #[test]
     fn test_api_profile_internal_save_success() {
         let mut contract = build_contract();
-        let profile_id: ProfileId = "alice".parse().unwrap();
+        let profile_id: ProfileId = "bob".parse().unwrap();
 
         assert_eq!(contract.profiles.len(), 0, "wrong profiles len");
         let profile = Profile::new(&profile_id);
@@ -162,7 +162,7 @@ mod tests {
     #[should_panic(expected="internal_profile_save: profile already exists")]
     fn test_api_profile_internal_save_fail_already_exists() {
         let mut contract = build_contract();
-        let profile_id: ProfileId = "alice".parse().unwrap();
+        let profile_id: ProfileId = "bob".parse().unwrap();
         let profile = Profile::new(&profile_id);
         contract.internal_profile_save(&profile);
         contract.internal_profile_save(&profile);
@@ -171,7 +171,7 @@ mod tests {
     #[test]
     fn test_api_profile_internal_rewards_transfer() {
         let mut contract = build_contract();
-        let profile_id: ProfileId = "alice".parse().unwrap();
+        let profile_id: ProfileId = "bob".parse().unwrap();
 
         contract.internal_profile_rewards_transfer(&profile_id, to_yocto("3"));
         assert_eq!(contract.profiles.len(), 1);
@@ -187,7 +187,7 @@ mod tests {
     #[test]
     fn test_api_profile_get_missing() {
         let contract = build_contract();
-        let profile_id: ProfileId = "alice".parse().unwrap();
+        let profile_id: ProfileId = "bob".parse().unwrap();
 
         testing_env!(get_context_view(to_ts(11)));
         let profile = contract.profile_get(profile_id.clone());
@@ -197,7 +197,7 @@ mod tests {
     #[test]
     fn profile_get_present() {
         let mut contract = build_contract();
-        let profile_id: ProfileId = "alice".parse().unwrap();
+        let profile_id: ProfileId = "bob".parse().unwrap();
         let mut profile = Profile::new(&profile_id);
         let rewards_available: Balance = to_yocto("3");
         let rewards_claimed: Balance = to_yocto("0");
