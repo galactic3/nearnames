@@ -1,9 +1,10 @@
 use near_sdk::serde_json::json;
-use near_sdk::Balance;
+use near_sdk::{Balance, Timestamp};
 use near_sdk_sim::{
     call, deploy, init_simulator, to_nanos, to_yocto, view, ContractAccount, UserAccount,
     DEFAULT_GAS, STORAGE_AMOUNT,
 };
+use near_sdk_sim::runtime::init_runtime;
 
 use marketplace::{
     ContractConfigView, ContractContract, Fraction, FractionView, LotView, ProfileView,
@@ -107,14 +108,18 @@ fn simulate_lot_offer_buy_now() {
     root.transfer(bob.account_id(), balance_to_reserve); // storage and future gas
     bob.transfer(root.account_id(), to_yocto("100")); // storage and future gas
 
+    let (runtime, _, _) = init_runtime(None);
+    let time_now: Timestamp = runtime.current_block().block_timestamp;
+    let finish_timestamp = time_now + to_nanos(7);
+
     let result = call!(
         alice,
         contract.lot_offer(
             bob.account_id.clone(),
             to_yocto("3").into(),
             to_yocto("10").into(),
-            None,
-            Some((to_nanos(10)).into())
+            Some(finish_timestamp.into()),
+            None
         )
     );
     assert!(result.is_ok());
@@ -202,14 +207,18 @@ fn simulate_lot_offer_withdraw() {
     root.transfer(bob.account_id(), balance_to_reserve); // storage and future gas
     bob.transfer(root.account_id(), to_yocto("100")); // storage and future gas
 
+    let (runtime, _, _) = init_runtime(None);
+    let time_now: Timestamp = runtime.current_block().block_timestamp;
+    let finish_timestamp = time_now + to_nanos(7);
+
     let result = call!(
         alice,
         contract.lot_offer(
             bob.account_id.clone(),
             to_yocto("3").into(),
             to_yocto("10").into(),
-            None,
-            Some((to_nanos(10)).into())
+            Some(finish_timestamp.into()),
+            None
         )
     );
     assert!(result.is_ok());
