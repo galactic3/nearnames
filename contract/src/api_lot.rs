@@ -162,19 +162,21 @@ impl Contract {
         duration: WrappedDuration,
     ) -> bool {
         let lot_id: LotId = env::predecessor_account_id();
+        let seller_id: ProfileId = seller_id.into();
         let reserve_price: Balance = reserve_price.into();
         let buy_now_price: Balance = buy_now_price.into();
-        let seller_id: ProfileId = seller_id.into();
-        let time_now = env::block_timestamp();
         let duration: Duration = duration.into();
+
+        let start_timestamp: Timestamp = env::block_timestamp();
+        let finish_timestamp: Timestamp = start_timestamp + duration;
 
         let lot = Lot::new(
             lot_id.clone(),
             seller_id.clone(),
             reserve_price,
             buy_now_price,
-            time_now,
-            duration,
+            start_timestamp,
+            finish_timestamp,
         );
         self.internal_lot_save(&lot);
 

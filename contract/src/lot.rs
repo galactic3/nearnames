@@ -1,6 +1,7 @@
 use crate::*;
 
 pub const ERR_LOT_SELLS_SELF: &str = "expected lot_id != seller_id";
+pub const ERR_LOT_DURATION_NEGATIVE: &str = "expected start_timestamp <= finish_timestamp";
 pub const ERR_LOT_PRICE_RESERVE_LE_BUY_NOW: &str = "expected reserve_price <= buy_now_price";
 pub const ERR_LOT_BID_WRONG_STATUS: &str = "bid: expected status active";
 pub const ERR_LOT_BID_BID_TOO_SMALL: &str = "bid: expected bigger bid";
@@ -54,14 +55,19 @@ impl Lot {
         seller_id: ProfileId,
         reserve_price: Balance,
         buy_now_price: Balance,
-        time_now: Timestamp,
-        duration: Duration,
+        start_timestamp: Timestamp,
+        finish_timestamp: Timestamp,
     ) -> Lot {
         assert_ne!(lot_id, seller_id, "{}", ERR_LOT_SELLS_SELF);
         assert!(
             reserve_price <= buy_now_price,
             "{}",
             ERR_LOT_PRICE_RESERVE_LE_BUY_NOW,
+        );
+        assert!(
+            start_timestamp <= finish_timestamp,
+            "{}",
+            ERR_LOT_DURATION_NEGATIVE,
         );
 
         // TODO: do we still need to hash the key
@@ -74,8 +80,8 @@ impl Lot {
             seller_id,
             reserve_price,
             buy_now_price,
-            start_timestamp: time_now,
-            finish_timestamp: time_now + duration,
+            start_timestamp,
+            finish_timestamp,
             is_withdrawn: false,
             bids: Vector::new(prefix),
         }
@@ -236,16 +242,16 @@ pub mod tests {
         let reserve_price = to_yocto("2");
         let buy_now_price = to_yocto("10");
 
-        let time_now = to_ts(10);
-        let duration = to_nanos(7);
+        let start_timestamp = to_ts(10);
+        let finish_timestamp = to_ts(17);
 
         Lot::new(
             lot_id.clone(),
             seller_id.clone(),
             reserve_price,
             buy_now_price,
-            time_now,
-            duration,
+            start_timestamp,
+            finish_timestamp,
         )
     }
 
@@ -327,6 +333,19 @@ pub mod tests {
             to_yocto("0"),
             to_ts(0),
             to_nanos(0),
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "expected start_timestamp <= finish_timestamp")]
+    fn test_lot_new_fail_start_before_finish() {
+        Lot::new(
+            "alice".parse().unwrap(),
+            "bob".parse().unwrap(),
+            to_yocto("0"),
+            to_yocto("0"),
+            to_ts(10),
+            to_nanos(9),
         );
     }
 
