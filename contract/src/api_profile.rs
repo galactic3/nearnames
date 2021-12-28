@@ -1,7 +1,7 @@
 use crate::*;
 
 pub const ERR_PROFILE_INTERNAL_SAVE_ALREADY_EXISTS: &str = "internal_profile_save: profile already exists";
-pub const ERR_PROFILE_REWARDS_CLAIM_NOT_ENOUGH: &str = "Not enough rewards for transfer";
+pub const ERR_PROFILE_REWARDS_CLAIM_NOT_ENOUGH: &str = "profile_rewards_claim: not enough rewards";
 
 pub const MIN_PROFILE_REWARDS_CLAIM_AMOUNT: Balance = 10 * 10u128.pow(21);
 
@@ -115,7 +115,7 @@ mod tests {
     use near_sdk::testing_env;
 
     use crate::tests::build_contract;
-    use crate::api_lot::tests::get_context_view;
+    use crate::api_lot::tests::{get_context_view, get_context_call};
     use crate::profile::tests::create_profile_bob;
 
     fn create_contract_with_profile_bob() -> (Contract, ProfileId) {
@@ -190,7 +190,7 @@ mod tests {
     }
 
     #[test]
-    fn profile_get_present() {
+    fn test_api_profile_get_present() {
         let (contract, profile_id) = create_contract_with_profile_bob();
 
         testing_env!(get_context_view(to_ts(11)));
@@ -210,5 +210,27 @@ mod tests {
             to_yocto("2").into(),
             "wrong rewards_claimed",
         );
+    }
+
+    #[test]
+    pub fn test_api_profile_rewards_claim_success() {
+        let (mut contract, profile_id) = create_contract_with_profile_bob();
+
+        testing_env!(get_context_call(to_ts(11), &profile_id));
+        contract.profile_rewards_claim();
+
+        let profile = contract.profile_get(profile_id.clone());
+        assert_eq!(profile.rewards_available.0, to_yocto("0"), "wrong rewards_available");
+        assert_eq!(profile.rewards_claimed.0, to_yocto("5"), "wrong rewards_claimed");
+    }
+
+    #[test]
+    #[should_panic(expected="profile_rewards_claim: not enough rewards")]
+    pub fn test_api_profile_rewards_claim_fail_not_enough() {
+        let mut contract = build_contract();
+        let profile_id: ProfileId = "alice".parse().unwrap();
+
+        testing_env!(get_context_call(to_ts(11), &profile_id));
+        contract.profile_rewards_claim();
     }
 }

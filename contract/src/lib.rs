@@ -128,18 +128,6 @@ mod tests {
             .build()
     }
 
-    fn get_context_pred_x(profile_id: &ProfileId, is_view: bool) -> VMContext {
-        VMContextBuilder::new()
-            .predecessor_account_id(profile_id.clone())
-            .is_view(is_view)
-            .block_timestamp(to_ts(10))
-            .build()
-    }
-
-    fn get_context_pred_alice(is_view: bool) -> VMContext {
-        get_context_pred_x(&"alice".parse().unwrap(), is_view)
-    }
-
     pub fn build_contract() -> Contract {
         Contract::new(
             FractionView { num: 1, denom: 10 },
@@ -170,22 +158,5 @@ mod tests {
             FractionView { num: 4, denom: 5 },
             "wrong seller rewards commission",
         );
-    }
-
-    #[test]
-    #[should_panic(expected = "Not enough rewards for transfer")]
-    pub fn profile_rewards_claim_fail_below_threshold() {
-        let context = get_context_simple(false);
-        testing_env!(context);
-        let mut contract = build_contract();
-        let profile_id: ProfileId = "alice".parse().unwrap();
-        let amount = MIN_PROFILE_REWARDS_CLAIM_AMOUNT - 1;
-
-        contract.internal_profile_rewards_transfer(&profile_id, amount);
-
-        let context = get_context_pred_alice(false);
-        testing_env!(context);
-
-        contract.profile_rewards_claim();
     }
 }
