@@ -74,7 +74,7 @@ impl Contract {
         value: Balance,
     ) {
         if value == 0 {
-            return
+            return;
         }
 
         let mut profile = self.internal_profile_extract(profile_id);

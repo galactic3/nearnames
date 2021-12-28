@@ -71,7 +71,9 @@ impl From<&Bid> for BidView {
 
 impl Contract {
     pub(crate) fn internal_lot_extract(&mut self, lot_id: &LotId) -> Lot {
-        self.lots.remove(&lot_id).expect(ERR_INTERNAL_LOT_EXTRACT_NOT_EXIST)
+        self.lots
+            .remove(&lot_id)
+            .expect(ERR_INTERNAL_LOT_EXTRACT_NOT_EXIST)
     }
 
     pub(crate) fn internal_lot_save(&mut self, lot: &Lot) {
@@ -200,7 +202,11 @@ impl Contract {
         let bidder_id: ProfileId = env::predecessor_account_id();
         let amount: Balance = env::attached_deposit();
         let timestamp = env::block_timestamp();
-        let bid: Bid = Bid { bidder_id: bidder_id.clone(), amount, timestamp };
+        let bid: Bid = Bid {
+            bidder_id: bidder_id.clone(),
+            amount,
+            timestamp,
+        };
 
         let mut lot = self.internal_lot_extract(&lot_id);
         let prev_bid: Option<Bid> = lot.last_bid();
