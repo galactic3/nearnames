@@ -1,6 +1,8 @@
 use crate::*;
 
+pub const ERR_PROFILE_INTERNAL_SAVE_ALREADY_EXISTS: &str = "internal_profile_save: profile already exists";
 pub const ERR_PROFILE_REWARDS_CLAIM_NOT_ENOUGH: &str = "Not enough rewards for transfer";
+
 pub const MIN_PROFILE_REWARDS_CLAIM_AMOUNT: Balance = 10 * 10u128.pow(21);
 
 pub const GAS_EXT_CALL_AFTER_REWARDS_CLAIM: u64 = 20_000_000_000_000;
@@ -37,7 +39,11 @@ impl Contract {
     }
 
     pub(crate) fn internal_profile_save(&mut self, profile: &Profile) {
-        assert!(self.profiles.insert(&profile.profile_id, profile).is_none());
+        assert!(
+            self.profiles.insert(&profile.profile_id, profile).is_none(),
+            "{}",
+            ERR_PROFILE_INTERNAL_SAVE_ALREADY_EXISTS
+        );
     }
 
     pub(crate) fn internal_profile_rewards_transfer(
@@ -105,12 +111,65 @@ impl Contract {
 mod tests {
     use super::*;
 
-    use near_sdk_sim::to_yocto;
+    use near_sdk_sim::{to_ts, to_yocto};
+    use near_sdk::testing_env;
 
     use crate::tests::build_contract;
+    use crate::api_lot::tests::get_context_view;
 
     #[test]
-    fn test_profile_internal_profile_rewards_transfer() {
+    fn test_api_profile_internal_get() {
+        let mut contract = build_contract();
+        let profile_id: ProfileId = "alice".parse().unwrap();
+
+        let mut profile = contract.internal_profile_get(&profile_id);
+
+        profile.rewards_transfer(to_yocto("3"));
+        contract.internal_profile_save(&profile);
+
+        testing_env!(get_context_view(to_ts(11)));
+        let profile = contract.internal_profile_get(&profile_id);
+        assert_eq!(contract.profiles.len(), 1, "wrong profiles len");
+        assert_eq!(profile.rewards_available, to_yocto("3"), "wrong rewards");
+    }
+
+    #[test]
+    fn test_api_profile_internal_extract() {
+        let mut contract = build_contract();
+        let profile_id: ProfileId = "alice".parse().unwrap();
+
+        let mut profile = contract.internal_profile_extract(&profile_id);
+        profile.rewards_transfer(to_yocto("3"));
+        contract.internal_profile_save(&profile);
+
+        let profile = contract.internal_profile_extract(&profile_id);
+        assert_eq!(contract.profiles.len(), 0, "wrong profiles len");
+        assert_eq!(profile.rewards_available, to_yocto("3"), "wrong rewards");
+    }
+
+    #[test]
+    fn test_api_profile_internal_save_success() {
+        let mut contract = build_contract();
+        let profile_id: ProfileId = "alice".parse().unwrap();
+
+        assert_eq!(contract.profiles.len(), 0, "wrong profiles len");
+        let profile = Profile::new(&profile_id);
+        contract.internal_profile_save(&profile);
+        assert_eq!(contract.profiles.len(), 1, "wrong profiles len");
+    }
+
+    #[test]
+    #[should_panic(expected="internal_profile_save: profile already exists")]
+    fn test_api_profile_internal_save_fail_already_exists() {
+        let mut contract = build_contract();
+        let profile_id: ProfileId = "alice".parse().unwrap();
+        let profile = Profile::new(&profile_id);
+        contract.internal_profile_save(&profile);
+        contract.internal_profile_save(&profile);
+    }
+
+    #[test]
+    fn test_api_profile_internal_rewards_transfer() {
         let mut contract = build_contract();
         let profile_id: ProfileId = "alice".parse().unwrap();
 

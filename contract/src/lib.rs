@@ -223,32 +223,6 @@ mod tests {
     }
 
     #[test]
-    fn internal_transfer() {
-        let context = get_context_simple(false);
-        testing_env!(context);
-        let mut contract = build_contract();
-        let profile_id: ProfileId = "alice".parse().unwrap();
-        contract.internal_profile_rewards_transfer(&profile_id, to_yocto("3"));
-        let profile = contract.profiles.get(&profile_id);
-        assert!(profile.is_some());
-        let profile = profile.unwrap();
-
-        assert_eq!(profile.rewards_available, to_yocto("3"));
-
-        contract.internal_profile_rewards_transfer(&profile_id, to_yocto("2"));
-        assert_eq!(contract.profiles.len(), 1);
-        let profile = contract.profiles.get(&profile_id);
-        assert!(profile.is_some());
-        let profile = profile.unwrap();
-
-        assert_eq!(
-            profile.rewards_available,
-            to_yocto("5"),
-            "expected balance 5 near after two transfers"
-        );
-    }
-
-    #[test]
     #[should_panic(expected = "Not enough rewards for transfer")]
     pub fn profile_rewards_claim_fail_below_threshold() {
         let context = get_context_simple(false);

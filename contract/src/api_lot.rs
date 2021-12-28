@@ -305,7 +305,7 @@ impl Contract {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use super::*;
 
     use near_sdk::test_utils::VMContextBuilder;
@@ -315,14 +315,14 @@ mod tests {
     use crate::lot::tests::*;
     use crate::tests::build_contract;
 
-    fn get_context_view(time_now: Timestamp) -> VMContext {
+    pub fn get_context_view(time_now: Timestamp) -> VMContext {
         VMContextBuilder::new()
             .is_view(true)
             .block_timestamp(time_now)
             .build()
     }
 
-    fn get_context_call(time_now: Timestamp, caller_id: &LotId) -> VMContext {
+    pub fn get_context_call(time_now: Timestamp, caller_id: &LotId) -> VMContext {
         VMContextBuilder::new()
             .predecessor_account_id(caller_id.clone())
             .is_view(false)
@@ -330,7 +330,7 @@ mod tests {
             .build()
     }
 
-    fn get_context_pay(
+    pub fn get_context_pay(
         time_now: Timestamp,
         caller_id: &ProfileId,
         attached_deposit: Balance,
@@ -343,7 +343,7 @@ mod tests {
             .build()
     }
 
-    fn create_lot_x_sells_y_api(
+    pub fn create_lot_x_sells_y_api(
         contract: &mut Contract,
         seller_id: &ProfileId,
         lot_id: &LotId,
