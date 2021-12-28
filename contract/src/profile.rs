@@ -33,6 +33,10 @@ impl Profile {
             lots_bidding: UnorderedSet::new(prefix_bidding),
         }
     }
+
+    pub fn rewards_transfer(&mut self, amount: Balance) {
+        self.rewards_available += amount;
+    }
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -80,7 +84,7 @@ impl Contract {
         }
 
         let mut profile = self.internal_profile_extract(profile_id);
-        profile.rewards_available += value;
+        profile.rewards_transfer(value);
         self.internal_profile_save(&profile);
     }
 }
@@ -147,6 +151,16 @@ mod tests {
         assert_eq!(profile.profile_id, profile_id, "wrong profile_id");
         assert_eq!(profile.rewards_available, to_yocto("0"), "wrong rewards_available");
         assert_eq!(profile.rewards_claimed, to_yocto("0"), "wrong rewards_claimed");
+    }
+
+    #[test]
+    fn test_profile_rewards_transfer() {
+        let profile_id: ProfileId = "bob".parse().unwrap();
+        let profile = Profile::new(&profile_id);
+
+        profile.rewards_transfer(to_yocto("3"));
+        profile.rewards_transfer(to_yocto("2"));
+        assert_eq!(profile.rewards_available, to_yocto("5"), "wrong rewards_available");
     }
 
     fn test_profile_internal_profile_rewards_transfer() {
