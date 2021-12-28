@@ -35,10 +35,20 @@ impl Profile {
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use super::*;
 
     use near_sdk_sim::to_yocto;
+
+    pub fn create_profile_bob() -> Profile {
+        let profile_id: ProfileId = "bob".parse().unwrap();
+        let mut profile = Profile::new(&profile_id);
+
+        profile.rewards_available = to_yocto("3");
+        profile.rewards_claimed = to_yocto("2");
+
+        profile
+    }
 
     #[test]
     fn test_profile_new() {
