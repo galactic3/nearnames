@@ -110,8 +110,6 @@ impl Contract {
 
 #[cfg(test)]
 mod tests {
-    use std::convert::TryInto;
-
     use super::*;
 
     use near_sdk::test_utils::VMContextBuilder;
@@ -656,76 +654,6 @@ mod tests {
                 timestamp: to_ts(11),
             },
         );
-    }
-
-    // derived from empty string
-    const DEFAULT_PUBLIC_KEY: &str = "ed25519:Ga6C8S7jVG2inG88cos8UsdtGVWRFQasSdTdtHL7kBqL";
-
-    #[test]
-    pub fn api_lot_claim_success() {
-        let context = get_context_simple(false);
-        testing_env!(context);
-        let mut contract = build_contract();
-        {
-            let lot = create_lot_bob_sells_alice();
-            contract.internal_lot_save(&lot);
-        }
-
-        {
-            let bid: Bid = Bid {
-                bidder_id: "carol".parse().unwrap(),
-                amount: to_yocto("7"),
-                timestamp: to_ts(10),
-            };
-            internal_lot_bid(&mut contract, &"alice".parse().unwrap(), &bid);
-        }
-
-        {
-            let context =
-                get_context_with_payer(&"carol".parse().unwrap(), to_yocto("0"), to_ts(11));
-            testing_env!(context);
-            let public_key: PublicKey = DEFAULT_PUBLIC_KEY.parse().unwrap();
-
-            contract.lot_claim("alice".parse().unwrap(), public_key);
-        }
-    }
-
-    #[test]
-    pub fn api_lot_claim_by_seller_success_withdraw_after_finish() {
-        let context = get_context_simple(false);
-        testing_env!(context);
-        let mut contract = build_contract();
-        {
-            let lot = create_lot_bob_sells_alice();
-            contract.internal_lot_save(&lot);
-        }
-
-        let context = get_context_with_payer(&"bob".parse().unwrap(), to_yocto("0"), to_ts(13));
-        testing_env!(context);
-        contract.lot_withdraw("alice".to_string().try_into().unwrap());
-        let public_key: PublicKey = DEFAULT_PUBLIC_KEY.parse().unwrap();
-        contract.lot_claim("alice".parse().unwrap(), public_key);
-    }
-
-    #[test]
-    #[should_panic(expected = "claim by bidder: expected status sale success")]
-    pub fn api_lot_claim_fail_still_active() {
-        let context = get_context_simple(false);
-        testing_env!(context);
-        let mut contract = build_contract();
-        {
-            let lot = create_lot_bob_sells_alice();
-            contract.internal_lot_save(&lot);
-        }
-
-        {
-            let context =
-                get_context_with_payer(&"carol".parse().unwrap(), to_yocto("0"), to_ts(10));
-            testing_env!(context);
-            let public_key: PublicKey = DEFAULT_PUBLIC_KEY.parse().unwrap();
-
-            contract.lot_claim("alice".parse().unwrap(), public_key);
-        }
     }
 
     #[test]

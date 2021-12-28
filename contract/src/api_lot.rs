@@ -648,7 +648,7 @@ mod tests {
     }
 
     #[test]
-    fn test_api_lot_create() {
+    fn test_api_lot_offer() {
         let mut contract = build_contract();
 
         let lot_id: ProfileId = "alice".parse().unwrap();
@@ -678,7 +678,7 @@ mod tests {
     }
 
     #[test]
-    fn test_api_lot_create_old() {
+    fn test_api_lot_offer_duration() {
         let mut contract = build_contract();
 
         let lot_id: ProfileId = "alice".parse().unwrap();
@@ -705,6 +705,54 @@ mod tests {
         assert_eq!(result.finish_timestamp, time_now + duration);
         assert_eq!(result.reserve_price, reserve_price.into());
         assert_eq!(result.buy_now_price, buy_now_price.into());
+    }
+
+    const NEW_PUBLIC_KEY: &str = "ed25519:KEYKEYKEYKEYKEYKEYKEYKEYKEYKEYKEYKEYKEYKEYK";
+
+    #[test]
+    pub fn test_api_lot_claim_success() {
+        let mut contract = build_contract();
+        let (lot, time_now) = create_lot_alice_buy_now_bid();
+        contract.internal_lot_save(&lot);
+        testing_env!(get_context_call(time_now, &"carol".parse().unwrap()));
+        let public_key: PublicKey = NEW_PUBLIC_KEY.parse().unwrap();
+
+        contract.lot_claim("alice".parse().unwrap(), public_key);
+    }
+
+    #[test]
+    pub fn test_api_lot_claim_success_by_seller_withdrawn() {
+        let mut contract = build_contract();
+        let (lot, time_now) = create_lot_alice_withdrawn();
+        contract.internal_lot_save(&lot);
+        testing_env!(get_context_call(time_now, &"bob".parse().unwrap()));
+        let public_key: PublicKey = NEW_PUBLIC_KEY.parse().unwrap();
+
+        contract.lot_claim("alice".parse().unwrap(), public_key);
+    }
+
+    #[test]
+    #[should_panic(expected = "claim by bidder: expected status sale success")]
+    pub fn test_api_lot_claim_fail_still_active() {
+        let mut contract = build_contract();
+        let (lot, time_now) = create_lot_alice_with_bids();
+        contract.internal_lot_save(&lot);
+        testing_env!(get_context_call(time_now, &"dan".parse().unwrap()));
+        let public_key: PublicKey = NEW_PUBLIC_KEY.parse().unwrap();
+
+        contract.lot_claim("alice".parse().unwrap(), public_key);
+    }
+
+    #[test]
+    #[should_panic(expected = "claim by bidder: wrong claimer")]
+    pub fn test_api_lot_claim_fail_wrong_claimer() {
+        let mut contract = build_contract();
+        let (lot, time_now) = create_lot_alice_buy_now_bid();
+        contract.internal_lot_save(&lot);
+        testing_env!(get_context_call(time_now, &"dan".parse().unwrap()));
+        let public_key: PublicKey = NEW_PUBLIC_KEY.parse().unwrap();
+
+        contract.lot_claim("alice".parse().unwrap(), public_key);
     }
 
     #[test]
