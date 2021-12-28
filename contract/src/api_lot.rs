@@ -702,7 +702,7 @@ mod tests {
     }
 
     #[test]
-    pub fn test_api_lot_bid() {
+    pub fn test_api_lot_bid_rewards() {
         let mut contract = build_contract();
         let (lot, _) = create_lot_alice();
         contract.internal_lot_save(&lot);
@@ -759,6 +759,74 @@ mod tests {
         assert_eq!(check_rewards(&contract, &bob), two_bids_seller_reward);
         assert_eq!(check_rewards(&contract, &carol), first_bidder_reward);
         assert_eq!(check_rewards(&contract, &dan), to_yocto("0"));
+    }
+
+    #[test]
+    pub fn test_api_lot_list_bidding_by_offering_by_fields() {
+        let alice: LotId = "alice".parse().unwrap();
+        let bob: ProfileId = "bob".parse().unwrap();
+        let carol: ProfileId = "carol".parse().unwrap();
+
+        let mut contract = build_contract();
+        create_lot_x_sells_y_api(&mut contract, &bob, &alice);
+
+        api_lot_bid(
+            &mut contract,
+            &"alice".parse().unwrap(),
+            &Bid {
+                bidder_id: carol.clone(),
+                amount: to_yocto("6"),
+                timestamp: to_ts(11),
+            },
+        );
+
+        {
+            let result = contract.lot_list_offering_by(bob.clone(), None, None);
+            assert_eq!(result.len(), 1, "expected 1 lot");
+            let result = result.first().unwrap();
+            assert_eq!(
+                &result.lot_id,
+                &alice,
+                "wrong lot_id",
+            );
+            assert_eq!(
+                result.last_bidder_id,
+                Some(carol.clone()),
+                "wrong_last_bidder",
+            );
+            assert_eq!(
+                result.status,
+                "OnSale".to_string(),
+                "wrong status",
+            );
+
+            let result = contract.lot_list_offering_by("carol".parse().unwrap(), None, None);
+            assert_eq!(result.len(), 0, "wrong lots_offering list for craol");
+        }
+
+        {
+            let result = contract.lot_list_bidding_by(carol.clone(), None, None);
+            assert_eq!(result.len(), 1, "expected 1 lot");
+            let result = result.first().unwrap();
+            assert_eq!(
+                &result.lot_id,
+                &alice,
+                "wrong lot_id",
+            );
+            assert_eq!(
+                result.last_bidder_id,
+                Some(carol.clone()),
+                "wrong_last_bidder",
+            );
+            assert_eq!(
+                result.status,
+                "OnSale".to_string(),
+                "wrong status",
+            );
+
+            let result = contract.lot_list_bidding_by("bob".parse().unwrap(), None, None);
+            assert_eq!(result.len(), 0, "wrong lots_offering list for craol");
+        }
     }
 
     #[test]
