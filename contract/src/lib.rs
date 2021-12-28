@@ -24,6 +24,7 @@ pub use crate::fraction::*;
 pub use crate::lot::*;
 pub use crate::profile::*;
 pub use crate::utils::*;
+pub use crate::economics::*;
 
 construct_uint! {
     /// 256-bit unsigned integer.

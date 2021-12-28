@@ -218,7 +218,7 @@ impl Contract {
         bidder.lots_bidding.insert(&lot_id);
         self.internal_profile_save(&bidder);
 
-        let (to_prev_bidder, to_seller) = economics::calculate_lot_bid_rewards(
+        let (to_prev_bidder, to_seller) = calc_lot_bid_rewards(
             prev_bid.as_ref().map(|x| x.amount),
             bid.amount,
             self.seller_rewards_commission,
