@@ -40,8 +40,6 @@ mod tests {
 
     use near_sdk_sim::to_yocto;
 
-    use crate::tests::build_contract;
-
     #[test]
     fn test_profile_new() {
         let profile_id: ProfileId = "bob".parse().unwrap();

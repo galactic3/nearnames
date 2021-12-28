@@ -109,6 +109,7 @@ mod tests {
 
     use crate::tests::build_contract;
 
+    #[test]
     fn test_profile_internal_profile_rewards_transfer() {
         let mut contract = build_contract();
         let profile_id: ProfileId = "alice".parse().unwrap();
