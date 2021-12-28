@@ -36,8 +36,7 @@ mod tests {
     fn test_economics_calc_lot_bid_rewards_zero_commissions() {
         let z = Fraction::new(0, 1);
 
-        let (to_prev_bidder, to_seller) =
-            calc_lot_bid_rewards(None, to_yocto("10"), z, z);
+        let (to_prev_bidder, to_seller) = calc_lot_bid_rewards(None, to_yocto("10"), z, z);
         assert_eq!(to_prev_bidder, None);
         assert_eq!(to_seller, to_yocto("10"));
 

@@ -824,21 +824,13 @@ mod tests {
             let result = contract.lot_list_offering_by(bob.clone(), None, None);
             assert_eq!(result.len(), 1, "expected 1 lot");
             let result = result.first().unwrap();
-            assert_eq!(
-                &result.lot_id,
-                &alice,
-                "wrong lot_id",
-            );
+            assert_eq!(&result.lot_id, &alice, "wrong lot_id",);
             assert_eq!(
                 result.last_bidder_id,
                 Some(carol.clone()),
                 "wrong_last_bidder",
             );
-            assert_eq!(
-                result.status,
-                "OnSale".to_string(),
-                "wrong status",
-            );
+            assert_eq!(result.status, "OnSale".to_string(), "wrong status",);
 
             let result = contract.lot_list_offering_by("carol".parse().unwrap(), None, None);
             assert_eq!(result.len(), 0, "wrong lots_offering list for craol");
@@ -848,21 +840,13 @@ mod tests {
             let result = contract.lot_list_bidding_by(carol.clone(), None, None);
             assert_eq!(result.len(), 1, "expected 1 lot");
             let result = result.first().unwrap();
-            assert_eq!(
-                &result.lot_id,
-                &alice,
-                "wrong lot_id",
-            );
+            assert_eq!(&result.lot_id, &alice, "wrong lot_id",);
             assert_eq!(
                 result.last_bidder_id,
                 Some(carol.clone()),
                 "wrong_last_bidder",
             );
-            assert_eq!(
-                result.status,
-                "OnSale".to_string(),
-                "wrong status",
-            );
+            assert_eq!(result.status, "OnSale".to_string(), "wrong status",);
 
             let result = contract.lot_list_bidding_by("bob".parse().unwrap(), None, None);
             assert_eq!(result.len(), 0, "wrong lots_offering list for craol");

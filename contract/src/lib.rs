@@ -1,9 +1,9 @@
 mod api_lot;
+mod economics;
 mod fraction;
 mod lot;
 mod profile;
 mod utils;
-mod economics;
 
 use std::collections::HashSet;
 use std::fmt;
@@ -20,11 +20,11 @@ use near_sdk::{
 use uint::construct_uint;
 
 pub use crate::api_lot::*;
+pub use crate::economics::*;
 pub use crate::fraction::*;
 pub use crate::lot::*;
 pub use crate::profile::*;
 pub use crate::utils::*;
-pub use crate::economics::*;
 
 construct_uint! {
     /// 256-bit unsigned integer.
