@@ -262,28 +262,4 @@ mod tests {
 
         contract.profile_rewards_claim();
     }
-
-    #[test]
-    pub fn profile_rewards_claim_success() {
-        let context = get_context_simple(false);
-        testing_env!(context);
-        let mut contract = build_contract();
-        let profile_id: ProfileId = "alice".parse().unwrap();
-        let amount = MIN_PROFILE_REWARDS_CLAIM_AMOUNT;
-        contract.internal_profile_rewards_transfer(&profile_id, amount);
-
-        let context = get_context_pred_alice(false);
-        testing_env!(context);
-        contract.profile_rewards_claim();
-        let result = contract.profile_get(profile_id.clone());
-        assert_eq!(
-            result.rewards_available.0,
-            to_yocto("0"),
-            "Expected rewards_available 0 after claim"
-        );
-        assert_eq!(
-            result.rewards_claimed.0, amount,
-            "Expected rewards_claimed amount after claim"
-        );
-    }
 }
