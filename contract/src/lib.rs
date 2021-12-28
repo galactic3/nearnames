@@ -233,36 +233,6 @@ mod tests {
         );
     }
 
-    pub fn create_lot_x_sells_y_api(
-        contract: &mut Contract,
-        seller_id: &ProfileId,
-        lot_id: &LotId,
-    ) -> Lot {
-        let context = get_context_pred_x(&lot_id, false);
-        testing_env!(context);
-
-        let reserve_price = to_yocto("2");
-        let buy_now_price = to_yocto("10");
-        let finish_timestamp = to_ts(17);
-
-        contract.lot_offer(
-            seller_id.clone(),
-            reserve_price.into(),
-            buy_now_price.into(),
-            Some(WrappedTimestamp::from(finish_timestamp)),
-            None,
-        );
-
-        contract.lots.get(&lot_id).unwrap()
-    }
-
-    fn create_lot_bob_sells_alice_api(contract: &mut Contract) -> Lot {
-        let lot_id: ProfileId = "alice".parse().unwrap();
-        let seller_id: ProfileId = "bob".parse().unwrap();
-
-        create_lot_x_sells_y_api(contract, &seller_id, &lot_id)
-    }
-
     pub fn api_lot_bid(contract: &mut Contract, lot_id: &LotId, bid: &Bid) {
         let context = get_context_with_payer(&bid.bidder_id, bid.amount, bid.timestamp);
         testing_env!(context);
@@ -334,50 +304,5 @@ mod tests {
             result.rewards_claimed.0, amount,
             "Expected rewards_claimed amount after claim"
         );
-    }
-
-    #[test]
-    pub fn test_profile_lots_offering_bidding() {
-        let context = get_context_simple(false);
-        testing_env!(context);
-        let mut contract = build_contract();
-
-        create_lot_bob_sells_alice_api(&mut contract);
-
-        {
-            let profile = contract.profiles.get(&"bob".parse().unwrap()).unwrap();
-            let expected_lots_offering: Vec<LotId> = vec!["alice".parse().unwrap()];
-            assert_eq!(
-                profile.lots_offering.to_vec(),
-                expected_lots_offering,
-                "must be present after offer",
-            );
-            assert!(profile.lots_bidding.is_empty(), "must be empty for seller");
-        }
-
-        api_lot_bid(
-            &mut contract,
-            &"alice".parse().unwrap(),
-            &Bid {
-                bidder_id: "carol".parse().unwrap(),
-                amount: to_yocto("7"),
-                timestamp: to_ts(10),
-            },
-        );
-
-        {
-            let profile = contract.profiles.get(&"carol".parse().unwrap()).unwrap();
-            let expected_lots_bidding: Vec<LotId> = vec!["alice".parse().unwrap()];
-            assert_eq!(
-                profile.lots_bidding.to_vec(),
-                expected_lots_bidding,
-                "alice must be present after lot bid",
-            );
-            assert_eq!(
-                profile.lots_offering.to_vec(),
-                vec![],
-                "must be empty for bidder"
-            );
-        }
     }
 }

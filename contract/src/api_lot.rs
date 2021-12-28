@@ -313,7 +313,7 @@ mod tests {
     use near_sdk_sim::{to_nanos, to_ts, to_yocto};
 
     use crate::lot::tests::*;
-    use crate::tests::{api_lot_bid, build_contract, create_lot_x_sells_y_api};
+    use crate::tests::{api_lot_bid, build_contract};
 
     fn get_context_view(time_now: Timestamp) -> VMContext {
         VMContextBuilder::new()
@@ -328,6 +328,28 @@ mod tests {
             .is_view(false)
             .block_timestamp(time_now)
             .build()
+    }
+
+    fn create_lot_x_sells_y_api(
+        contract: &mut Contract,
+        seller_id: &ProfileId,
+        lot_id: &LotId,
+    ) -> Lot {
+        let reserve_price = to_yocto("2");
+        let buy_now_price = to_yocto("10");
+        let start_timestamp = to_ts(10);
+        let finish_timestamp = to_ts(17);
+
+        testing_env!(get_context_call(start_timestamp, lot_id));
+        contract.lot_offer(
+            seller_id.clone(),
+            reserve_price.into(),
+            buy_now_price.into(),
+            Some(WrappedTimestamp::from(finish_timestamp)),
+            None,
+        );
+
+        contract.lots.get(&lot_id).unwrap()
     }
 
     #[test]
