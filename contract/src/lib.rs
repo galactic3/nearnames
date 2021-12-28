@@ -1,4 +1,5 @@
 mod api_lot;
+mod api_profile;
 mod economics;
 mod fraction;
 mod lot;
@@ -20,6 +21,7 @@ use near_sdk::{
 use uint::construct_uint;
 
 pub use crate::api_lot::*;
+pub use crate::api_profile::*;
 pub use crate::economics::*;
 pub use crate::fraction::*;
 pub use crate::lot::*;
