@@ -66,20 +66,4 @@ mod tests {
         profile.rewards_transfer(to_yocto("2"));
         assert_eq!(profile.rewards_available, to_yocto("5"), "wrong rewards_available");
     }
-
-    fn test_profile_internal_profile_rewards_transfer() {
-        let mut contract = build_contract();
-        let profile_id: ProfileId = "alice".parse().unwrap();
-
-        contract.internal_profile_rewards_transfer(&profile_id, to_yocto("3"));
-        assert_eq!(contract.profiles.len(), 1);
-
-        let profile = contract.profiles.get(&profile_id).unwrap();
-        assert_eq!(profile.rewards_available, to_yocto("3"));
-
-        contract.internal_profile_rewards_transfer(&profile_id, to_yocto("2"));
-        let profile = contract.profiles.get(&profile_id).unwrap();
-
-        assert_eq!(profile.rewards_available, to_yocto("5"), "wrong amount");
-    }
 }
