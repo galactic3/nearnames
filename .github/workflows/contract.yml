@@ -22,13 +22,13 @@ jobs:
           ~/.cargo/registry/index/
           ~/.cargo/registry/cache/
           ~/.cargo/git/db/
-        key: ${{ runner.os }}-cargo_home-${{ hashFiles('**/Cargo.lock') }}-v5
+        key: ${{ runner.os }}-cargo_home-${{ hashFiles('**/Cargo.lock') }}-v6
     - name: Cache target
       uses: actions/cache@v2.1.7
       with:
         path: |
           contract/target/
-        key: ${{ runner.os }}-contract_target-${{ hashFiles('**/Cargo.lock') }}-v5
+        key: ${{ runner.os }}-contract_target-${{ hashFiles('**/Cargo.lock') }}-v6
     - name: Cache toolchain
       uses: actions/cache@v2.1.7
       with:
