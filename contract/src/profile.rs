@@ -15,6 +15,26 @@ pub struct Profile {
     pub lots_bidding: UnorderedSet<LotId>,
 }
 
+impl Profile {
+    pub fn new(profile_id: &ProfileId) -> Profile {
+        let mut prefix_offering: Vec<u8> = Vec::with_capacity(33);
+        prefix_offering.extend(PREFIX_PROFILE_LOTS_OFFERING.as_bytes());
+        prefix_offering.extend(env::sha256(profile_id.as_bytes()));
+
+        let mut prefix_bidding: Vec<u8> = Vec::with_capacity(33);
+        prefix_bidding.extend(PREFIX_PROFILE_LOTS_BIDDING.as_bytes());
+        prefix_bidding.extend(env::sha256(profile_id.as_bytes()));
+
+        Profile {
+            profile_id: profile_id.clone(),
+            rewards_available: 0,
+            rewards_claimed: 0,
+            lots_offering: UnorderedSet::new(prefix_offering),
+            lots_bidding: UnorderedSet::new(prefix_bidding),
+        }
+    }
+}
+
 #[derive(Deserialize, Serialize, Debug)]
 #[serde(crate = "near_sdk::serde")]
 pub struct ProfileView {
@@ -37,31 +57,13 @@ impl Contract {
     pub(crate) fn internal_profile_extract(&mut self, profile_id: &ProfileId) -> Profile {
         self.profiles
             .remove(&profile_id)
-            .unwrap_or_else(|| self.internal_profile_new(&profile_id))
+            .unwrap_or_else(|| Profile::new(&profile_id))
     }
 
     pub(crate) fn internal_profile_get(&self, profile_id: &ProfileId) -> Profile {
         self.profiles
             .get(&profile_id)
-            .unwrap_or_else(|| self.internal_profile_new(&profile_id))
-    }
-
-    fn internal_profile_new(&self, profile_id: &ProfileId) -> Profile {
-        let mut prefix_offering: Vec<u8> = Vec::with_capacity(33);
-        prefix_offering.extend(PREFIX_PROFILE_LOTS_OFFERING.as_bytes());
-        prefix_offering.extend(env::sha256(profile_id.as_bytes()));
-
-        let mut prefix_bidding: Vec<u8> = Vec::with_capacity(33);
-        prefix_bidding.extend(PREFIX_PROFILE_LOTS_BIDDING.as_bytes());
-        prefix_bidding.extend(env::sha256(profile_id.as_bytes()));
-
-        Profile {
-            profile_id: profile_id.clone(),
-            rewards_available: 0,
-            rewards_claimed: 0,
-            lots_offering: UnorderedSet::new(prefix_offering),
-            lots_bidding: UnorderedSet::new(prefix_bidding),
-        }
+            .unwrap_or_else(|| Profile::new(&profile_id))
     }
 
     pub(crate) fn internal_profile_save(&mut self, profile: &Profile) {
@@ -136,12 +138,11 @@ mod tests {
     use near_sdk_sim::to_yocto;
 
     use crate::tests::build_contract;
-    #[test]
 
+    #[test]
     fn test_profile_new() {
-        let mut contract = build_contract();
         let profile_id: ProfileId = "bob".parse().unwrap();
-        let profile = contract.internal_profile_new(&profile_id);
+        let profile = Profile::new(&profile_id);
 
         assert_eq!(profile.profile_id, profile_id, "wrong profile_id");
         assert_eq!(profile.rewards_available, to_yocto("0"), "wrong rewards_available");
