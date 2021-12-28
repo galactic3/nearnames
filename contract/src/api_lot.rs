@@ -85,7 +85,7 @@ impl Contract {
 
 #[near_bindgen]
 impl Contract {
-    pub fn lot_bid_list(&self, lot_id: AccountId) -> Vec<BidView> {
+    pub fn lot_bid_list(&self, lot_id: LotId) -> Vec<BidView> {
         let lot: Lot = self.lots.get(&lot_id).unwrap();
 
         lot.bids().iter().map(|v| v.into()).collect()
@@ -156,7 +156,7 @@ impl Contract {
 
     pub fn lot_offer(
         &mut self,
-        seller_id: AccountId,
+        seller_id: ProfileId,
         reserve_price: WrappedBalance,
         buy_now_price: WrappedBalance,
         finish_timestamp: Option<WrappedTimestamp>,
@@ -239,7 +239,7 @@ impl Contract {
         true
     }
 
-    pub fn lot_claim(&mut self, lot_id: AccountId, public_key: PublicKey) -> Promise {
+    pub fn lot_claim(&mut self, lot_id: LotId, public_key: PublicKey) -> Promise {
         let claimer_id: ProfileId = env::predecessor_account_id();
         let time_now = env::block_timestamp();
         let lot: Lot = self.lots.get(&lot_id).unwrap();
@@ -297,7 +297,7 @@ impl Contract {
         true
     }
 
-    pub fn lot_withdraw(&mut self, lot_id: AccountId) -> bool {
+    pub fn lot_withdraw(&mut self, lot_id: LotId) -> bool {
         let lot_id: ProfileId = lot_id.into();
         let withdrawer_id: ProfileId = env::predecessor_account_id();
         let mut lot = self.internal_lot_extract(&lot_id);

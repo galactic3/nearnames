@@ -85,7 +85,7 @@ impl Contract {
 
 #[near_bindgen]
 impl Contract {
-    pub fn profile_get(&self, profile_id: AccountId) -> ProfileView {
+    pub fn profile_get(&self, profile_id: ProfileId) -> ProfileView {
         (&self.internal_profile_get(&profile_id)).into()
     }
 

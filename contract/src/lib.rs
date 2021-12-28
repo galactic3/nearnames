@@ -324,7 +324,7 @@ mod tests {
         );
     }
 
-    pub fn api_lot_bid(contract: &mut Contract, lot_id: &AccountId, bid: &Bid) {
+    pub fn api_lot_bid(contract: &mut Contract, lot_id: &LotId, bid: &Bid) {
         let context = get_context_with_payer(&bid.bidder_id, bid.amount, bid.timestamp);
         testing_env!(context);
         contract.lot_bid(lot_id.clone());
@@ -889,10 +889,10 @@ mod tests {
         let context = get_context_simple(false);
         testing_env!(context);
         let mut contract = build_contract();
-        let account_id: AccountId = "alice".parse().unwrap();
+        let profile_id: ProfileId = "alice".parse().unwrap();
         let amount = MIN_PROFILE_REWARDS_CLAIM_AMOUNT - 1;
 
-        contract.internal_profile_rewards_transfer(&account_id, amount);
+        contract.internal_profile_rewards_transfer(&profile_id, amount);
 
         let context = get_context_pred_alice(false);
         testing_env!(context);
@@ -905,14 +905,14 @@ mod tests {
         let context = get_context_simple(false);
         testing_env!(context);
         let mut contract = build_contract();
-        let account_id: AccountId = "alice".parse().unwrap();
+        let profile_id: ProfileId = "alice".parse().unwrap();
         let amount = MIN_PROFILE_REWARDS_CLAIM_AMOUNT;
-        contract.internal_profile_rewards_transfer(&account_id, amount);
+        contract.internal_profile_rewards_transfer(&profile_id, amount);
 
         let context = get_context_pred_alice(false);
         testing_env!(context);
         contract.profile_rewards_claim();
-        let result = contract.profile_get(account_id.clone());
+        let result = contract.profile_get(profile_id.clone());
         assert_eq!(
             result.rewards_available.0,
             to_yocto("0"),

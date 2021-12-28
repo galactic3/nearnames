@@ -500,7 +500,7 @@ pub mod tests {
     #[test]
     fn test_lot_validate_claim_by_seller() {
         let (lot, time_now) = create_lot_alice_withdrawn();
-        let seller_id: AccountId = "bob".parse().unwrap();
+        let seller_id: ProfileId = "bob".parse().unwrap();
         lot.validate_claim(&seller_id, time_now);
     }
 
@@ -508,7 +508,7 @@ pub mod tests {
     #[should_panic(expected = "claim by seller: expected status withdrawn")]
     fn test_lot_validate_claim_by_seller_fail_lot_active() {
         let (lot, time_now) = create_lot_alice();
-        let seller_id: AccountId = "bob".parse().unwrap();
+        let seller_id: ProfileId = "bob".parse().unwrap();
         lot.validate_claim(&seller_id, time_now);
     }
 
@@ -516,7 +516,7 @@ pub mod tests {
     #[should_panic(expected = "claim by seller: expected status withdrawn")]
     fn test_lot_validate_claim_by_seller_fail_lot_sale_success() {
         let (lot, time_now) = create_lot_alice_with_bids_sale_success();
-        let seller_id: AccountId = "bob".parse().unwrap();
+        let seller_id: ProfileId = "bob".parse().unwrap();
         lot.validate_claim(&seller_id, time_now);
     }
 
@@ -524,14 +524,14 @@ pub mod tests {
     #[should_panic(expected = "claim by seller: wrong claimer")]
     fn test_lot_validate_claim_by_seller_fail_wrong_claimer() {
         let (lot, _) = create_lot_alice_withdrawn();
-        let fake_seller_id: AccountId = "carol".parse().unwrap();
+        let fake_seller_id: ProfileId = "carol".parse().unwrap();
         lot.validate_claim_by_seller(&fake_seller_id);
     }
 
     #[test]
     fn test_lot_validate_claim_by_bidder() {
         let (lot, time_now) = create_lot_alice_with_bids_sale_success(); // dan is the last bidder
-        let bidder_id: AccountId = "dan".parse().unwrap();
+        let bidder_id: ProfileId = "dan".parse().unwrap();
         lot.validate_claim(&bidder_id, time_now);
     }
 
@@ -539,7 +539,7 @@ pub mod tests {
     #[should_panic(expected = "claim by bidder: expected status sale success")]
     fn test_lot_validate_claim_by_bidder_fail_active() {
         let (lot, time_now) = create_lot_alice_with_bids(); // dan is the last bidder
-        let bidder_id: AccountId = "dan".parse().unwrap();
+        let bidder_id: ProfileId = "dan".parse().unwrap();
         lot.validate_claim(&bidder_id, time_now);
     }
 
@@ -547,14 +547,14 @@ pub mod tests {
     #[should_panic(expected = "claim by bidder: wrong claimer")]
     fn test_lot_validate_claim_by_bidder_fail_wrong_bidder() {
         let (lot, time_now) = create_lot_alice_with_bids_sale_success(); // dan is the last bidder
-        let bidder_id: AccountId = "carol".parse().unwrap();
+        let bidder_id: ProfileId = "carol".parse().unwrap();
         lot.validate_claim(&bidder_id, time_now);
     }
 
     #[test]
     fn test_lot_withdraw() {
         let (mut lot, _) = create_lot_alice();
-        let withdrawer_id: AccountId = "bob".parse().unwrap();
+        let withdrawer_id: ProfileId = "bob".parse().unwrap();
         lot.withdraw(&withdrawer_id);
         assert_eq!(lot.is_withdrawn, true, "expected lot to be withdrawn");
     }
@@ -563,7 +563,7 @@ pub mod tests {
     #[should_panic(expected = "withdraw: already withdrawn")]
     fn test_lot_withdraw_fail_already_withdrawn() {
         let (mut lot, _tm) = create_lot_alice_withdrawn();
-        let withdrawer_id: AccountId = "bob".parse().unwrap();
+        let withdrawer_id: ProfileId = "bob".parse().unwrap();
         lot.withdraw(&withdrawer_id);
     }
 
@@ -571,7 +571,7 @@ pub mod tests {
     #[should_panic(expected = "withdraw: expected no bids")]
     fn test_lot_withdraw_fail_has_bids() {
         let (mut lot, _) = create_lot_alice_with_bids(); // dan is the last bidder
-        let withdrawer_id: AccountId = "bob".parse().unwrap();
+        let withdrawer_id: ProfileId = "bob".parse().unwrap();
         lot.withdraw(&withdrawer_id);
     }
 
@@ -579,7 +579,7 @@ pub mod tests {
     #[should_panic(expected = "withdraw: wrong withdrawer")]
     fn test_lot_withdraw_fail_wrong_withdrawer() {
         let (mut lot, _) = create_lot_alice();
-        let not_withdrawer_id: AccountId = "alice".parse().unwrap();
+        let not_withdrawer_id: ProfileId = "alice".parse().unwrap();
         lot.withdraw(&not_withdrawer_id);
     }
 
