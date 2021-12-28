@@ -73,6 +73,10 @@ impl Contract {
         profile_id: &ProfileId,
         value: Balance,
     ) {
+        if value == 0 {
+            return
+        }
+
         let mut profile = self.internal_profile_extract(profile_id);
         profile.rewards_available += value;
         self.internal_profile_save(&profile);

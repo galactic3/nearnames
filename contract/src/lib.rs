@@ -151,7 +151,7 @@ mod tests {
             .build()
     }
 
-    fn build_contract() -> Contract {
+    pub fn build_contract() -> Contract {
         Contract::new(
             FractionView { num: 1, denom: 10 },
             FractionView { num: 1, denom: 5 },
@@ -257,7 +257,7 @@ mod tests {
         )
     }
 
-    fn create_lot_x_sells_y_api(
+    pub fn create_lot_x_sells_y_api(
         contract: &mut Contract,
         seller_id: &ProfileId,
         lot_id: &LotId,
@@ -265,7 +265,7 @@ mod tests {
         let context = get_context_pred_x(&lot_id, false);
         testing_env!(context);
 
-        let reserve_price = to_yocto("5");
+        let reserve_price = to_yocto("2");
         let buy_now_price = to_yocto("10");
         let duration = to_nanos(7);
 
@@ -323,200 +323,7 @@ mod tests {
         );
     }
 
-    #[test]
-    fn lot_get_missing() {
-        let context = get_context_simple(false);
-        testing_env!(context);
-        let contract = build_contract();
-
-        assert!(
-            contract.lot_list(None, None).is_empty(),
-            "Expected lot_list to be empty",
-        );
-    }
-
-    #[test]
-    fn lot_list_present() {
-        let context = get_context_simple(false);
-        testing_env!(context);
-        let mut contract = build_contract();
-        let lot_bob_sells_alice = create_lot_bob_sells_alice();
-        contract.internal_lot_save(&lot_bob_sells_alice);
-
-        let response: Vec<LotView> = contract.lot_list(None, None);
-        assert!(!response.is_empty());
-        let response: &LotView = &response[0];
-
-        assert_eq!(response.lot_id, "alice".parse().unwrap());
-        assert_eq!(response.seller_id, "bob".parse().unwrap());
-        assert_eq!(response.start_timestamp, (to_ts(10)).into());
-        assert_eq!(response.finish_timestamp, (to_ts(11)).into());
-        assert_eq!(response.reserve_price, to_yocto("5").into());
-        assert_eq!(response.buy_now_price, to_yocto("10").into());
-        assert_eq!(response.last_bid_amount, None);
-        assert_eq!(
-            response.next_bid_amount, None,
-            "expected none next price for inactive lot"
-        );
-        assert_eq!(response.is_active, false);
-        assert_eq!(response.is_withdrawn, false);
-    }
-
-    #[test]
-    fn lot_list_present_limit_offset() {
-        let context = get_context_simple(false);
-        testing_env!(context);
-        let mut contract = build_contract();
-
-        for i in 0..3 {
-            create_lot_x_sells_y_api(
-                &mut contract,
-                &"seller".parse().unwrap(),
-                &format!("lot{}", i).parse().unwrap(),
-            );
-        };
-
-        {
-            let result = contract.lot_list(None, None);
-            assert_eq!(result.len(), 3, "wrong lot list size");
-            assert_eq!(result[0].lot_id, "lot0".parse().unwrap());
-            assert_eq!(result[1].lot_id, "lot1".parse().unwrap());
-            assert_eq!(result[2].lot_id, "lot2".parse().unwrap());
-        }
-        {
-            let result = contract.lot_list(Some(2), None);
-            assert_eq!(result.len(), 2, "wrong lot list size");
-            assert_eq!(result[0].lot_id, "lot0".parse().unwrap());
-            assert_eq!(result[1].lot_id, "lot1".parse().unwrap());
-        }
-        {
-            let result = contract.lot_list(None, Some(2));
-            assert_eq!(result.len(), 1, "wrong lot list size");
-            assert_eq!(result[0].lot_id, "lot2".parse().unwrap());
-        }
-        {
-            let result = contract.lot_list(Some(2), Some(1));
-            assert_eq!(result.len(), 2, "wrong lot list size");
-            assert_eq!(result[0].lot_id, "lot1".parse().unwrap());
-            assert_eq!(result[1].lot_id, "lot2".parse().unwrap());
-        }
-        {
-            let result = contract.lot_list(Some(5), Some(100));
-            assert_eq!(result.len(), 0, "wrong lot list size");
-        }
-    }
-
-    #[test]
-    fn lot_list_offering_by_limit_offset() {
-        let context = get_context_simple(false);
-        testing_env!(context);
-        let mut contract = build_contract();
-
-        let seller_id: ProfileId = "seller".parse().unwrap();
-
-        for i in 0..3 {
-            create_lot_x_sells_y_api(
-                &mut contract,
-                &seller_id,
-                &format!("lot{}", i).parse().unwrap(),
-            );
-        };
-
-        {
-            let result = contract.lot_list_offering_by(seller_id.clone(), None, None);
-            assert_eq!(result.len(), 3, "wrong lot list size");
-            assert_eq!(result[0].lot_id, "lot0".parse().unwrap());
-            assert_eq!(result[1].lot_id, "lot1".parse().unwrap());
-            assert_eq!(result[2].lot_id, "lot2".parse().unwrap());
-        }
-        {
-            let result = contract.lot_list_offering_by(seller_id.clone(), Some(2), None);
-            assert_eq!(result.len(), 2, "wrong lot list size");
-            assert_eq!(result[0].lot_id, "lot0".parse().unwrap());
-            assert_eq!(result[1].lot_id, "lot1".parse().unwrap());
-        }
-        {
-            let result = contract.lot_list_offering_by(seller_id.clone(), None, Some(2));
-            assert_eq!(result.len(), 1, "wrong lot list size");
-            assert_eq!(result[0].lot_id, "lot2".parse().unwrap());
-        }
-        {
-            let result = contract.lot_list_offering_by(seller_id.clone(), Some(2), Some(1));
-            assert_eq!(result.len(), 2, "wrong lot list size");
-            assert_eq!(result[0].lot_id, "lot1".parse().unwrap());
-            assert_eq!(result[1].lot_id, "lot2".parse().unwrap());
-        }
-        {
-            let result = contract.lot_list_offering_by(seller_id.clone(), Some(5), Some(100));
-            assert_eq!(result.len(), 0, "wrong lot list size");
-        }
-
-        {
-            let result = contract.lot_list_offering_by("nonexistent".parse().unwrap(), None, None);
-            assert_eq!(result.len(), 0, "should be zero for non existing profile");
-        }
-    }
-
-    #[test]
-    fn lot_list_bidding_by_limit_offset() {
-        let context = get_context_simple(false);
-        testing_env!(context);
-        let mut contract = build_contract();
-
-        let seller_id: ProfileId = "seller".parse().unwrap();
-        let bidder_id: ProfileId = "bidder".parse().unwrap();
-
-        for i in 0..3 {
-            let lot_id = format!("lot{}", i).parse().unwrap();
-            create_lot_x_sells_y_api(
-                &mut contract,
-                &seller_id,
-                &lot_id,
-            );
-
-            api_lot_bid(&mut contract, &lot_id, &Bid {
-                bidder_id: bidder_id.clone(),
-                amount: to_yocto("6"),
-                timestamp: to_ts(11),
-            });
-        };
-
-        {
-            let result = contract.lot_list_bidding_by(bidder_id.clone(), None, None);
-            assert_eq!(result.len(), 3, "wrong lot list size");
-            assert_eq!(result[0].lot_id, "lot0".parse().unwrap());
-            assert_eq!(result[1].lot_id, "lot1".parse().unwrap());
-            assert_eq!(result[2].lot_id, "lot2".parse().unwrap());
-        }
-        {
-            let result = contract.lot_list_bidding_by(bidder_id.clone(), Some(2), None);
-            assert_eq!(result.len(), 2, "wrong lot list size");
-            assert_eq!(result[0].lot_id, "lot0".parse().unwrap());
-            assert_eq!(result[1].lot_id, "lot1".parse().unwrap());
-        }
-        {
-            let result = contract.lot_list_bidding_by(bidder_id.clone(), None, Some(2));
-            assert_eq!(result.len(), 1, "wrong lot list size");
-            assert_eq!(result[0].lot_id, "lot2".parse().unwrap());
-        }
-        {
-            let result = contract.lot_list_bidding_by(bidder_id.clone(), Some(2), Some(1));
-            assert_eq!(result.len(), 2, "wrong lot list size");
-            assert_eq!(result[0].lot_id, "lot1".parse().unwrap());
-            assert_eq!(result[1].lot_id, "lot2".parse().unwrap());
-        }
-        {
-            let result = contract.lot_list_bidding_by(bidder_id.clone(), Some(5), Some(100));
-            assert_eq!(result.len(), 0, "wrong lot list size");
-        }
-
-        {
-            let result = contract.lot_list_bidding_by("nonexistent".parse().unwrap(), None, None);
-            assert_eq!(result.len(), 0, "should be zero for non existing profile");
-        }
-    }
-
-    fn api_lot_bid(contract: &mut Contract, lot_id: &AccountId, bid: &Bid) {
+    pub fn api_lot_bid(contract: &mut Contract, lot_id: &AccountId, bid: &Bid) {
         let context = get_context_with_payer(&bid.bidder_id, bid.amount, bid.timestamp);
         testing_env!(context);
         contract.lot_bid(lot_id.clone());
@@ -526,45 +333,6 @@ mod tests {
         let mut lot = contract.internal_lot_extract(lot_id);
         lot.place_bid(bid, contract.bid_step);
         contract.internal_lot_save(&lot);
-    }
-
-    #[test]
-    fn lot_bid_list() {
-        let context = get_context_simple(false);
-        testing_env!(context);
-        let mut contract = build_contract();
-        let lot_bob_sells_alice = create_lot_bob_sells_alice();
-        contract.internal_lot_save(&lot_bob_sells_alice);
-
-        let bid: Bid = Bid {
-            bidder_id: "carol".parse().unwrap(),
-            amount: to_yocto("7"),
-            timestamp: to_ts(10),
-        };
-        internal_lot_bid(&mut contract, &"alice".parse().unwrap(), &bid);
-
-        let bid: Bid = Bid {
-            bidder_id: "dan".parse().unwrap(),
-            amount: to_yocto("9"),
-            timestamp: to_ts(10) + 1,
-        };
-        internal_lot_bid(&mut contract, &"alice".parse().unwrap(), &bid);
-
-        let response: Vec<BidView> = contract.lot_bid_list("alice".parse().unwrap());
-        let expected: Vec<BidView> = vec![
-            BidView {
-                bidder_id: "carol".parse().unwrap(),
-                amount: WrappedBalance::from(to_yocto("7")),
-                timestamp: WrappedTimestamp::from(to_ts(10)),
-            },
-            BidView {
-                bidder_id: "dan".parse().unwrap(),
-                amount: WrappedBalance::from(to_yocto("9")),
-                timestamp: WrappedTimestamp::from(to_ts(10) + 1),
-            },
-        ];
-
-        assert_eq!(response, expected, "wrong bids list");
     }
 
     #[test]
@@ -679,42 +447,6 @@ mod tests {
     }
 
     #[test]
-    fn lot_create_api() {
-        let context = get_context_pred_alice(false);
-        testing_env!(context);
-
-        let mut contract = build_contract();
-
-        let lot_id: ProfileId = "alice".parse().unwrap();
-        let seller_id: ProfileId = "bob".parse().unwrap();
-        let reserve_price = to_yocto("5");
-        let buy_now_price = to_yocto("10");
-        let duration = to_nanos(1);
-
-        contract.lot_offer(
-            seller_id.try_into().unwrap(),
-            reserve_price.into(),
-            buy_now_price.into(),
-            WrappedDuration::from(duration),
-        );
-
-        let result = contract.lots.get(&lot_id);
-        assert!(result.is_some(), "expected lot_saved is present");
-        let result = result.unwrap();
-
-        assert_eq!(result.lot_id, "alice".parse().unwrap());
-        assert_eq!(result.seller_id, "bob".parse().unwrap());
-        assert_eq!(result.start_timestamp, to_ts(10), "expected start day ten");
-        assert_eq!(
-            result.finish_timestamp,
-            to_ts(11),
-            "expected finish day eleven"
-        );
-        assert_eq!(result.reserve_price, to_yocto("5").into());
-        assert_eq!(result.buy_now_price, to_yocto("10").into());
-    }
-
-    #[test]
     fn internal_transfer() {
         let context = get_context_simple(false);
         testing_env!(context);
@@ -738,31 +470,6 @@ mod tests {
             to_yocto("5"),
             "expected balance 5 near after two transfers"
         );
-    }
-
-    #[test]
-    fn last_bid_amount() {
-        let mut lot = create_lot_bob_sells_alice();
-        assert!(
-            lot.last_bid_amount().is_none(),
-            "expected last_bid_amount to be None"
-        );
-
-        let bid = Bid {
-            bidder_id: "carol".parse().unwrap(),
-            timestamp: to_ts(10),
-            amount: to_yocto("6"),
-        };
-        lot.bids.push(&bid);
-        assert_eq!(lot.last_bid_amount().unwrap(), to_yocto("6"));
-
-        let bid = Bid {
-            bidder_id: "carol".parse().unwrap(),
-            timestamp: to_ts(10),
-            amount: to_yocto("7"),
-        };
-        lot.bids.push(&bid);
-        assert_eq!(lot.last_bid_amount().unwrap(), to_yocto("7"));
     }
 
     // checks:
@@ -791,9 +498,9 @@ mod tests {
         };
         internal_lot_bid(&mut contract, &"alice".parse().unwrap(), &bid);
         let lot = contract.lots.get(&"alice".parse().unwrap()).unwrap();
-        assert_eq!(lot.bids.len(), 1, "expected one bid for lot");
+        assert_eq!(lot.bids().len(), 1, "expected one bid for lot");
 
-        let last_bid = lot.bids.get(lot.bids.len() - 1).unwrap();
+        let last_bid = lot.last_bid().unwrap();
         assert_eq!(last_bid.amount, first_bid_amount, "wrong first bid amount");
         assert_eq!(
             last_bid.bidder_id,
@@ -813,9 +520,9 @@ mod tests {
         };
         internal_lot_bid(&mut contract, &"alice".parse().unwrap(), &bid);
         let lot = contract.lots.get(&"alice".parse().unwrap()).unwrap();
-        assert_eq!(lot.bids.len(), 2, "wrong bids length");
+        assert_eq!(lot.bids().len(), 2, "wrong bids length");
 
-        let last_bid = lot.bids.get(lot.bids.len() - 1).unwrap();
+        let last_bid = lot.last_bid().unwrap();
         assert_eq!(
             last_bid.amount, second_bid_amount,
             "expected last bid to be 6 near"
@@ -955,7 +662,7 @@ mod tests {
         );
 
         let lot = contract.lots.get(&"alice".parse().unwrap()).unwrap();
-        assert_eq!(lot.bids.len(), 1, "expected one bid for lot");
+        assert_eq!(lot.bids().len(), 1, "expected one bid for lot");
 
         let last_bid = lot.last_bid().unwrap();
         assert_eq!(last_bid.amount, first_bid_amount, "wrong_first_bid");
@@ -1103,44 +810,6 @@ mod tests {
                 timestamp: to_ts(11),
             },
         );
-    }
-
-    #[test]
-    pub fn api_lot_withdraw_success() {
-        let context = get_context_simple(false);
-        testing_env!(context);
-        let mut contract = build_contract();
-        {
-            let lot = create_lot_bob_sells_alice();
-            contract.internal_lot_save(&lot);
-        }
-
-        let context = get_context_with_payer(&"bob".parse().unwrap(), 0, to_ts(13));
-        testing_env!(context);
-        contract.lot_withdraw("alice".to_string().try_into().unwrap());
-    }
-
-    #[test]
-    #[should_panic(expected = "withdraw: expected no bids")]
-    pub fn api_lot_withdraw_fail_has_bids() {
-        let context = get_context_simple(false);
-        testing_env!(context);
-        let mut contract = build_contract();
-        {
-            let lot = create_lot_bob_sells_alice();
-            contract.internal_lot_save(&lot);
-        }
-
-        let bid: Bid = Bid {
-            bidder_id: "carol".parse().unwrap(),
-            amount: to_yocto("7"),
-            timestamp: to_ts(10),
-        };
-        internal_lot_bid(&mut contract, &"alice".parse().unwrap(), &bid);
-
-        let context = get_context_with_payer(&"bob".parse().unwrap(), 0, to_ts(13));
-        testing_env!(context);
-        contract.lot_withdraw("alice".to_string().try_into().unwrap());
     }
 
     // derived from empty string
