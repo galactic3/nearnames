@@ -32,6 +32,19 @@ impl Profile {
     pub fn rewards_transfer(&mut self, amount: Balance) {
         self.rewards_available += amount;
     }
+
+    pub fn rewards_claim(&mut self) -> Balance {
+        let amount = self.rewards_available;
+        self.rewards_available -= amount;
+        self.rewards_claimed += amount;
+
+        amount
+    }
+
+    pub fn rewards_claim_revert(&mut self, amount: Balance) {
+        self.rewards_available += amount;
+        self.rewards_claimed -= amount;
+    }
 }
 
 #[cfg(test)]
@@ -68,5 +81,25 @@ pub mod tests {
         profile.rewards_transfer(to_yocto("3"));
         profile.rewards_transfer(to_yocto("2"));
         assert_eq!(profile.rewards_available, to_yocto("5"), "wrong rewards_available");
+    }
+
+    #[test]
+    fn test_profile_rewards_claim() {
+        let mut profile = create_profile_bob();
+
+        let amount = profile.rewards_claim();
+        assert_eq!(amount, to_yocto("3"));
+        assert_eq!(profile.rewards_available, to_yocto("0"));
+        assert_eq!(profile.rewards_claimed, to_yocto("5"));
+    }
+
+    #[test]
+    fn test_profile_rewards_claim_revert() {
+        let mut profile = create_profile_bob();
+        let amount: Balance = to_yocto("2");
+
+        profile.rewards_claim_revert(amount);
+        assert_eq!(profile.rewards_available, to_yocto("5"));
+        assert_eq!(profile.rewards_claimed, to_yocto("0"));
     }
 }

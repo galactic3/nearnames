@@ -71,15 +71,12 @@ impl Contract {
         let profile_id: ProfileId = env::predecessor_account_id();
         let mut profile = self.internal_profile_extract(&profile_id.clone());
 
-        let rewards = profile.rewards_available;
+        let rewards = profile.rewards_claim();
         assert!(
             rewards >= MIN_PROFILE_REWARDS_CLAIM_AMOUNT,
             "{}",
             ERR_PROFILE_REWARDS_CLAIM_NOT_ENOUGH,
         );
-
-        profile.rewards_available = 0;
-        profile.rewards_claimed += rewards;
         self.internal_profile_save(&profile);
 
         Promise::new(profile_id.clone()).transfer(rewards).then(
@@ -99,8 +96,7 @@ impl Contract {
         if !rewards_transferred {
             // In case of failure, put the amount back
             let mut profile = self.internal_profile_extract(&profile_id);
-            profile.rewards_available = rewards;
-            profile.rewards_claimed -= rewards;
+            profile.rewards_claim_revert(rewards);
             self.internal_profile_save(&profile);
         }
         rewards_transferred
