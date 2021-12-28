@@ -218,29 +218,19 @@ impl Contract {
         bidder.lots_bidding.insert(&lot_id);
         self.internal_profile_save(&bidder);
 
-        // redistribute balances
-        match prev_bid {
-            Some(prev_bid) => {
-                let to_prev_bider = prev_bid.amount;
-                let to_seller = amount - to_prev_bider;
-                let commission = self.seller_rewards_commission * to_seller;
-                let to_seller = to_seller - commission;
-
-                let prev_bidder_reward = self.prev_bidder_commission_share * commission;
-
-                self.internal_profile_rewards_transfer(
-                    &prev_bid.bidder_id,
-                    to_prev_bider + prev_bidder_reward,
-                );
-                self.internal_profile_rewards_transfer(&lot.seller_id, to_seller);
-            }
-            None => {
-                let to_seller = amount;
-                let commission = self.seller_rewards_commission * to_seller;
-                let to_seller = to_seller - commission;
-                self.internal_profile_rewards_transfer(&lot.seller_id, to_seller)
-            }
+        let (to_prev_bidder, to_seller) = economics::calculate_lot_bid_rewards(
+            prev_bid.as_ref().map(|x| x.amount),
+            bid.amount,
+            self.seller_rewards_commission,
+            self.prev_bidder_commission_share,
+        );
+        if let Some(to_prev_bidder) = to_prev_bidder {
+            self.internal_profile_rewards_transfer(
+                &prev_bid.as_ref().unwrap().bidder_id,
+                to_prev_bidder,
+            );
         }
+        self.internal_profile_rewards_transfer(&lot.seller_id, to_seller);
 
         true
     }

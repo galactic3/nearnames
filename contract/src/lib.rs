@@ -3,6 +3,7 @@ mod fraction;
 mod lot;
 mod profile;
 mod utils;
+mod economics;
 
 use std::collections::HashSet;
 use std::fmt;
