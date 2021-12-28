@@ -313,7 +313,7 @@ mod tests {
     use near_sdk_sim::{to_nanos, to_ts, to_yocto};
 
     use crate::lot::tests::*;
-    use crate::tests::{api_lot_bid, build_contract};
+    use crate::tests::build_contract;
 
     fn get_context_view(time_now: Timestamp) -> VMContext {
         VMContextBuilder::new()
@@ -326,6 +326,19 @@ mod tests {
         VMContextBuilder::new()
             .predecessor_account_id(caller_id.clone())
             .is_view(false)
+            .block_timestamp(time_now)
+            .build()
+    }
+
+    fn get_context_pay(
+        time_now: Timestamp,
+        caller_id: &ProfileId,
+        attached_deposit: Balance,
+    ) -> VMContext {
+        VMContextBuilder::new()
+            .predecessor_account_id(caller_id.clone())
+            .is_view(false)
+            .attached_deposit(attached_deposit)
             .block_timestamp(time_now)
             .build()
     }
@@ -350,6 +363,11 @@ mod tests {
         );
 
         contract.lots.get(&lot_id).unwrap()
+    }
+
+    pub fn api_lot_bid(contract: &mut Contract, lot_id: &LotId, bid: &Bid) {
+        testing_env!(get_context_pay(bid.timestamp, &bid.bidder_id, bid.amount));
+        contract.lot_bid(lot_id.clone());
     }
 
     #[test]

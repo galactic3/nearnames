@@ -138,19 +138,6 @@ mod tests {
         get_context_pred_x(&"alice".parse().unwrap(), is_view)
     }
 
-    fn get_context_with_payer(
-        profile_id: &ProfileId,
-        attached_deposit: Balance,
-        timestamp: Timestamp,
-    ) -> VMContext {
-        VMContextBuilder::new()
-            .predecessor_account_id(profile_id.clone())
-            .is_view(false)
-            .attached_deposit(attached_deposit)
-            .block_timestamp(timestamp)
-            .build()
-    }
-
     pub fn build_contract() -> Contract {
         Contract::new(
             FractionView { num: 1, denom: 10 },
@@ -231,12 +218,6 @@ mod tests {
             rewards_claimed.into(),
             "rewards_claimed mismatch"
         );
-    }
-
-    pub fn api_lot_bid(contract: &mut Contract, lot_id: &LotId, bid: &Bid) {
-        let context = get_context_with_payer(&bid.bidder_id, bid.amount, bid.timestamp);
-        testing_env!(context);
-        contract.lot_bid(lot_id.clone());
     }
 
     #[test]
