@@ -738,7 +738,7 @@ pub mod tests {
     }
 
     fn check_rewards(contract: &Contract, profile_id: &ProfileId) -> Balance {
-        contract.internal_profile_get(profile_id).rewards_available
+        contract.internal_profile_get(profile_id).rewards_available()
     }
 
     #[test]

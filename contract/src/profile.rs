@@ -3,8 +3,8 @@ use crate::*;
 #[derive(BorshDeserialize, BorshSerialize)]
 pub struct Profile {
     pub profile_id: ProfileId,
-    pub rewards_available: Balance,
-    pub rewards_claimed: Balance,
+    rewards_available: Balance,
+    rewards_claimed: Balance,
 
     pub lots_offering: UnorderedSet<LotId>,
     pub lots_bidding: UnorderedSet<LotId>,
@@ -44,6 +44,14 @@ impl Profile {
     pub fn rewards_claim_revert(&mut self, amount: Balance) {
         self.rewards_available += amount;
         self.rewards_claimed -= amount;
+    }
+
+    pub fn rewards_available(&self) -> Balance {
+        self.rewards_available
+    }
+
+    pub fn rewards_claimed(&self) -> Balance {
+        self.rewards_claimed
     }
 }
 
@@ -101,5 +109,12 @@ pub mod tests {
         profile.rewards_claim_revert(amount);
         assert_eq!(profile.rewards_available, to_yocto("5"));
         assert_eq!(profile.rewards_claimed, to_yocto("0"));
+    }
+
+    #[test]
+    fn test_profile_rewards_getters() {
+        let profile = create_profile_bob();
+        assert_eq!(profile.rewards_available(), to_yocto("3"));
+        assert_eq!(profile.rewards_claimed(), to_yocto("2"));
     }
 }

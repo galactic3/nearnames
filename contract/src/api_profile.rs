@@ -19,8 +19,8 @@ impl From<&Profile> for ProfileView {
     fn from(p: &Profile) -> Self {
         Self {
             profile_id: p.profile_id.clone(),
-            rewards_available: p.rewards_available.into(),
-            rewards_claimed: p.rewards_claimed.into(),
+            rewards_available: p.rewards_available().into(),
+            rewards_claimed: p.rewards_claimed().into(),
         }
     }
 }
@@ -130,8 +130,8 @@ mod tests {
         let profile = contract.internal_profile_get(&profile_id);
         assert_eq!(contract.profiles.len(), 1, "wrong profiles len");
         assert_eq!(profile.profile_id, profile_id, "wrong rewards_available");
-        assert_eq!(profile.rewards_available, to_yocto("3"), "wrong rewards_available");
-        assert_eq!(profile.rewards_claimed, to_yocto("2"), "wrong rewards_claimed");
+        assert_eq!(profile.rewards_available(), to_yocto("3"), "wrong rewards_available");
+        assert_eq!(profile.rewards_claimed(), to_yocto("2"), "wrong rewards_claimed");
     }
 
     #[test]
@@ -141,8 +141,8 @@ mod tests {
         let profile = contract.internal_profile_extract(&profile_id);
         assert_eq!(contract.profiles.len(), 0, "wrong profiles len");
         assert_eq!(profile.profile_id, profile_id, "wrong rewards_available");
-        assert_eq!(profile.rewards_available, to_yocto("3"), "wrong rewards_available");
-        assert_eq!(profile.rewards_claimed, to_yocto("2"), "wrong rewards_claimed");
+        assert_eq!(profile.rewards_available(), to_yocto("3"), "wrong rewards_available");
+        assert_eq!(profile.rewards_claimed(), to_yocto("2"), "wrong rewards_claimed");
     }
 
     #[test]
@@ -168,11 +168,11 @@ mod tests {
         assert_eq!(contract.profiles.len(), 1);
 
         let profile = contract.profiles.get(&profile_id).unwrap();
-        assert_eq!(profile.rewards_available, to_yocto("3"));
+        assert_eq!(profile.rewards_available(), to_yocto("3"));
 
         contract.internal_profile_rewards_transfer(&profile_id, to_yocto("2"));
         let profile = contract.profiles.get(&profile_id).unwrap();
-        assert_eq!(profile.rewards_available, to_yocto("5"), "wrong amount");
+        assert_eq!(profile.rewards_available(), to_yocto("5"), "wrong amount");
     }
 
     #[test]
