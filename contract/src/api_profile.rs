@@ -1,6 +1,5 @@
 use crate::*;
 
-pub const ERR_PROFILE_INTERNAL_SAVE_ALREADY_EXISTS: &str = "internal_profile_save: profile already exists";
 pub const ERR_PROFILE_REWARDS_CLAIM_NOT_ENOUGH: &str = "profile_rewards_claim: not enough rewards";
 
 pub const MIN_PROFILE_REWARDS_CLAIM_AMOUNT: Balance = 10 * 10u128.pow(21);
@@ -87,15 +86,7 @@ impl Contract {
 mod tests {
     use crate::tests::*;
 
-    use crate::profile::tests::*;
-
-    fn create_contract_with_profile_bob() -> (Contract, ProfileId) {
-        let mut contract = build_contract();
-        let profile = create_profile_bob();
-        contract.internal_profile_save(&profile);
-
-        (contract, profile.profile_id.clone())
-    }
+    use crate::contract::tests_profile::*;
 
     #[test]
     fn test_api_profile_internal_rewards_transfer() {

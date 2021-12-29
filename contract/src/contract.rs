@@ -1,5 +1,7 @@
 use crate::*;
 
+pub const ERR_PROFILE_INTERNAL_SAVE_ALREADY_EXISTS: &str = "internal_profile_save: profile already exists";
+
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
 pub struct Contract {
@@ -123,6 +125,21 @@ mod tests {
             FractionView { num: 4, denom: 5 },
             "wrong seller rewards commission",
         );
+    }
+}
+
+#[cfg(test)]
+pub mod tests_profile {
+    use crate::tests::*;
+
+    use crate::profile::tests::*;
+
+    pub fn create_contract_with_profile_bob() -> (Contract, ProfileId) {
+        let mut contract = build_contract();
+        let profile = create_profile_bob();
+        contract.internal_profile_save(&profile);
+
+        (contract, profile.profile_id.clone())
     }
 
     #[test]
