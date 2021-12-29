@@ -54,7 +54,7 @@ impl From<&Fraction> for FractionView {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use crate::tests::*;
 
     #[test]
     pub fn test_fractions_new() {

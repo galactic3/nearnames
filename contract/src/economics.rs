@@ -28,9 +28,7 @@ pub fn calc_lot_bid_rewards(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
-    use near_sdk_sim::to_yocto;
+    use crate::tests::*;
 
     #[test]
     fn test_economics_calc_lot_bid_rewards_zero_commissions() {

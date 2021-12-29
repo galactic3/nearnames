@@ -306,42 +306,9 @@ impl Contract {
 
 #[cfg(test)]
 pub mod tests {
-    use super::*;
-
-    use near_sdk::test_utils::VMContextBuilder;
-    use near_sdk::{testing_env, VMContext};
-    use near_sdk_sim::{to_nanos, to_ts, to_yocto};
+    use crate::tests::*;
 
     use crate::lot::tests::*;
-    use crate::tests::build_contract;
-
-    pub fn get_context_view(time_now: Timestamp) -> VMContext {
-        VMContextBuilder::new()
-            .is_view(true)
-            .block_timestamp(time_now)
-            .build()
-    }
-
-    pub fn get_context_call(time_now: Timestamp, caller_id: &LotId) -> VMContext {
-        VMContextBuilder::new()
-            .predecessor_account_id(caller_id.clone())
-            .is_view(false)
-            .block_timestamp(time_now)
-            .build()
-    }
-
-    pub fn get_context_pay(
-        time_now: Timestamp,
-        caller_id: &ProfileId,
-        attached_deposit: Balance,
-    ) -> VMContext {
-        VMContextBuilder::new()
-            .predecessor_account_id(caller_id.clone())
-            .is_view(false)
-            .attached_deposit(attached_deposit)
-            .block_timestamp(time_now)
-            .build()
-    }
 
     pub fn create_lot_x_sells_y_api(
         contract: &mut Contract,

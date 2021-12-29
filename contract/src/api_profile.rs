@@ -105,14 +105,9 @@ impl Contract {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use crate::tests::*;
 
-    use near_sdk_sim::{to_ts, to_yocto};
-    use near_sdk::testing_env;
-
-    use crate::tests::build_contract;
-    use crate::api_lot::tests::{get_context_view, get_context_call};
-    use crate::profile::tests::create_profile_bob;
+    use crate::profile::tests::*;
 
     fn create_contract_with_profile_bob() -> (Contract, ProfileId) {
         let mut contract = build_contract();

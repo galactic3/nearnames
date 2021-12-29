@@ -57,9 +57,7 @@ impl Profile {
 
 #[cfg(test)]
 pub mod tests {
-    use super::*;
-
-    use near_sdk_sim::to_yocto;
+    use crate::tests::*;
 
     pub fn create_profile_bob() -> Profile {
         let profile_id: ProfileId = "bob".parse().unwrap();

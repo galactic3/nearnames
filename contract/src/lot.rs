@@ -234,9 +234,7 @@ impl Lot {
 
 #[cfg(test)]
 pub mod tests {
-    use super::*;
-
-    use near_sdk_sim::{to_nanos, to_ts, to_yocto};
+    use crate::tests::*;
 
     pub fn create_lot_x_sells_y(seller_id: &ProfileId, lot_id: &LotId) -> Lot {
         let reserve_price = to_yocto("2");
