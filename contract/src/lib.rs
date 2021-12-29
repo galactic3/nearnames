@@ -116,18 +116,6 @@ impl Contract {
 mod tests {
     use super::*;
 
-    use near_sdk::test_utils::VMContextBuilder;
-    use near_sdk::{testing_env, VMContext};
-    use near_sdk_sim::to_ts;
-
-    fn get_context_simple(is_view: bool) -> VMContext {
-        VMContextBuilder::new()
-            .signer_account_id("alice_near".parse().unwrap())
-            .is_view(is_view)
-            .block_timestamp(to_ts(13))
-            .build()
-    }
-
     pub fn build_contract() -> Contract {
         Contract::new(
             FractionView { num: 1, denom: 10 },
@@ -138,8 +126,6 @@ mod tests {
 
     #[test]
     fn contract_config_get() {
-        let context = get_context_simple(false);
-        testing_env!(context);
         let contract = build_contract();
 
         let config = contract.config_get();
