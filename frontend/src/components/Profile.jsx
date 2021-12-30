@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router';
 import Loader from './Loader';
 import {BOATLOAD_OF_GAS, nearTo, renderName} from "../utils";
 import LotsList from "./LotsList";
 
 function Profile (props) {
-  const { profileId } = useParams();
+  const profileId = props.app.currentUser.accountId;
   const [profile, setProfile] = useState([]);
   const [lotsOffering, setLotsOffering] = useState([]);
   const [lotsBidding, setLotsBidding] = useState([]);
@@ -34,9 +33,9 @@ function Profile (props) {
     setClaimLoader(true);
     try {
       await contract.profile_rewards_claim({}, BOATLOAD_OF_GAS).then(() => {
-        contract.profile_get({profile_id: profileId}).then((profile) => {
+        contract.profile_get({profile_id: profileId}).then(async (profile) => {
           setProfile(profile);
-          console.log(profile);
+          await props.app.updateBalance();
           setClaimLoader(false);
         });
       });

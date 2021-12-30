@@ -2,13 +2,13 @@ import 'regenerator-runtime/runtime';
 import React from 'react';
 import * as nearAPI from 'near-api-js';
 import localStorage from 'local-storage';
-import { HashRouter as Router, NavLink, Route, Switch, Redirect } from 'react-router-dom';
+import {HashRouter as Router, NavLink, Redirect, Route, Switch} from 'react-router-dom';
 import OfferProcessPage from './components/OfferProcess';
 import Lots from './components/Lots';
 import ProfilePage from './components/Profile';
 import LogoutIcon from '@mui/icons-material/Logout';
 import CreateOffer from "./components/CreateOffer";
-import {renderName} from "./utils";
+import {nearTo, renderName} from "./utils";
 
 class App extends React.Component {
   constructor(props) {
@@ -23,15 +23,26 @@ class App extends React.Component {
       contract: props.contract,
       currentUser: props.currentUser,
       account: props.wallet.account(),
-      accountId: props.currentUser && props.currentUser.accountId
+      accountId: props.currentUser && props.currentUser.accountId,
+      accountBalance: nearTo((props.wallet.account().getAccountBalance()).total),
     };
 
     this.app.marketPublicKey = 'ed25519:Ga6C8S7jVG2inG88cos8UsdtGVWRFQasSdTdtHL7kBqL';
 
     this.state = {
-      connected: false,
-      account: null
+      connected: false
     };
+
+    this.app.updateBalance = async () => {
+      this.setState({
+        signedAccountBalance: this.app.accountId && await this.getBalance(this.app.accountId)
+      })
+    }
+
+    this.getBalance = async (accountId) => {
+      const account = await this.app.near.account(accountId);
+      return nearTo((await account.getAccountBalance()).total);
+    }
 
     this.app.signIn = () => {
       props.wallet.requestSignIn(
@@ -45,13 +56,13 @@ class App extends React.Component {
       window.location.replace(window.location.origin + window.location.pathname);
     };
 
-    this.initApp().then(() => {
+    this.initApp().then(async () => {
       this.setState({
         signedIn: !!this.app.accountId,
         signedAccountId: this.app.accountId,
+        signedAccountBalance: this.app.accountId && await this.getBalance(this.app.accountId),
         connected: true
       });
-      console.log(this.state);
     })
   }
 
@@ -180,16 +191,17 @@ class App extends React.Component {
                   </li>
                 { this.app.currentUser && (<li className='nav-item'>
                     <NavLink activeClassName='active' className='nav-link' aria-current='page'
-                          to={`/profile/${this.app.currentUser.accountId}`}>Profile</NavLink>
+                          to='profile'>Profile</NavLink>
                   </li>)}
                 </ul> }
                 <CreateOffer {...passProps}/>
                 { !this.state.connected ? (
                     <div className="auth">
-                      <span className='spinner-grow spinner-grow-sm' role='status' aria-hidden='true' />
+                      <span className='spinner' role='status' aria-hidden='true'>Connecting...</span>
                     </div>
                   ) : this.app.currentUser
                   ? <div className="auth">
+                      <strong className="balance near-icon">{this.state.signedAccountBalance}</strong>
                       {renderName(this.app.accountId)}
                       <a className="icon logout" onClick={this.app.signOut}><LogoutIcon/></a>
                     </div>
@@ -207,7 +219,7 @@ class App extends React.Component {
             <Route exact path='/offerProcess'>
               <OfferProcessPage {...passProps} />
             </Route>
-            <Route exact path='/profile/:profileId'>
+            <Route exact path='/profile'>
               <ProfilePage {...passProps}/>
             </Route>
           </Switch>
