@@ -16,7 +16,7 @@ function Lots(props) {
 
     const load_lots_raw = async () => {
       let result = [];
-      const limit = 100;
+      const limit = 30;
       let offset = 0;
 
       while (true) {
