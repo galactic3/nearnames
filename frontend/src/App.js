@@ -9,6 +9,7 @@ import ProfilePage from './components/Profile';
 import LogoutIcon from '@mui/icons-material/Logout';
 import CreateOffer from "./components/CreateOffer";
 import {nearTo, renderName} from "./utils";
+import AboutPage from "./components/About";
 
 class App extends React.Component {
   constructor(props) {
@@ -193,6 +194,9 @@ class App extends React.Component {
                     <NavLink activeClassName='active' className='nav-link' aria-current='page'
                           to='profile'>Profile</NavLink>
                   </li>)}
+                  <li className='nav-item'>
+                    <NavLink activeClassName='active' className='nav-link' aria-current='page' to='/about'>About</NavLink>
+                  </li>
                 </ul> }
                 <CreateOffer {...passProps}/>
                 { !this.state.connected ? (
@@ -221,6 +225,9 @@ class App extends React.Component {
             </Route>
             <Route exact path='/profile'>
               <ProfilePage {...passProps}/>
+            </Route>
+            <Route exact path='/about'>
+              <AboutPage/>
             </Route>
           </Switch>
         </Router>

@@ -8,6 +8,25 @@
   max-width: 1440px;
 }
 
+.about {
+  margin-top: 40px;
+  margin-bottom: 80px;
+  h3 {
+    margin: 1rem 0;
+  }
+  ul {
+    margin-bottom: 20px;
+  }
+  img {
+    width: 1000px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    &.zoom {
+      width: auto;
+    }
+  }
+}
+
 .lots-container {
   padding: 20px;
   margin-bottom: 20px;
