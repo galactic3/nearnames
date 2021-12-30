@@ -112,6 +112,10 @@ ul, dl {
   list-style: none;
 }
 
+ul.default {
+  list-style: disc inside;
+}
+
 .account-name {
   color: var(--primary);
 }

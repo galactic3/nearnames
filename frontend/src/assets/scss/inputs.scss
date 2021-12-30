@@ -54,6 +54,14 @@ textarea {
     }
 }
 
+.input-checkbox {
+    display: flex;
+    input {
+        height: 20px;
+        margin: 5px 10px 0 0;
+    }
+}
+
 label {
     font-size: 12px;
     font-weight: 500;
@@ -61,3 +69,21 @@ label {
     color: var(--light-gray);
 }
 
+.error-input {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    padding-left: 3px;
+    margin: 3px 0 -21px;
+    color: var(--red);
+}
+
+
+.form-group {
+    position: relative;
+    .error-input {
+        position: absolute;
+        top: 100%; left: 0;
+    }
+}

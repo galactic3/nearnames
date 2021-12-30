@@ -203,6 +203,18 @@
     flex-wrap: wrap;
     justify-content: space-between;
   }
+  .confirmation {
+    flex-basis: content;
+    ul {
+      margin-bottom: 5px;
+    }
+    label {
+      padding: 0;
+    }
+    p {
+      margin: 0 0 5px;
+    }
+  }
 }
 
 .claim_modal {
