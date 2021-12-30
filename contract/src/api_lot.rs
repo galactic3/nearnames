@@ -71,7 +71,9 @@ impl From<&Bid> for BidView {
 
 impl Contract {
     pub(crate) fn internal_lot_extract(&mut self, lot_id: &LotId) -> Lot {
-        self.lots.remove(&lot_id).expect(ERR_INTERNAL_LOT_EXTRACT_NOT_EXIST)
+        self.lots
+            .remove(&lot_id)
+            .expect(ERR_INTERNAL_LOT_EXTRACT_NOT_EXIST)
     }
 
     pub(crate) fn internal_lot_save(&mut self, lot: &Lot) {
@@ -85,7 +87,7 @@ impl Contract {
 
 #[near_bindgen]
 impl Contract {
-    pub fn lot_bid_list(&self, lot_id: AccountId) -> Vec<BidView> {
+    pub fn lot_bid_list(&self, lot_id: LotId) -> Vec<BidView> {
         let lot: Lot = self.lots.get(&lot_id).unwrap();
 
         lot.bids().iter().map(|v| v.into()).collect()
@@ -156,7 +158,7 @@ impl Contract {
 
     pub fn lot_offer(
         &mut self,
-        seller_id: AccountId,
+        seller_id: ProfileId,
         reserve_price: WrappedBalance,
         buy_now_price: WrappedBalance,
         finish_timestamp: Option<WrappedTimestamp>,
@@ -200,7 +202,11 @@ impl Contract {
         let bidder_id: ProfileId = env::predecessor_account_id();
         let amount: Balance = env::attached_deposit();
         let timestamp = env::block_timestamp();
-        let bid: Bid = Bid { bidder_id: bidder_id.clone(), amount, timestamp };
+        let bid: Bid = Bid {
+            bidder_id: bidder_id.clone(),
+            amount,
+            timestamp,
+        };
 
         let mut lot = self.internal_lot_extract(&lot_id);
         let prev_bid: Option<Bid> = lot.last_bid();
@@ -212,34 +218,24 @@ impl Contract {
         bidder.lots_bidding.insert(&lot_id);
         self.internal_profile_save(&bidder);
 
-        // redistribute balances
-        match prev_bid {
-            Some(prev_bid) => {
-                let to_prev_bider = prev_bid.amount;
-                let to_seller = amount - to_prev_bider;
-                let commission = self.seller_rewards_commission * to_seller;
-                let to_seller = to_seller - commission;
-
-                let prev_bidder_reward = self.prev_bidder_commission_share * commission;
-
-                self.internal_profile_rewards_transfer(
-                    &prev_bid.bidder_id,
-                    to_prev_bider + prev_bidder_reward,
-                );
-                self.internal_profile_rewards_transfer(&lot.seller_id, to_seller);
-            }
-            None => {
-                let to_seller = amount;
-                let commission = self.seller_rewards_commission * to_seller;
-                let to_seller = to_seller - commission;
-                self.internal_profile_rewards_transfer(&lot.seller_id, to_seller)
-            }
+        let (to_prev_bidder, to_seller) = calc_lot_bid_rewards(
+            prev_bid.as_ref().map(|x| x.amount),
+            bid.amount,
+            self.seller_rewards_commission,
+            self.prev_bidder_commission_share,
+        );
+        if let Some(to_prev_bidder) = to_prev_bidder {
+            self.internal_profile_rewards_transfer(
+                &prev_bid.as_ref().unwrap().bidder_id,
+                to_prev_bidder,
+            );
         }
+        self.internal_profile_rewards_transfer(&lot.seller_id, to_seller);
 
         true
     }
 
-    pub fn lot_claim(&mut self, lot_id: AccountId, public_key: PublicKey) -> Promise {
+    pub fn lot_claim(&mut self, lot_id: LotId, public_key: PublicKey) -> Promise {
         let claimer_id: ProfileId = env::predecessor_account_id();
         let time_now = env::block_timestamp();
         let lot: Lot = self.lots.get(&lot_id).unwrap();
@@ -297,7 +293,7 @@ impl Contract {
         true
     }
 
-    pub fn lot_withdraw(&mut self, lot_id: AccountId) -> bool {
+    pub fn lot_withdraw(&mut self, lot_id: LotId) -> bool {
         let lot_id: ProfileId = lot_id.into();
         let withdrawer_id: ProfileId = env::predecessor_account_id();
         let mut lot = self.internal_lot_extract(&lot_id);
@@ -309,29 +305,36 @@ impl Contract {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    use near_sdk::test_utils::VMContextBuilder;
-    use near_sdk::{testing_env, VMContext};
-    use near_sdk_sim::{to_nanos, to_ts, to_yocto};
+pub mod tests {
+    use crate::tests::*;
 
     use crate::lot::tests::*;
-    use crate::tests::{api_lot_bid, build_contract, create_lot_x_sells_y_api};
 
-    fn get_context_view(time_now: Timestamp) -> VMContext {
-        VMContextBuilder::new()
-            .is_view(true)
-            .block_timestamp(time_now)
-            .build()
+    pub fn create_lot_x_sells_y_api(
+        contract: &mut Contract,
+        seller_id: &ProfileId,
+        lot_id: &LotId,
+    ) -> Lot {
+        let reserve_price = to_yocto("2");
+        let buy_now_price = to_yocto("10");
+        let start_timestamp = to_ts(10);
+        let finish_timestamp = to_ts(17);
+
+        testing_env!(get_context_call(start_timestamp, lot_id));
+        contract.lot_offer(
+            seller_id.clone(),
+            reserve_price.into(),
+            buy_now_price.into(),
+            Some(WrappedTimestamp::from(finish_timestamp)),
+            None,
+        );
+
+        contract.lots.get(&lot_id).unwrap()
     }
 
-    fn get_context_call(time_now: Timestamp, caller_id: &LotId) -> VMContext {
-        VMContextBuilder::new()
-            .predecessor_account_id(caller_id.clone())
-            .is_view(false)
-            .block_timestamp(time_now)
-            .build()
+    pub fn api_lot_bid(contract: &mut Contract, lot_id: &LotId, bid: &Bid) {
+        testing_env!(get_context_pay(bid.timestamp, &bid.bidder_id, bid.amount));
+        contract.lot_bid(lot_id.clone());
     }
 
     #[test]
@@ -366,6 +369,8 @@ mod tests {
 
         let lot_extracted = contract.internal_lot_extract(&"lot1".parse().unwrap());
         assert_eq!(lot_extracted.seller_id, "seller1".parse().unwrap());
+
+        assert_eq!(contract.lots.len(), 2, "wrong lots len after extract");
     }
 
     #[test]
@@ -640,7 +645,7 @@ mod tests {
     }
 
     #[test]
-    fn test_api_lot_create() {
+    fn test_api_lot_offer() {
         let mut contract = build_contract();
 
         let lot_id: ProfileId = "alice".parse().unwrap();
@@ -670,7 +675,7 @@ mod tests {
     }
 
     #[test]
-    fn test_api_lot_create_old() {
+    fn test_api_lot_offer_duration() {
         let mut contract = build_contract();
 
         let lot_id: ProfileId = "alice".parse().unwrap();
@@ -699,6 +704,206 @@ mod tests {
         assert_eq!(result.buy_now_price, buy_now_price.into());
     }
 
+    fn check_rewards(contract: &Contract, profile_id: &ProfileId) -> Balance {
+        contract.internal_profile_get(profile_id).rewards_available()
+    }
+
+    #[test]
+    pub fn test_api_lot_bid_rewards() {
+        let mut contract = build_contract();
+        let (lot, _) = create_lot_alice();
+        contract.internal_lot_save(&lot);
+
+        let alice: LotId = "alice".parse().unwrap();
+        let bob: ProfileId = "bob".parse().unwrap();
+        let carol: ProfileId = "carol".parse().unwrap();
+        let dan: ProfileId = "dan".parse().unwrap();
+
+        let first_bid_amount = to_yocto("6");
+        let second_bid_amount = to_yocto("8");
+        let one_bid_seller_reward = to_yocto("5.4");
+        let two_bids_seller_reward = to_yocto("7.2");
+        let first_bidder_reward = to_yocto("6.16");
+
+        api_lot_bid(
+            &mut contract,
+            &alice,
+            &Bid {
+                bidder_id: carol.clone(),
+                amount: first_bid_amount,
+                timestamp: to_ts(11),
+            },
+        );
+
+        let lot = contract.lots.get(&"alice".parse().unwrap()).unwrap();
+        assert_eq!(lot.bids().len(), 1, "expected one bid");
+        let last_bid = lot.last_bid().unwrap();
+        assert_eq!(last_bid.amount, first_bid_amount, "wrong first bid");
+        assert_eq!(last_bid.bidder_id, carol, "wrong first bidder");
+        assert_eq!(last_bid.timestamp, to_ts(11), "expected start as timestamp");
+        assert_eq!(check_rewards(&contract, &alice), to_yocto("0"));
+        assert_eq!(check_rewards(&contract, &bob), one_bid_seller_reward);
+        assert_eq!(check_rewards(&contract, &carol), to_yocto("0"));
+
+        api_lot_bid(
+            &mut contract,
+            &alice,
+            &Bid {
+                bidder_id: dan.clone(),
+                amount: second_bid_amount,
+                timestamp: to_ts(12),
+            },
+        );
+
+        let lot = contract.lots.get(&"alice".parse().unwrap()).unwrap();
+        assert_eq!(lot.bids().len(), 2, "expected two bids");
+        let last_bid = lot.last_bid().unwrap();
+        assert_eq!(last_bid.amount, second_bid_amount, "wrong amount");
+        assert_eq!(last_bid.bidder_id, dan, "wrong bidder");
+        assert_eq!(last_bid.timestamp, to_ts(12), "wrong timestamp");
+
+        assert_eq!(check_rewards(&contract, &alice), to_yocto("0"));
+        assert_eq!(check_rewards(&contract, &bob), two_bids_seller_reward);
+        assert_eq!(check_rewards(&contract, &carol), first_bidder_reward);
+        assert_eq!(check_rewards(&contract, &dan), to_yocto("0"));
+    }
+
+    #[test]
+    pub fn test_api_lot_list_bidding_by_offering_by_fields() {
+        let alice: LotId = "alice".parse().unwrap();
+        let bob: ProfileId = "bob".parse().unwrap();
+        let carol: ProfileId = "carol".parse().unwrap();
+
+        let mut contract = build_contract();
+        create_lot_x_sells_y_api(&mut contract, &bob, &alice);
+
+        api_lot_bid(
+            &mut contract,
+            &"alice".parse().unwrap(),
+            &Bid {
+                bidder_id: carol.clone(),
+                amount: to_yocto("6"),
+                timestamp: to_ts(11),
+            },
+        );
+
+        {
+            let result = contract.lot_list_offering_by(bob.clone(), None, None);
+            assert_eq!(result.len(), 1, "expected 1 lot");
+            let result = result.first().unwrap();
+            assert_eq!(&result.lot_id, &alice, "wrong lot_id",);
+            assert_eq!(
+                result.last_bidder_id,
+                Some(carol.clone()),
+                "wrong_last_bidder",
+            );
+            assert_eq!(result.status, "OnSale".to_string(), "wrong status",);
+
+            let result = contract.lot_list_offering_by("carol".parse().unwrap(), None, None);
+            assert_eq!(result.len(), 0, "wrong lots_offering list for craol");
+        }
+
+        {
+            let result = contract.lot_list_bidding_by(carol.clone(), None, None);
+            assert_eq!(result.len(), 1, "expected 1 lot");
+            let result = result.first().unwrap();
+            assert_eq!(&result.lot_id, &alice, "wrong lot_id",);
+            assert_eq!(
+                result.last_bidder_id,
+                Some(carol.clone()),
+                "wrong_last_bidder",
+            );
+            assert_eq!(result.status, "OnSale".to_string(), "wrong status",);
+
+            let result = contract.lot_list_bidding_by("bob".parse().unwrap(), None, None);
+            assert_eq!(result.len(), 0, "wrong lots_offering list for craol");
+        }
+    }
+
+    #[test]
+    #[should_panic(expected = "bid: expected bigger bid")]
+    pub fn test_api_lot_bid_fail_small_bid() {
+        let mut contract = build_contract();
+        let (lot, time_now) = create_lot_alice();
+        contract.internal_lot_save(&lot);
+
+        api_lot_bid(
+            &mut contract,
+            &"alice".parse().unwrap(),
+            &Bid {
+                bidder_id: "carol".parse().unwrap(),
+                amount: to_yocto("1"),
+                timestamp: time_now,
+            },
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "bid: expected status active")]
+    pub fn test_api_lot_bid_fail_inactive() {
+        let mut contract = build_contract();
+        let (lot, time_now) = create_lot_alice_with_bids_sale_success();
+        contract.internal_lot_save(&lot);
+
+        api_lot_bid(
+            &mut contract,
+            &"alice".parse().unwrap(),
+            &Bid {
+                bidder_id: "carol".parse().unwrap(),
+                amount: to_yocto("10"),
+                timestamp: time_now,
+            },
+        );
+    }
+
+    const NEW_PUBLIC_KEY: &str = "ed25519:KEYKEYKEYKEYKEYKEYKEYKEYKEYKEYKEYKEYKEYKEYK";
+
+    #[test]
+    pub fn test_api_lot_claim_success() {
+        let mut contract = build_contract();
+        let (lot, time_now) = create_lot_alice_buy_now_bid();
+        contract.internal_lot_save(&lot);
+        testing_env!(get_context_call(time_now, &"carol".parse().unwrap()));
+        let public_key: PublicKey = NEW_PUBLIC_KEY.parse().unwrap();
+
+        contract.lot_claim("alice".parse().unwrap(), public_key);
+    }
+
+    #[test]
+    pub fn test_api_lot_claim_success_by_seller_withdrawn() {
+        let mut contract = build_contract();
+        let (lot, time_now) = create_lot_alice_withdrawn();
+        contract.internal_lot_save(&lot);
+        testing_env!(get_context_call(time_now, &"bob".parse().unwrap()));
+        let public_key: PublicKey = NEW_PUBLIC_KEY.parse().unwrap();
+
+        contract.lot_claim("alice".parse().unwrap(), public_key);
+    }
+
+    #[test]
+    #[should_panic(expected = "claim by bidder: expected status sale success")]
+    pub fn test_api_lot_claim_fail_still_active() {
+        let mut contract = build_contract();
+        let (lot, time_now) = create_lot_alice_with_bids();
+        contract.internal_lot_save(&lot);
+        testing_env!(get_context_call(time_now, &"dan".parse().unwrap()));
+        let public_key: PublicKey = NEW_PUBLIC_KEY.parse().unwrap();
+
+        contract.lot_claim("alice".parse().unwrap(), public_key);
+    }
+
+    #[test]
+    #[should_panic(expected = "claim by bidder: wrong claimer")]
+    pub fn test_api_lot_claim_fail_wrong_claimer() {
+        let mut contract = build_contract();
+        let (lot, time_now) = create_lot_alice_buy_now_bid();
+        contract.internal_lot_save(&lot);
+        testing_env!(get_context_call(time_now, &"dan".parse().unwrap()));
+        let public_key: PublicKey = NEW_PUBLIC_KEY.parse().unwrap();
+
+        contract.lot_claim("alice".parse().unwrap(), public_key);
+    }
+
     #[test]
     pub fn test_api_lot_withdraw_success() {
         let mut contract = build_contract();
@@ -711,7 +916,7 @@ mod tests {
 
     #[test]
     #[should_panic(expected = "withdraw: expected no bids")]
-    pub fn api_lot_withdraw_fail_has_bids() {
+    fn test_api_lot_withdraw_fail_has_bids() {
         let mut contract = build_contract();
         let (lot, time_now) = create_lot_alice_with_bids();
         contract.internal_lot_save(&lot);

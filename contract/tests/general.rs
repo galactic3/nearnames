@@ -1,10 +1,10 @@
 use near_sdk::serde_json::json;
 use near_sdk::{Balance, Timestamp};
+use near_sdk_sim::runtime::init_runtime;
 use near_sdk_sim::{
     call, deploy, init_simulator, to_nanos, to_yocto, view, ContractAccount, UserAccount,
     DEFAULT_GAS, STORAGE_AMOUNT,
 };
-use near_sdk_sim::runtime::init_runtime;
 
 use marketplace::{
     ContractConfigView, ContractContract, Fraction, FractionView, LotView, ProfileView,

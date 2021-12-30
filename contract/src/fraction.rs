@@ -36,25 +36,9 @@ impl ops::Mul<Balance> for Fraction {
     }
 }
 
-#[derive(Deserialize, Serialize, Debug, PartialEq, Eq)]
-#[serde(crate = "near_sdk::serde")]
-pub struct FractionView {
-    pub num: u32,
-    pub denom: u32,
-}
-
-impl From<&Fraction> for FractionView {
-    fn from(fraction: &Fraction) -> FractionView {
-        FractionView {
-            num: fraction.num,
-            denom: fraction.denom,
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use crate::tests::*;
 
     #[test]
     pub fn test_fractions_new() {

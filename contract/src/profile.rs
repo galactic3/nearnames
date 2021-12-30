@@ -1,52 +1,17 @@
 use crate::*;
 
-pub const ERR_PROFILE_REWARDS_CLAIM_NOT_ENOUGH: &str = "Not enough rewards for transfer";
-pub const MIN_PROFILE_REWARDS_CLAIM_AMOUNT: Balance = 10 * 10u128.pow(21);
-
-pub const GAS_EXT_CALL_AFTER_REWARDS_CLAIM: u64 = 20_000_000_000_000;
-
 #[derive(BorshDeserialize, BorshSerialize)]
 pub struct Profile {
     pub profile_id: ProfileId,
-    pub rewards_available: Balance,
-    pub rewards_claimed: Balance,
+    rewards_available: Balance,
+    rewards_claimed: Balance,
 
     pub lots_offering: UnorderedSet<LotId>,
     pub lots_bidding: UnorderedSet<LotId>,
 }
 
-#[derive(Deserialize, Serialize, Debug)]
-#[serde(crate = "near_sdk::serde")]
-pub struct ProfileView {
-    pub profile_id: ProfileId,
-    pub rewards_available: WrappedBalance,
-    pub rewards_claimed: WrappedBalance,
-}
-
-impl From<&Profile> for ProfileView {
-    fn from(p: &Profile) -> Self {
-        Self {
-            profile_id: p.profile_id.clone(),
-            rewards_available: p.rewards_available.into(),
-            rewards_claimed: p.rewards_claimed.into(),
-        }
-    }
-}
-
-impl Contract {
-    pub(crate) fn internal_profile_extract(&mut self, profile_id: &ProfileId) -> Profile {
-        self.profiles
-            .remove(&profile_id)
-            .unwrap_or_else(|| self.internal_profile_new(&profile_id))
-    }
-
-    pub(crate) fn internal_profile_get(&self, profile_id: &ProfileId) -> Profile {
-        self.profiles
-            .get(&profile_id)
-            .unwrap_or_else(|| self.internal_profile_new(&profile_id))
-    }
-
-    pub(crate) fn internal_profile_new(&self, profile_id: &ProfileId) -> Profile {
+impl Profile {
+    pub fn new(profile_id: &ProfileId) -> Profile {
         let mut prefix_offering: Vec<u8> = Vec::with_capacity(33);
         prefix_offering.extend(PREFIX_PROFILE_LOTS_OFFERING.as_bytes());
         prefix_offering.extend(env::sha256(profile_id.as_bytes()));
@@ -64,67 +29,90 @@ impl Contract {
         }
     }
 
-    pub(crate) fn internal_profile_save(&mut self, profile: &Profile) {
-        assert!(self.profiles.insert(&profile.profile_id, profile).is_none());
+    pub fn rewards_transfer(&mut self, amount: Balance) {
+        self.rewards_available += amount;
     }
 
-    pub(crate) fn internal_profile_rewards_transfer(
-        &mut self,
-        profile_id: &ProfileId,
-        value: Balance,
-    ) {
-        if value == 0 {
-            return
-        }
+    pub fn rewards_claim(&mut self) -> Balance {
+        let amount = self.rewards_available;
+        self.rewards_available -= amount;
+        self.rewards_claimed += amount;
 
-        let mut profile = self.internal_profile_extract(profile_id);
-        profile.rewards_available += value;
-        self.internal_profile_save(&profile);
+        amount
+    }
+
+    pub fn rewards_claim_revert(&mut self, amount: Balance) {
+        self.rewards_available += amount;
+        self.rewards_claimed -= amount;
+    }
+
+    pub fn rewards_available(&self) -> Balance {
+        self.rewards_available
+    }
+
+    pub fn rewards_claimed(&self) -> Balance {
+        self.rewards_claimed
     }
 }
 
-#[near_bindgen]
-impl Contract {
-    pub fn profile_get(&self, profile_id: AccountId) -> ProfileView {
-        (&self.internal_profile_get(&profile_id)).into()
+#[cfg(test)]
+pub mod tests {
+    use crate::tests::*;
+
+    pub fn create_profile_bob() -> Profile {
+        let profile_id: ProfileId = "bob".parse().unwrap();
+        let mut profile = Profile::new(&profile_id);
+
+        profile.rewards_available = to_yocto("3");
+        profile.rewards_claimed = to_yocto("2");
+
+        profile
     }
 
-    pub fn profile_rewards_claim(&mut self) -> Promise {
-        let profile_id: ProfileId = env::predecessor_account_id();
-        let mut profile = self.internal_profile_extract(&profile_id.clone());
+    #[test]
+    fn test_profile_new() {
+        let profile_id: ProfileId = "bob".parse().unwrap();
+        let profile = Profile::new(&profile_id);
 
-        let rewards = profile.rewards_available;
-        assert!(
-            rewards >= MIN_PROFILE_REWARDS_CLAIM_AMOUNT,
-            "{}",
-            ERR_PROFILE_REWARDS_CLAIM_NOT_ENOUGH,
-        );
-
-        profile.rewards_available = 0;
-        profile.rewards_claimed += rewards;
-        self.internal_profile_save(&profile);
-
-        Promise::new(profile_id.clone()).transfer(rewards).then(
-            ext_self_contract::profile_after_rewards_claim(
-                profile_id.clone(),
-                rewards,
-                env::current_account_id(),
-                NO_DEPOSIT,
-                GAS_EXT_CALL_AFTER_REWARDS_CLAIM.into(),
-            ),
-        )
+        assert_eq!(profile.profile_id, profile_id, "wrong profile_id");
+        assert_eq!(profile.rewards_available, to_yocto("0"), "wrong rewards_available");
+        assert_eq!(profile.rewards_claimed, to_yocto("0"), "wrong rewards_claimed");
     }
 
-    #[private]
-    pub fn profile_after_rewards_claim(&mut self, profile_id: ProfileId, rewards: Balance) -> bool {
-        let rewards_transferred = is_promise_success();
-        if !rewards_transferred {
-            // In case of failure, put the amount back
-            let mut profile = self.internal_profile_extract(&profile_id);
-            profile.rewards_available = rewards;
-            profile.rewards_claimed -= rewards;
-            self.internal_profile_save(&profile);
-        }
-        rewards_transferred
+    #[test]
+    fn test_profile_rewards_transfer() {
+        let profile_id: ProfileId = "bob".parse().unwrap();
+        let mut profile = Profile::new(&profile_id);
+
+        profile.rewards_transfer(to_yocto("3"));
+        profile.rewards_transfer(to_yocto("2"));
+        assert_eq!(profile.rewards_available, to_yocto("5"), "wrong rewards_available");
+    }
+
+    #[test]
+    fn test_profile_rewards_claim() {
+        let mut profile = create_profile_bob();
+
+        let amount = profile.rewards_claim();
+        assert_eq!(amount, to_yocto("3"));
+        assert_eq!(profile.rewards_available, to_yocto("0"));
+        assert_eq!(profile.rewards_claimed, to_yocto("5"));
+    }
+
+    #[test]
+    fn test_profile_rewards_claim_revert() {
+        let mut profile = create_profile_bob();
+        let amount: Balance = to_yocto("2");
+
+        profile.rewards_claim_revert(amount);
+        assert_eq!(profile.rewards_available, to_yocto("5"));
+        assert_eq!(profile.rewards_claimed, to_yocto("0"));
+    }
+
+    #[test]
+    fn test_profile_rewards_getters() {
+        let profile = create_profile_bob();
+        assert_eq!(profile.rewards_available(), to_yocto("3"));
+        assert_eq!(profile.rewards_claimed(), to_yocto("2"));
     }
 }
