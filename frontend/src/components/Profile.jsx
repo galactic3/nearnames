@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router';
 import Loader from './Loader';
 import {BOATLOAD_OF_GAS, nearTo, renderName} from "../utils";
 import LotsList from "./LotsList";
 
 function Profile (props) {
-  const { profileId } = useParams();
+  const profileId = props.app.currentUser.accountId;
   const [profile, setProfile] = useState([]);
   const [lotsOffering, setLotsOffering] = useState([]);
   const [lotsBidding, setLotsBidding] = useState([]);
@@ -25,18 +24,18 @@ function Profile (props) {
   useEffect(async () => {
     setLoader(true);
     await contract.profile_get({profile_id: profileId}).then(setProfile);
-    setLoader(false);
     await getLotsOffering();
     await getLotsBidding();
+    setLoader(false);
   }, []);
 
   const claim = async () => {
     setClaimLoader(true);
     try {
       await contract.profile_rewards_claim({}, BOATLOAD_OF_GAS).then(() => {
-        contract.profile_get({profile_id: profileId}).then((profile) => {
+        contract.profile_get({profile_id: profileId}).then(async (profile) => {
           setProfile(profile);
-          console.log(profile);
+          await props.app.updateBalance();
           setClaimLoader(false);
         });
       });
@@ -57,8 +56,8 @@ function Profile (props) {
           <div className="profile-block"><strong>Claimed:</strong> <span className="rewards near-icon">{nearTo(profile.rewards_claimed)}</span></div>
           <div className="profile-block"><button name="claim_rewards" className="mb-5" disabled={!parseFloat(profile.rewards_available) || claimLoader} onClick={(e) => claim(e)}>{claimLoader ? 'Claiming...' : 'Claim rewards'}</button></div>
         </div>
-        <LotsList lots={lotsOffering} getLots={getLotsOffering} showStatus={true} name={' offer'} {...props}/>
-        <LotsList lots={lotsBidding} showStatus={true} name={' bidding'} {...props}/>
+        <LotsList lots={lotsOffering} getLots={getLotsOffering} showStatus={true} name={' you are selling'} {...props}/>
+        <LotsList lots={lotsBidding} getLots={getLotsBidding} showStatus={true} name={' you are bidding on'} {...props}/>
       </div> :
       <div>Profile not found</div>
     }

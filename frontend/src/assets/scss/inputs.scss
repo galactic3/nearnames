@@ -15,6 +15,9 @@ input {
         font-size: 16px;
         width: 100%;
     }
+    &::placeholder {
+        color: var(--gray);
+    }
     &:read-only {
         background: var(--light-gray);
     }
@@ -51,6 +54,14 @@ textarea {
     }
 }
 
+.input-checkbox {
+    display: flex;
+    input {
+        height: 20px;
+        margin: 5px 10px 0 0;
+    }
+}
+
 label {
     font-size: 12px;
     font-weight: 500;
@@ -58,3 +69,23 @@ label {
     color: var(--light-gray);
 }
 
+.error-input {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    padding-left: 3px;
+    color: var(--red);
+    &.warning {
+        color: var(--yellow);
+    }
+}
+
+
+.form-group {
+    position: relative;
+    .error-input {
+        position: absolute;
+        top: 100%; left: 0;
+    }
+}

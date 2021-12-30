@@ -36,7 +36,7 @@ function Lots(props) {
     await load_lots_raw().then((lots) => {
       const result = lots.filter((lot) => {
         if (notSafeLots.includes(lot.lot_id)) {
-          lot.status = 'NotSafe';
+          lot.notSafe = true;
         }
         return lot.status === 'OnSale';
       })
@@ -72,7 +72,7 @@ function Lots(props) {
     <div className="container">
       <div className="search-wrapper">
         <SearchIcon className="search-icon"/>
-        <input type="text" className="search" onChange={(e) => filterList(e)} value={filter}/>
+        <input type="text" className="search" placeholder="Search lots for sale" onChange={(e) => filterList(e)} value={filter}/>
         {filter && <span className="search-result">{lots.length} results <b>"{filter}"</b> found</span>}
       </div>
       <LotsList lots={lots} getLots={getLots} showStatus={false} loader={loader} {...props} />

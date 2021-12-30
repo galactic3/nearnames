@@ -48,8 +48,8 @@ h1 {
 }
 
 h2 {
-  font-size: 22px;
-  line-height: 24px;
+  font-size: 26px;
+  line-height: 28px;
   font-weight: 700;
 }
 
@@ -112,6 +112,10 @@ ul, dl {
   list-style: none;
 }
 
+ul.default {
+  list-style: disc inside;
+}
+
 .account-name {
   color: var(--primary);
 }
@@ -150,6 +154,10 @@ ul, dl {
     background: var(--fg);
     content: "OR";
   }
+}
+
+.spinner {
+  margin: 20px 0;
 }
 
 @import 'buttons';

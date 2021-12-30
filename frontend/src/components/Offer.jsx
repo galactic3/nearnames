@@ -1,19 +1,103 @@
-import React, { useState } from 'react';
+import React, {useRef, useState} from 'react';
 import ls from 'local-storage';
 import { customRequestSigninFullAccess, toNear, nearTo } from '../utils.js';
-import {Box, IconButton, Modal} from "@mui/material";
+import {Box, FormControl, FormHelperText, IconButton, InputLabel, MenuItem, Modal, Select} from "@mui/material";
+import { useForm } from "react-hook-form";
 import CloseIcon from "@mui/icons-material/Close";
+import ModalAlert from "./Alert";
 
 function Offer (props) {
 
   const accountSuffix = '.' + 'testnet';
-  const [showAlert, setShowAlert] = useState(false);
-  const [contentAlert, setContentAlert] = useState('');
-  const [offerButtonEnabled, setOfferButtonEnabled] = useState(true);
+  const [alertShow, setAlertShow] = useState(false);
+  const [alertContent, setAlertContent] = useState('');
+  const [offerButtonDisabled, setOfferButtonDisabled] = useState(false);
+  const [sameAccountError, setSameAccountError] = useState('');
+  const [priceError, setPriceError] = useState(false);
+  const [buyPriceError, setBuyPriceError] = useState(false);
+  const [priceCompareError, setPriceCompareError] = useState(false);
+  const [durationError, setDurationError] = useState(false);
+  const {register, formState: { errors }, handleSubmit} = useForm();
+
+  const lotRef = useRef(null);
+  const sellerRef = useRef(null);
+  const priceRef = useRef(null);
+  const buyPriceRef = useRef(null);
+  const durationRef = useRef(null);
+
+  const alertOpen = (text) => {
+    setAlertShow(true);
+    setAlertContent(text);
+  };
+
+  const alertHide = () => {
+    setAlertShow(false);
+  };
+
+  const checkAccounts = async () => {
+    if (lotRef.current.value && sellerRef.current.value &&
+        lotRef.current.value === sellerRef.current.value) {
+      setSameAccountError(true);
+      setOfferButtonDisabled(true);
+    } else {
+      setSameAccountError(false);
+      setOfferButtonDisabled(false);
+    }
+  }
+
+  const checkDuration = async () => {
+    if (durationRef.current.value && (durationRef.current.value > 240 || durationRef.current.value < 1)) {
+      setDurationError(true);
+      setOfferButtonDisabled(true);
+    } else {
+      setDurationError(false);
+      setOfferButtonDisabled(false);
+    }
+  }
+
+  const checkPrice = async () => {
+    if (priceRef.current.value && parseFloat(priceRef.current.value) < 1.5) {
+      setPriceError(true);
+      setOfferButtonDisabled(true);
+    } else {
+      setPriceError(false);
+      setOfferButtonDisabled(false);
+    }
+
+    if (buyPriceRef.current.value && parseFloat(buyPriceRef.current.value) < 1.5) {
+      setBuyPriceError(true);
+      setOfferButtonDisabled(true);
+    } else {
+      setBuyPriceError(false);
+      setOfferButtonDisabled(false);
+    }
+    if (buyPriceRef.current.value && priceRef.current.value >= buyPriceRef.current.value) {
+      setPriceCompareError(true);
+      setOfferButtonDisabled(true);
+    } else {
+      setPriceCompareError(false);
+      setOfferButtonDisabled(false);
+    }
+  }
+
+  const checkAccountExist = async (account) => {
+    let balance = null;
+    try {
+      balance = nearTo((await account.getAccountBalance()).total);
+      if (balance < 1.5) {
+        alert('Not enough balance - should be at least 1.5 NEAR available');
+        setOfferButtonDisabled(false);
+        console.error('Not enough balance - should be at least 1.5 NEAR available')
+      }
+    } catch (e) {
+      alert('Account not exist - you have to create it first');
+      console.error('Account not exist - you have to create it first');
+    }
+  }
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    setOfferButtonEnabled(false);
+    setOfferButtonDisabled(true);
 
     const { fieldset, lot_id, seller_id, reserve_price, buy_now_price, duration } = e.target.elements;
 
@@ -26,28 +110,33 @@ function Offer (props) {
 
     fieldset.disabled = true;
 
-    if (lot_account_id === seller_id) {
-      alert('Accounts must be different');
-      setOfferButtonEnabled(true);
-      throw console.error('Accounts must be different');
-    }
-
     const account = await props.app.near.account(lot_account_id);
     let balance = null;
     try {
       balance = nearTo((await account.getAccountBalance()).total);
     } catch (e) {
-      alert('Account not exist - you have to create it first');
-      setOfferButtonEnabled(true);
+      alertOpen('Account ' + lot_account_id + ' not exist - you have to create it first');
+      setOfferButtonDisabled(false);
       fieldset.disabled = false;
-      throw console.error('Account not exist - you have to create it first')
+      throw console.error('Account ' + lot_account_id + ' not exist - you have to create it first')
     }
 
     if (balance < 1.5) {
-      alert('Not enough balance - should be at least 1.5 NEAR available (1.5 total usually works)');
-      setOfferButtonEnabled(true);
+      alertOpen('Not enough balance - should be at least 1.5 NEAR available');
+      setOfferButtonDisabled(false);
       fieldset.disabled = false;
       throw console.error('Not enough balance - should be at least 1.5 NEAR available')
+    }
+
+    const seller = await props.app.near.account(seller_account_id);
+
+    try {
+      balance = nearTo((await seller.getAccountBalance()).total);
+    } catch (e) {
+      alertOpen('Account: ' + seller_account_id + ' not exist - you have to create it first');
+      setOfferButtonDisabled(false);
+      fieldset.disabled = false;
+      throw console.error('Account: ' + seller_account_id + ' not exist - you have to create it first')
     }
 
     let offerData = {
@@ -100,11 +189,15 @@ function Offer (props) {
                 <input
                   className="name"
                   autoComplete="off"
+                  onChange={checkAccounts}
                   type="text"
+                  ref={lotRef}
                   id="lot_id"
                   required
                 /><span>{accountSuffix}</span>
               </div>
+              {sameAccountError && <span className="error-input">The accounts should be different</span>}
+              <span className="error-input">{errors.lotId?.type === 'required' && "Seller account is required"}</span>
             </div>
             <div className='form-group'>
               <label htmlFor="seller_id">Seller account:</label>
@@ -112,11 +205,14 @@ function Offer (props) {
                 <input
                   className="name"
                   autoComplete="off"
+                  onChange={checkAccounts}
                   type="text"
+                  ref={sellerRef}
                   id="seller_id"
                   required
                 /><span>{accountSuffix}</span>
               </div>
+              <span className="error-input">{errors.sellerId?.type === 'required' && "Seller account is required"}</span>
             </div>
             <div className='form-group'>
               <label htmlFor="reserve_price">Min price:</label>
@@ -125,13 +221,18 @@ function Offer (props) {
                   className="price"
                   autoComplete="off"
                   defaultValue="1.5"
+                  onChange={checkPrice}
                   id="reserve_price"
+                  ref={priceRef}
                   min="1.5"
                   step="0.01"
                   type="number"
                   required
                 /><span>Near</span>
               </div>
+              {priceCompareError && !priceError && !buyPriceError && <span className="error-input">Buy now price must be less then reserve</span>}
+              {priceError && <span className="error-input">Min price should be more than 1.5</span>}
+              <span className="error-input">{errors.price?.type === 'required' && "Price is required"}</span>
             </div>
             <div className='form-group'>
               <label htmlFor="buy_now_price">Buy now price:</label>
@@ -139,13 +240,16 @@ function Offer (props) {
               <input
                 className="price"
                 autoComplete="off"
+                onChange={checkPrice}
                 id="buy_now_price"
+                ref={buyPriceRef}
                 min="1.5"
                 step="0.01"
                 type="number"
                 required
               /><span>Near</span>
               </div>
+              {buyPriceError && <span className="error-input">Buy price should be more than 1.5</span>}
             </div>
             <div className='form-group'>
               <label htmlFor="buy_now_price">Duration:</label>
@@ -153,18 +257,49 @@ function Offer (props) {
               <input
                 className="duration"
                 autoComplete="off"
+                onChange={checkDuration}
                 id="duration"
                 type="number"
+                ref={durationRef}
+                min="1"
+                max="240"
+                required
               /><span>hours</span>
               </div>
+              <span className="error-input">{errors.duration?.type === 'required' && "Duration is required"}</span>
+              {durationError && <span className="error-input">Duration should be in range 1 to 240</span>}
+            </div>
+            <div className='form-group confirmation'>
+              <div className="input-checkbox">
+                <input
+                  id="confirm"
+                  type="checkbox"
+                  required
+                />
+                <label htmlFor="confirm">
+                  <p>To ensure that buyer will receive control over the account after the sale, we require lot account to give control over itself to the marketplace contract. After full access is given, UI:</p>
+                  <ul className="default">
+                    <li>deploys lock contract to lot account</li>
+                    <li>configures marketplace account as owner</li>
+                    <li>calls lot_offer to put account on sale</li>
+                    <li>removes all access keys from the account</li>
+                  </ul>
+                  <p>After that moment, lot can be only unlocked by call from marketplace account.</p>
+                </label>
+              </div>
+              <span className="error-input">{errors.confirm?.type === 'required' && "Please apply checkbox"}</span>
             </div>
           </fieldset>
           <div className="button_wrapper">
-            <button disabled={!offerButtonEnabled} type="submit" className="full-width">
+            <button disabled={offerButtonDisabled} type="submit" className="full-width">
               Create offer
             </button>
           </div>
         </form>
+        <ModalAlert
+          open={alertShow}
+          content={alertContent}
+          onClose={() => alertHide()}/>
       </Box>
     </Modal>
   )

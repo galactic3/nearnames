@@ -26,11 +26,13 @@ function Lot(props) {
       case 'OnSale':
         return (
           <div className="button_wrapper">
-            <button name="bid" className="outlined" onClick={(e) => props.openBid(lot, bids, e)}>{isNotSeller && props.currentUser ? 'Buy or bid' : 'Show bid list'}</button>
+            <button name="bid" className="outlined" onClick={(e) => props.openBid(lot, bids, e)}>{isNotSeller && props.currentUser ? 'Buy or bid' : 'Show details'}</button>
           </div>)
       case 'SaleSuccess':
-        return (isLastBidder && <div className="button_wrapper">
+        return (isLastBidder ? <div className="button_wrapper">
           <button name="claim" className="outlined" onClick={(e) => props.claim(lot, e)}>Claim</button>
+        </div> : <div className="button_wrapper">
+          <button name="bid" className="outlined" onClick={(e) => props.openBid(lot, bids, e)}>Show details</button>
         </div>)
       case 'SaleFailure':
         return (!isNotSeller && <div className="button_wrapper">
@@ -52,13 +54,16 @@ function Lot(props) {
       {props.showStatus && <div className="lot_status">
         <span className={'badge ' + lot.status}>{lot.status}</span>
       </div>}
+      {lot.notSafe && <div className="lot_status">
+        <span className='badge'>Not safe</span>
+      </div>}
       <div className="lot_price">
         <span className="current_price near-icon">{getCurrentPrice(lot)}</span>
         <span className="buy-now_price">Buy now: <strong className="near-icon">{getBuyNowPrice(lot)}</strong></span>
       </div>
       <div className="lot_action">
         {renderButton(lot)}
-        {getCountdownTime(lot) > Date.now() && <span className="countdown"><AccessTimeFilledIcon className="icon"/><Countdown daysInHours={true} date={getCountdownTime(lot)}/></span>}
+        {getCountdownTime(lot) > Date.now() && <span className="countdown"><AccessTimeFilledIcon className="icon"/><Countdown date={getCountdownTime(lot)}/></span>}
       </div>
     </li>
   );

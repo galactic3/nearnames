@@ -46,11 +46,11 @@ export const customRequestSigninFullAccess = async (connection, contractIdOrOpti
   window.location.assign(newUrl.toString());
 };
 
-export const renderName = (accountId) => {
-  const accountName = accountId && accountId.split('.')[0];
-  const accountSuffix = accountId && accountId.split('.')[1];
+export const renderName = (accountId, suffix = 'testnet') => {
+  const accountSuffix = '.' + suffix;
+  const accountName = accountId && accountId.split(accountSuffix)[0];
   return (
-    <strong className="account-name">{accountName}<span className="account-suffix">.{accountSuffix}</span></strong>
+    <strong className="account-name">{accountName}<span className="account-suffix">{accountSuffix}</span></strong>
   )
 }
 

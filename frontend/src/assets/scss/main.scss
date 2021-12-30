@@ -5,6 +5,26 @@
   padding-left: 32px;
   margin-right: auto;
   margin-left: auto;
+  max-width: 1440px;
+}
+
+.about {
+  margin-top: 40px;
+  margin-bottom: 80px;
+  h3 {
+    margin: 1rem 0;
+  }
+  ul {
+    margin-bottom: 20px;
+  }
+  img {
+    width: 1000px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    &.zoom {
+      width: auto;
+    }
+  }
 }
 
 .lots-container {
@@ -17,6 +37,7 @@
     font-size: 22px;
     line-height: 32px;
     margin-bottom: 20px;
+    padding-left: 17px;
   }
 
   .lot_list {
@@ -94,7 +115,7 @@
       display: block;
       margin: 5px auto 0;
       line-height: 1;
-      max-width: 65px;
+      max-width: 80px;
       white-space: nowrap;
       .icon {
         font-size: 1rem;
@@ -201,6 +222,18 @@
     flex-wrap: wrap;
     justify-content: space-between;
   }
+  .confirmation {
+    flex-basis: content;
+    ul {
+      margin-bottom: 5px;
+    }
+    label {
+      padding: 0;
+    }
+    p {
+      margin: 0 0 5px;
+    }
+  }
 }
 
 .claim_modal {
@@ -247,6 +280,13 @@
   }
   .alert-button {
     margin: 24px 0;
+  }
+  .button_wrapper {
+    display: flex;
+    justify-content: space-between;
+    button {
+      width: 50%;
+    }
   }
 }
 

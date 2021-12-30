@@ -65,7 +65,6 @@ function LotsList(props) {
   }
 
   const bid = async (e, lot, value) => {
-    console.log(lot, value);
     const isBuyNowButton = e.target.name === 'buy_now';
     let nValue = toNear(value);
     if (nValue < lot.reserve_price) {
@@ -85,7 +84,7 @@ function LotsList(props) {
     if (!isSafe) {
       alertOpen('account is not safe');
       setLotNotSafe(lot);
-      await closeBid();
+      lot.notSafe = true;
       e.target.disabled = false;
       return;
     }
@@ -98,7 +97,7 @@ function LotsList(props) {
 
   return (
     <div className="lots-container">
-      { props.lots.length && props.name ? <h5 className="lots-title">Lots {props.name}</h5> : ''}
+      { props.name ? <h5 className="lots-title">Lots {props.name}</h5> : ''}
       { props.loader ?
         <div className='d-flex m-5 justify-content-center' key='1'>
           <div className='spinner-grow' role='status'>
@@ -107,7 +106,8 @@ function LotsList(props) {
         </div> :
         <ul className="lot_list">
           {props.lots.map((lot, i) =>
-            <Lot lot={lot} key={i} openBid={openBid} withdraw={withdraw} claim={claimOpen} contract={contract} loader={loaderShow} currentUser={props.app.accountId}/>
+            <Lot lot={lot} key={i} openBid={openBid} withdraw={withdraw} claim={claimOpen}
+                 contract={contract} loader={loaderShow} showStatus={props.showStatus} currentUser={props.app.accountId}/>
           )}
         </ul>
       }
