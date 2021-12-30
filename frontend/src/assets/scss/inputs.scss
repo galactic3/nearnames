@@ -75,8 +75,10 @@ label {
     font-weight: 500;
     white-space: nowrap;
     padding-left: 3px;
-    margin: 3px 0 -21px;
     color: var(--red);
+    &.warning {
+        color: var(--yellow);
+    }
 }
 
 

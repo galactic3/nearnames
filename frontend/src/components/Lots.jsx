@@ -16,7 +16,7 @@ function Lots(props) {
     await contract.lot_list().then((lots) => {
       const result = lots.filter((lot) => {
         if (notSafeLots.includes(lot.lot_id)) {
-          lot.status = 'NotSafe';
+          lot.notSafe = true;
         }
         return lot.status === 'OnSale';
       })

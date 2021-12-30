@@ -262,6 +262,13 @@
   .alert-button {
     margin: 24px 0;
   }
+  .button_wrapper {
+    display: flex;
+    justify-content: space-between;
+    button {
+      width: 50%;
+    }
+  }
 }
 
 .bid_modal {

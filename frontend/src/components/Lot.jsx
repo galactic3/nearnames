@@ -29,8 +29,10 @@ function Lot(props) {
             <button name="bid" className="outlined" onClick={(e) => props.openBid(lot, bids, e)}>{isNotSeller && props.currentUser ? 'Buy or bid' : 'Show details'}</button>
           </div>)
       case 'SaleSuccess':
-        return (isLastBidder && <div className="button_wrapper">
+        return (isLastBidder ? <div className="button_wrapper">
           <button name="claim" className="outlined" onClick={(e) => props.claim(lot, e)}>Claim</button>
+        </div> : <div className="button_wrapper">
+          <button name="bid" className="outlined" onClick={(e) => props.openBid(lot, bids, e)}>Show details</button>
         </div>)
       case 'SaleFailure':
         return (!isNotSeller && <div className="button_wrapper">
@@ -51,6 +53,9 @@ function Lot(props) {
       </div>
       {props.showStatus && <div className="lot_status">
         <span className={'badge ' + lot.status}>{lot.status}</span>
+      </div>}
+      {lot.notSafe && <div className="lot_status">
+        <span className='badge'>Not safe</span>
       </div>}
       <div className="lot_price">
         <span className="current_price near-icon">{getCurrentPrice(lot)}</span>

@@ -24,9 +24,9 @@ function Profile (props) {
   useEffect(async () => {
     setLoader(true);
     await contract.profile_get({profile_id: profileId}).then(setProfile);
-    setLoader(false);
     await getLotsOffering();
     await getLotsBidding();
+    setLoader(false);
   }, []);
 
   const claim = async () => {
@@ -57,7 +57,7 @@ function Profile (props) {
           <div className="profile-block"><button name="claim_rewards" className="mb-5" disabled={!parseFloat(profile.rewards_available) || claimLoader} onClick={(e) => claim(e)}>{claimLoader ? 'Claiming...' : 'Claim rewards'}</button></div>
         </div>
         <LotsList lots={lotsOffering} getLots={getLotsOffering} showStatus={true} name={' you are selling'} {...props}/>
-        <LotsList lots={lotsBidding} showStatus={true} name={' you are bidding on'} {...props}/>
+        <LotsList lots={lotsBidding} getLots={getLotsBidding} showStatus={true} name={' you are bidding on'} {...props}/>
       </div> :
       <div>Profile not found</div>
     }
