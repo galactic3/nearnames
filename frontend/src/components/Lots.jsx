@@ -13,7 +13,27 @@ function Lots(props) {
 
   const getLots = async () => {
     setLoader(true);
-    await contract.lot_list().then((lots) => {
+
+    const load_lots_raw = async () => {
+      let result = [];
+      const limit = 100;
+      let offset = 0;
+
+      while (true) {
+        let part = await contract.lot_list({ limit, offset });
+        console.log("contract.lot_list", { limit, offset });
+        result.push(...part);
+        offset += limit;
+
+        if (part.length < limit) {
+          break;
+        }
+      }
+
+      return result;
+    };
+
+    await load_lots_raw().then((lots) => {
       const result = lots.filter((lot) => {
         if (notSafeLots.includes(lot.lot_id)) {
           lot.status = 'NotSafe';
