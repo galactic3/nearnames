@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import LotsList from "./LotsList";
 import SearchIcon from '@mui/icons-material/Search';
-import ls from 'local-storage'
-
-
+import ls from 'local-storage';
+import { loadListPaginated } from '../utils';
 
 function Lots(props) {
 
@@ -14,26 +13,7 @@ function Lots(props) {
   const getLots = async () => {
     setLoader(true);
 
-    const load_lots_raw = async () => {
-      let result = [];
-      const limit = 30;
-      let offset = 0;
-
-      while (true) {
-        let part = await contract.lot_list({ limit, offset });
-        console.log("contract.lot_list", { limit, offset });
-        result.push(...part);
-        offset += limit;
-
-        if (part.length < limit) {
-          break;
-        }
-      }
-
-      return result;
-    };
-
-    await load_lots_raw().then((lots) => {
+    await loadListPaginated(x => contract.lot_list(x)).then((lots) => {
       const result = lots.filter((lot) => {
         if (notSafeLots.includes(lot.lot_id)) {
           lot.notSafe = true;

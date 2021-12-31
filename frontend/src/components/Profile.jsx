@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Loader from './Loader';
-import {BOATLOAD_OF_GAS, nearTo, renderName} from "../utils";
+import { BOATLOAD_OF_GAS, nearTo, renderName, loadListPaginated } from "../utils";
 import LotsList from "./LotsList";
 
 function Profile (props) {
@@ -14,11 +14,15 @@ function Profile (props) {
   const contract = props.app.contract;
 
   const getLotsOffering = async () => {
-    await contract.lot_list_offering_by({profile_id: profileId}).then(setLotsOffering);
+    await loadListPaginated(
+      args => contract.lot_list_offering_by({ profile_id: profileId, ...args }),
+    ).then(setLotsOffering);
   }
 
   const getLotsBidding = async () => {
-    await contract.lot_list_bidding_by({profile_id: profileId}).then(setLotsBidding);
+    await loadListPaginated(
+      args => contract.lot_list_bidding_by({ profile_id: profileId, ...args }),
+    ).then(setLotsBidding);
   }
 
   useEffect(async () => {

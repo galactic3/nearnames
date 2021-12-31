@@ -91,3 +91,21 @@ export const fetchBidSafety = async (lot_id, near) => {
   }
   return { codeHash: '(unknown)', accessKeysLen: '(unknown)', lockerOwner: '(not found)', balance: 0 }
 };
+
+export const loadListPaginated = async (callback, limit = 30) => {
+  let result = [];
+  let offset = 0;
+
+  while (true) {
+    let part = await callback({ limit, offset });
+    console.log("paginateContractCall", { limit, offset });
+    result.push(...part);
+    offset += limit;
+
+    if (part.length < limit) {
+      break;
+    }
+  }
+
+  return result;
+};
