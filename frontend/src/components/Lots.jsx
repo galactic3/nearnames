@@ -13,7 +13,7 @@ function Lots(props) {
   const getLots = async () => {
     setLoader(true);
 
-    await loadListPaginated(x => contract.lot_list(x)).then((lots) => {
+    await loadListPaginated(args => contract.lot_list(args)).then((lots) => {
       const result = lots.filter((lot) => {
         if (notSafeLots.includes(lot.lot_id)) {
           lot.notSafe = true;
