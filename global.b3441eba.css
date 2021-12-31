@@ -414,8 +414,8 @@ h1 {
 }
 
 h2 {
-  font-size: 22px;
-  line-height: 24px;
+  font-size: 26px;
+  line-height: 28px;
   font-weight: 700;
 }
 
@@ -477,6 +477,10 @@ ul, dl {
   list-style: none;
 }
 
+ul.default {
+  list-style: disc inside;
+}
+
 .account-name {
   color: var(--primary);
 }
@@ -513,6 +517,10 @@ ul, dl {
   text-align: center;
   background: var(--fg);
   content: "OR";
+}
+
+.spinner {
+  margin: 20px 0;
 }
 
 button {
@@ -645,11 +653,40 @@ textarea {
   padding-right: 43px;
 }
 
+.input-checkbox {
+  display: flex;
+}
+.input-checkbox input {
+  height: 20px;
+  margin: 5px 10px 0 0;
+}
+
 label {
   font-size: 12px;
   font-weight: 500;
   padding-left: 13px;
   color: var(--light-gray);
+}
+
+.error-input {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  padding-left: 3px;
+  color: var(--red);
+}
+.error-input.warning {
+  color: var(--yellow);
+}
+
+.form-group {
+  position: relative;
+}
+.form-group .error-input {
+  position: absolute;
+  top: 100%;
+  left: 0;
 }
 
 header {
@@ -676,6 +713,7 @@ header .create_offer {
 }
 header .auth {
   margin: 15px 0 0 10px;
+  line-height: 40px;
 }
 header .auth .login {
   border-color: var(--primary);
@@ -683,15 +721,17 @@ header .auth .login {
 }
 header .auth .logout {
   vertical-align: top;
-  line-height: 40px;
 }
 header .auth .account-name {
   font-size: 20px;
-  line-height: 40px;
   margin: 0 15px;
 }
 header .auth .account-name .suffix {
   color: var(--gray);
+}
+header .balance {
+  font-size: 16px;
+  margin: 0 0 0 15px;
 }
 header .container {
   display: flex;
@@ -723,6 +763,25 @@ header .nav .nav-link.active {
   margin-right: auto;
   margin-left: auto;
   max-width: 1440px;
+}
+
+.about {
+  margin-top: 40px;
+  margin-bottom: 80px;
+}
+.about h3 {
+  margin: 1rem 0;
+}
+.about ul {
+  margin-bottom: 20px;
+}
+.about img {
+  width: 1000px;
+  margin-bottom: 10px;
+  cursor: pointer;
+}
+.about img.zoom {
+  width: auto;
 }
 
 .lots-container {
@@ -911,6 +970,18 @@ header .nav .nav-link.active {
   flex-wrap: wrap;
   justify-content: space-between;
 }
+.offer_modal .confirmation {
+  flex-basis: content;
+}
+.offer_modal .confirmation ul {
+  margin-bottom: 5px;
+}
+.offer_modal .confirmation label {
+  padding: 0;
+}
+.offer_modal .confirmation p {
+  margin: 0 0 5px;
+}
 
 .claim_modal {
   width: 410px;
@@ -953,6 +1024,13 @@ header .nav .nav-link.active {
 }
 .alert_modal .alert-button {
   margin: 24px 0;
+}
+.alert_modal .button_wrapper {
+  display: flex;
+  justify-content: space-between;
+}
+.alert_modal .button_wrapper button {
+  width: 50%;
 }
 
 .bid_modal {
