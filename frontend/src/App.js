@@ -118,7 +118,7 @@ class App extends React.Component {
             const state = await account.state();
             console.log(state);
 
-            const data = await fetch('https://near.bet/bin');
+            const data = await fetch('/lock_unlock_account.wasm');
             console.log('!', data);
             const buf = await data.arrayBuffer();
 
