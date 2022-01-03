@@ -3,7 +3,9 @@
   vertical-align: top;
   height: 40px;
   color: var(--primary);
-  background-color: var(--main),
+  background-color: var(--main);
+  font-size: 14px;
+  font-family: "Oswald", Segoe UI, Roboto, Helvetica, Arial, sans-serif;
 }
 
 .MuiInputBase-root .MuiSelect-icon.MuiSelect-iconOutlined {
@@ -17,6 +19,22 @@
 
 .MuiInputBase-root .MuiSelect-select.MuiOutlinedInput-input.MuiInputBase-input {
   padding: 8px 13px;
-  font-size: 14px;
+}
+
+.MuiList-root.MuiList-padding.MuiMenu-list {
+  color: var(--primary);
+  background-color: var(--main);
+}
+
+.MuiList-root.MuiList-padding.MuiMenu-list .MuiMenuItem-root.MuiButtonBase-root {
   font-family: "Oswald", Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+}
+
+.MuiList-root.MuiList-padding.MuiMenu-list .MuiMenuItem-root.MuiButtonBase-root:hover {
+  background-color: var(--gray);
+}
+
+.MuiList-root.MuiList-padding.MuiMenu-list .MuiMenuItem-root.MuiButtonBase-root.Mui-selected {
+  background-color: var(--main);
+  color: var(--link-active);
 }
