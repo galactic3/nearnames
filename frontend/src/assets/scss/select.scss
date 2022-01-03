@@ -1,8 +1,6 @@
-// original display "inline-flex" leaves 2px padding on each side
-// TODO: add workaround to preserve inline-flex
 .MuiInputBase-root.MuiOutlinedInput-root {
   width: 100%;
-  display: block;
+  vertical-align: top;
   height: 40px;
   color: var(--primary);
   background-color: var(--main),
