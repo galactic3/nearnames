@@ -6,19 +6,19 @@
   background-color: var(--main);
   font-size: 14px;
   font-family: "Oswald", Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-}
 
-.MuiInputBase-root .MuiSelect-icon.MuiSelect-iconOutlined {
-  color: var(--primary);
-}
+  .MuiSelect-icon.MuiSelect-iconOutlined {
+    color: var(--primary);
+  }
 
-.MuiInputBase-root .MuiOutlinedInput-notchedOutline {
-  border: none;
-  max-height: 40px;
-}
+  .MuiOutlinedInput-notchedOutline {
+    border: none;
+    max-height: 40px;
+  }
 
-.MuiInputBase-root .MuiSelect-select.MuiOutlinedInput-input.MuiInputBase-input {
-  padding: 8px 13px;
+  .MuiSelect-select.MuiOutlinedInput-input.MuiInputBase-input {
+    padding: 8px 13px;
+  }
 }
 
 .MuiList-root.MuiList-padding.MuiMenu-list {
