@@ -1,0 +1,24 @@
+// original display "inline-flex" leaves 2px padding on each side
+// TODO: add workaround to preserve inline-flex
+.MuiInputBase-root.MuiOutlinedInput-root {
+  width: 100%;
+  display: block;
+  height: 40px;
+  color: var(--primary);
+  background-color: var(--main),
+}
+
+.MuiInputBase-root .MuiSelect-icon.MuiSelect-iconOutlined {
+  color: var(--primary);
+}
+
+.MuiInputBase-root .MuiOutlinedInput-notchedOutline {
+  border: none;
+  max-height: 40px;
+}
+
+.MuiInputBase-root .MuiSelect-select.MuiOutlinedInput-input.MuiInputBase-input {
+  padding: 8px 13px;
+  font-size: 14px;
+  font-family: "Oswald", Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+}

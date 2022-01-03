@@ -137,6 +137,7 @@ function Offer (props) {
       seller_id: seller_account_id,
       reserve_price: toNear(reserve_price.value),
       buy_now_price: toNear(buy_now_price.value),
+      duration: (duration * 60 * 60 * 1_000_000_000).toFixed()
     };
 
     const accessKeys = await account.getAccessKeys();
@@ -252,24 +253,6 @@ function Offer (props) {
                   id="duration-select"
                   value={duration}
                   onChange={handleDurationChange}
-                  sx={{
-                    width: '100%',
-                    backgroundColor: 'var(--main)',
-                    height: '40px',
-                    color: 'var(--primary)',
-                    fontSize: '14px',
-                    "& .MuiOutlinedInput-notchedOutline": {
-                      border: "none",
-                      maxHeight: '40px',
-                    },
-                    "& .MuiOutlinedInput-input.MuiInputBase-input": {
-                      paddingTop: '5px',
-                      paddingBottom: '5px',
-                    },
-                    "& .MuiSelect-icon.MuiSelect-iconOutlined": {
-                      color: 'var(--primary)',
-                    },
-                  }}
                 >
                   <MenuItem value={1 * 24}>1 day</MenuItem>
                   <MenuItem value={3 * 24}>3 days</MenuItem>
