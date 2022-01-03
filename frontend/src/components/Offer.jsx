@@ -23,7 +23,12 @@ function Offer (props) {
   const sellerRef = useRef(null);
   const priceRef = useRef(null);
   const buyPriceRef = useRef(null);
-  const durationRef = useRef(null);
+
+  const [duration, setDuration] = React.useState('');
+
+  const handleDurationChange = (event) => {
+    setDuration(event.target.value);
+  }
 
   const alertOpen = (text) => {
     setAlertShow(true);
@@ -41,16 +46,6 @@ function Offer (props) {
       setOfferButtonDisabled(true);
     } else {
       setSameAccountError(false);
-      setOfferButtonDisabled(false);
-    }
-  }
-
-  const checkDuration = async () => {
-    if (durationRef.current.value && (durationRef.current.value > 240 || durationRef.current.value < 1)) {
-      setDurationError(true);
-      setOfferButtonDisabled(true);
-    } else {
-      setDurationError(false);
       setOfferButtonDisabled(false);
     }
   }
@@ -99,7 +94,7 @@ function Offer (props) {
     e.preventDefault();
     setOfferButtonDisabled(true);
 
-    const { fieldset, lot_id, seller_id, reserve_price, buy_now_price, duration } = e.target.elements;
+    const { fieldset, lot_id, seller_id, reserve_price, buy_now_price } = e.target.elements;
 
     if (props.signedIn) {
       props.app.wallet.signOut()
@@ -143,7 +138,7 @@ function Offer (props) {
       seller_id: seller_account_id,
       reserve_price: toNear(reserve_price.value),
       buy_now_price: toNear(buy_now_price.value),
-      duration: (duration.value * 3600000000000).toFixed()
+      duration: (duration * 60 * 60 * 1_000_000_000).toFixed()
     };
 
     const accessKeys = await account.getAccessKeys();
@@ -252,22 +247,22 @@ function Offer (props) {
               {buyPriceError && <span className="error-input">Buy price should be more than 1.5</span>}
             </div>
             <div className='form-group'>
-              <label htmlFor="buy_now_price">Duration:</label>
+              <label htmlFor="duration-select">Duration:</label>
               <div className="input-wrapper">
-              <input
-                className="duration"
-                autoComplete="off"
-                onChange={checkDuration}
-                id="duration"
-                type="number"
-                ref={durationRef}
-                min="1"
-                max="240"
-                required
-              /><span>hours</span>
+                <Select
+                  labelId="duration-select-label"
+                  id="duration-select"
+                  value={duration}
+                  label="Duration Select"
+                  onChange={handleDurationChange}
+                >
+                  <MenuItem value={1 * 24}>1 day</MenuItem>
+                  <MenuItem value={3 * 24}>3 days</MenuItem>
+                  <MenuItem value={5 * 24}>5 days</MenuItem>
+                  <MenuItem value={7 * 24}>7 days</MenuItem>
+                  <MenuItem value={10 * 24}>10 days</MenuItem>
+                </Select>
               </div>
-              <span className="error-input">{errors.duration?.type === 'required' && "Duration is required"}</span>
-              {durationError && <span className="error-input">Duration should be in range 1 to 240</span>}
             </div>
             <div className='form-group confirmation'>
               <div className="input-checkbox">
