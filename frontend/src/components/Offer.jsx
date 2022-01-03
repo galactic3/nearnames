@@ -253,8 +253,25 @@ function Offer (props) {
                   labelId="duration-select-label"
                   id="duration-select"
                   value={duration}
-                  label="Duration Select"
                   onChange={handleDurationChange}
+                  sx={{
+                    width: '100%',
+                    backgroundColor: 'var(--main)',
+                    height: '40px',
+                    color: 'var(--primary)',
+                    fontSize: '14px',
+                    "& .MuiOutlinedInput-notchedOutline": {
+                      border: "none",
+                      maxHeight: '40px',
+                    },
+                    "& .MuiOutlinedInput-input.MuiInputBase-input": {
+                      paddingTop: '5px',
+                      paddingBottom: '5px',
+                    },
+                    "& .MuiSelect-icon.MuiSelect-iconOutlined": {
+                      color: 'var(--primary)',
+                    },
+                  }}
                 >
                   <MenuItem value={1 * 24}>1 day</MenuItem>
                   <MenuItem value={3 * 24}>3 days</MenuItem>
