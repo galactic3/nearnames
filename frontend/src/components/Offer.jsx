@@ -17,14 +17,13 @@ function Offer (props) {
   const [buyPriceError, setBuyPriceError] = useState(false);
   const [priceCompareError, setPriceCompareError] = useState(false);
   const [durationError, setDurationError] = useState(false);
+  const [duration, setDuration] = useState('');
   const {register, formState: { errors }, handleSubmit} = useForm();
 
   const lotRef = useRef(null);
   const sellerRef = useRef(null);
   const priceRef = useRef(null);
   const buyPriceRef = useRef(null);
-
-  const [duration, setDuration] = React.useState('');
 
   const handleDurationChange = (event) => {
     setDuration(event.target.value);
@@ -138,7 +137,6 @@ function Offer (props) {
       seller_id: seller_account_id,
       reserve_price: toNear(reserve_price.value),
       buy_now_price: toNear(buy_now_price.value),
-      duration: (duration * 60 * 60 * 1_000_000_000).toFixed()
     };
 
     const accessKeys = await account.getAccessKeys();
