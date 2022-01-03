@@ -24,17 +24,17 @@
 .MuiList-root.MuiList-padding.MuiMenu-list {
   color: var(--primary);
   background-color: var(--main);
-}
 
-.MuiList-root.MuiList-padding.MuiMenu-list .MuiMenuItem-root.MuiButtonBase-root {
-  font-family: "Oswald", Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-}
+  .MuiMenuItem-root.MuiButtonBase-root {
+    font-family: "Oswald", Segoe UI, Roboto, Helvetica, Arial, sans-serif;
 
-.MuiList-root.MuiList-padding.MuiMenu-list .MuiMenuItem-root.MuiButtonBase-root:hover {
-  background-color: var(--gray);
-}
+    &:hover {
+      background-color: var(--gray);
+    }
 
-.MuiList-root.MuiList-padding.MuiMenu-list .MuiMenuItem-root.MuiButtonBase-root.Mui-selected {
-  background-color: var(--main);
-  color: var(--link-active);
+    &.Mui-selected {
+      background-color: var(--main);
+      color: var(--link-active);
+    }
+  }
 }
