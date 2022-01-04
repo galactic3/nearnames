@@ -160,12 +160,6 @@ function Offer (props) {
     )
   };
 
-  // const SelectArrowIcon = (props) => (
-  //   <SvgIcon {...props}>
-  //     <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
-  //   </SvgIcon>
-  // );
-
   return (
     <Modal onClose={props.onClose} open={props.open}>
       <Box className="modal-container offer_modal">
