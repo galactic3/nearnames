@@ -6,6 +6,8 @@ import { useForm } from "react-hook-form";
 import CloseIcon from "@mui/icons-material/Close";
 import ModalAlert from "./Alert";
 
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+
 function Offer (props) {
 
   const accountSuffix = '.' + 'testnet';
@@ -158,6 +160,12 @@ function Offer (props) {
     )
   };
 
+  // const SelectArrowIcon = (props) => (
+  //   <SvgIcon {...props}>
+  //     <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
+  //   </SvgIcon>
+  // );
+
   return (
     <Modal onClose={props.onClose} open={props.open}>
       <Box className="modal-container offer_modal">
@@ -253,6 +261,7 @@ function Offer (props) {
                   id="duration-select"
                   value={duration}
                   onChange={handleDurationChange}
+                  IconComponent={KeyboardArrowDownIcon}
                 >
                   <MenuItem value={1 * 24}>1 day</MenuItem>
                   <MenuItem value={3 * 24}>3 days</MenuItem>
