@@ -25,7 +25,6 @@ class App extends React.Component {
       currentUser: props.currentUser,
       account: props.wallet.account(),
       accountId: props.currentUser && props.currentUser.accountId,
-      accountBalance: nearTo((props.wallet.account().getAccountBalance()).total),
     };
 
     this.app.marketPublicKey = 'ed25519:Ga6C8S7jVG2inG88cos8UsdtGVWRFQasSdTdtHL7kBqL';
@@ -88,18 +87,19 @@ class App extends React.Component {
       return;
     }
 
-    const accessKeys = await this.app.account.getAccessKeys();
+    const lotAccountId = localStorage.get(this.app.lsLotAccountId);
+    const offerData = JSON.parse(localStorage.get(this.app.config.contractName + ':lotOffer: ' + this.app.accountId));
+    if (!offerData) {
+      return;
+    }
 
+    const accessKeys = await this.app.account.getAccessKeys();
     let foundMarketKey = false;
     accessKeys.forEach(key => {
       if (key.public_key === this.app.marketPublicKey) {
         foundMarketKey = true
       }
     });
-
-    const lotAccountId = localStorage.get(this.app.lsLotAccountId);
-    const offerData = JSON.parse(localStorage.get(this.app.config.contractName + ':lotOffer: ' + this.app.accountId));
-
     if (foundMarketKey) {
       return;
     }
