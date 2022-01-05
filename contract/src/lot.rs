@@ -119,19 +119,29 @@ impl Lot {
         self.last_bid().map(|x| x.amount)
     }
 
-    pub fn next_bid_amount(&self, time_now: Timestamp, bid_step: Fraction) -> Option<Balance> {
-        if !self.is_active(time_now) {
-            return None;
-        }
-        if let Some(last_bid_amount) = self.last_bid_amount() {
+    pub fn calculate_next_bid_amount(last_bid_amount: Option<Balance>,
+                                     bid_step: Fraction,
+                                     buy_now_price: Balance,
+                                     reserve_price: Balance) -> Option<Balance> {
+        if let Some(last_bid_amount) = last_bid_amount {
             let mut next_bid_amount = last_bid_amount + bid_step * last_bid_amount;
+
             if next_bid_amount == last_bid_amount {
                 next_bid_amount += 1;
             }
-            Some(std::cmp::min(next_bid_amount, self.buy_now_price))
+
+            Some(std::cmp::min(next_bid_amount, buy_now_price))
         } else {
-            Some(self.reserve_price)
+            Some(reserve_price)
         }
+    }
+
+    pub fn next_bid_amount(&self, time_now: Timestamp, bid_step: Fraction) -> Option<Balance> {
+        if !self.is_active(time_now) {
+            return None
+        }
+
+        Self::calculate_next_bid_amount(self.last_bid_amount(), bid_step, self.buy_now_price, self.reserve_price)
     }
 
     pub fn potential_claimer_id(&self) -> Option<ProfileId> {
