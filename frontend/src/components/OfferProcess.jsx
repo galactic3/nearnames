@@ -6,6 +6,7 @@ function OfferProcessPage (props) {
   if (props.connected) {
     finished = props.offerFinished;
     success = props.offerSuccess;
+    offerFailureReason = props.offerFailureReason;
   }
 
   return (
@@ -18,7 +19,9 @@ function OfferProcessPage (props) {
             </p>
           ) : (
             <p className='alert alert-danger'>
-            Something went wrong
+              Something went wrong, prease refresh the page.
+              <br/>
+              {offerFailureReason && <span>Failure reason: {offerFailureReason}.</span>}
             </p>
           )
         ) : (

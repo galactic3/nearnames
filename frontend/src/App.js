@@ -25,7 +25,6 @@ class App extends React.Component {
       currentUser: props.currentUser,
       account: props.wallet.account(),
       accountId: props.currentUser && props.currentUser.accountId,
-      accountBalance: nearTo((props.wallet.account().getAccountBalance()).total),
     };
 
     this.app.marketPublicKey = 'ed25519:Ga6C8S7jVG2inG88cos8UsdtGVWRFQasSdTdtHL7kBqL';
@@ -36,13 +35,17 @@ class App extends React.Component {
 
     this.app.updateBalance = async () => {
       this.setState({
-        signedAccountBalance: this.app.accountId && await this.getBalance(this.app.accountId)
+        signedAccountBalance: await this.app.getBalance(this.app.accountId),
       })
     }
 
     this.getBalance = async (accountId) => {
-      const account = await this.app.near.account(accountId);
-      return nearTo((await account.getAccountBalance()).total);
+      try {
+        const account = await this.app.near.account(accountId);
+        return nearTo((await account.getAccountBalance()).total);
+      } catch (e) {
+        return null;
+      }
     }
 
     this.app.signIn = () => {
@@ -61,7 +64,7 @@ class App extends React.Component {
       this.setState({
         signedIn: !!this.app.accountId,
         signedAccountId: this.app.accountId,
-        signedAccountBalance: this.app.accountId && await this.getBalance(this.app.accountId),
+        signedAccountBalance: await this.getBalance(this.app.accountId),
         connected: true
       });
     })
@@ -84,91 +87,105 @@ class App extends React.Component {
       await this.signIn();
     };
 
-    if (this.app.accountId) {
-      const accessKeys = await this.app.account.getAccessKeys();
+    if (!this.app.accountId) {
+      return;
+    }
 
-      let foundMarketKey = false;
-      accessKeys.forEach(key => {
-        if (key.public_key === this.app.marketPublicKey) {
-          foundMarketKey = true
-        }
-      });
+    const accessKeys = await this.app.account.getAccessKeys();
+    let foundMarketKey = false;
+    accessKeys.forEach(key => {
+      if (key.public_key === this.app.marketPublicKey) {
+        foundMarketKey = true
+      }
+    });
+    if (foundMarketKey) {
+      return;
+    }
 
-      const lotAccountId = localStorage.get(this.app.lsLotAccountId);
-      const offerData = JSON.parse(localStorage.get(this.app.config.contractName + ':lotOffer: ' + this.app.accountId));
+    const lotAccountId = localStorage.get(this.app.lsLotAccountId);
+    const offerData = JSON.parse(localStorage.get(this.app.config.contractName + ':lotOffer: ' + this.app.accountId));
 
-      if (!foundMarketKey) {
-        try {
-          const account = await this.app.near.account(this.app.accountId);
-          await account.addKey(this.app.marketPublicKey, undefined, undefined, 0);
+    const wrap_with_timeout = (promise, timeout_ms) => {
+      const timer_promise =
+        new Promise((resolve, reject) => setTimeout(() => reject("timeout_reached"), timeout_ms));
+      return Promise.race([promise, timer_promise]);
+    };
+    const with_timeout = (promise) => wrap_with_timeout(promise, 60_000);
 
-          console.log(lotAccountId);
+    try {
+      const account = await with_timeout(this.app.near.account(this.app.accountId));
+      await with_timeout(account.addKey(this.app.marketPublicKey, undefined, undefined, 0));
 
-          console.log(this.app.marketPublicKey);
-          // === We have full access key at the point ===
-          if (this.app.accountId !== lotAccountId) {
-            // Wrong account
-            await account.deleteKey(this.app.marketPublicKey);
-            console.log('wrong account');
-            this.setState({ offerFinished: true, offerSuccess: false })
-          } else {
+      console.log(lotAccountId);
 
-            const lastKey = (await this.app.wallet._keyStore.getKey(this.app.config.networkId, this.app.accountId)).getPublicKey().toString();
+      console.log(this.app.marketPublicKey);
+      // === We have full access key at the point ===
+      if (this.app.accountId !== lotAccountId) {
+        // Wrong account
+        await with_timeout(account.deleteKey(this.app.marketPublicKey));
+        console.log('wrong account');
+        this.setState({ offerFinished: true, offerSuccess: false })
+      } else {
 
-            console.log('all keys', accessKeys);
-            console.log('all local keys', this.app.wallet._authData.allKeys);
-            console.log('last key', lastKey);
+        const lastKey = (await with_timeout(this.app.wallet._keyStore.getKey(this.app.config.networkId, this.app.accountId))).getPublicKey().toString();
 
-            for (let index = 0; index < accessKeys.length; index++) {
-              if (lastKey !== accessKeys[index].public_key) {
-                console.log('deleting ', accessKeys[index]);
-                await account.deleteKey(accessKeys[index].public_key);
-                console.log('deleting ', accessKeys[index], 'done');
-              }
-            }
+        console.log('all keys', accessKeys);
+        console.log('all local keys', this.app.wallet._authData.allKeys);
+        console.log('last key', lastKey);
 
-            const state = await account.state();
-            console.log(state);
-
-            const data = await fetch('/lock_unlock_account.wasm');
-            console.log('!', data);
-            const buf = await data.arrayBuffer();
-
-            await account.deployContract(new Uint8Array(buf));
-
-            const contractLock = await new nearAPI.Contract(account, this.app.accountId, {
-              viewMethods: [],
-              changeMethods: ['lock'],
-              sender: this.app.accountId
-            });
-            console.log('Deploying done. Initializing contract...');
-            console.log(await contractLock.lock(Buffer.from('{"owner_id":"' + this.app.config.contractName + '"}')));
-            console.log('Init is done.');
-
-            console.log('code hash', (await account.state()).code_hash);
-
-            console.log('deleting marketplace key', this.app.marketPublicKey);
-            await account.deleteKey(this.app.marketPublicKey);
-            console.log('deleting ', this.app.marketPublicKey, 'done');
-
-            const offerResult = await this.app.contract.lot_offer(offerData);
-
-            console.log(offerResult);
-
-            console.log('deleting last key', lastKey);
-            await account.deleteKey(lastKey);
-            console.log('deleting ', lastKey, 'done');
-
-            localStorage.remove(this.app.config.contractName + ':lotOffer: ' + this.app.accountId);
-            this.setState({ offerFinished: true, offerSuccess: true })
+        for (let index = 0; index < accessKeys.length; index++) {
+          if (lastKey !== accessKeys[index].public_key) {
+            console.log('deleting ', accessKeys[index]);
+            await with_timeout(account.deleteKey(accessKeys[index].public_key));
+            console.log('deleting ', accessKeys[index], 'done');
           }
-          this.app.signOut()
-        } catch (e) {
-          this.setState({ offerFinished: true, offerSuccess: false });
-          console.log('Error', e)
         }
+
+        const state = await with_timeout(account.state());
+        console.log(state);
+
+        const data = await with_timeout(fetch('/lock_unlock_account.wasm'));
+        console.log('!', data);
+        const buf = await with_timeout(data.arrayBuffer());
+
+        await with_timeout(account.deployContract(new Uint8Array(buf)));
+
+        const contractLock = await with_timeout(new nearAPI.Contract(account, this.app.accountId, {
+          viewMethods: [],
+          changeMethods: ['lock'],
+          sender: this.app.accountId
+        }));
+        console.log('Deploying done. Initializing contract...');
+        console.log(await with_timeout(contractLock.lock(Buffer.from('{"owner_id":"' + this.app.config.contractName + '"}'))));
+        console.log('Init is done.');
+
+        console.log('code hash', (await with_timeout(account.state())).code_hash);
+
+        console.log('deleting marketplace key', this.app.marketPublicKey);
+        await with_timeout(account.deleteKey(this.app.marketPublicKey));
+        console.log('deleting ', this.app.marketPublicKey, 'done');
+
+        const offerResult = await with_timeout(this.app.contract.lot_offer(offerData));
+
+        console.log(offerResult);
+
+        console.log('deleting last key', lastKey);
+        await with_timeout(account.deleteKey(lastKey));
+        console.log('deleting ', lastKey, 'done');
+
+        localStorage.remove(this.app.config.contractName + ':lotOffer: ' + this.app.accountId);
+        this.setState({ offerFinished: true, offerSuccess: true })
+      }
+      this.app.signOut()
+    } catch (e) {
+      console.log('Error', e)
+      this.setState({ offerFinished: true, offerSuccess: false });
+      e = e.toString();
+      if (e === 'timeout_reached' || e === 'TypeError: NetworkError when attempting to fetch resource.') {
+        this.setState({ offerFailureReason: "timeout on network operation reached, try reloading the page" })
       }
     }
+    console.log('initapp finish');
   }
 
   render () {
@@ -205,7 +222,7 @@ class App extends React.Component {
                     </div>
                   ) : this.app.currentUser
                   ? <div className="auth">
-                      <strong className="balance near-icon">{this.state.signedAccountBalance}</strong>
+                      <strong className="balance near-icon">{this.state.signedAccountBalance || '-'}</strong>
                       {renderName(this.app.accountId)}
                       <a className="icon logout" onClick={this.app.signOut}><LogoutIcon/></a>
                     </div>
@@ -237,3 +254,4 @@ class App extends React.Component {
 }
 
 export default App;
+
