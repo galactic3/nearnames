@@ -91,20 +91,29 @@ impl Lot {
         self.bids.to_vec()
     }
 
-    pub fn is_active(&self, time_now: Timestamp) -> bool {
-        if time_now >= self.finish_timestamp {
+
+    pub fn lot_is_active(last_bid_amount: Option<Balance>,
+                         buy_now_price: Balance,
+                         finish_timestamp: Timestamp,
+                         time_now: Timestamp,
+                         is_withdrawn: bool) -> bool {
+        if time_now >= finish_timestamp {
             return false;
         }
-        if let Some(last_bid_amount) = self.last_bid_amount() {
-            if last_bid_amount >= self.buy_now_price {
+        if let Some(last_bid_amount) = last_bid_amount {
+            if last_bid_amount >= buy_now_price {
                 return false;
             }
         }
-        if self.is_withdrawn {
+        if is_withdrawn {
             return false;
         }
 
         true
+    }
+
+    pub fn is_active(&self, time_now: Timestamp) -> bool {
+        Self::lot_is_active(self.last_bid_amount(), self.buy_now_price, self.finish_timestamp, time_now, self.is_withdrawn)
     }
 
     pub fn last_bid(&self) -> Option<Bid> {
@@ -137,11 +146,13 @@ impl Lot {
     }
 
     pub fn next_bid_amount(&self, time_now: Timestamp, bid_step: Fraction) -> Option<Balance> {
-        if !self.is_active(time_now) {
+        let last_bid_amount = self.last_bid_amount();
+
+        if !Self::lot_is_active(last_bid_amount, self.buy_now_price, self.finish_timestamp, time_now, self.is_withdrawn) {
             return None
         }
 
-        Self::calculate_next_bid_amount(self.last_bid_amount(), bid_step, self.buy_now_price, self.reserve_price)
+        Self::calculate_next_bid_amount(last_bid_amount, bid_step, self.buy_now_price, self.reserve_price)
     }
 
     pub fn potential_claimer_id(&self) -> Option<ProfileId> {
