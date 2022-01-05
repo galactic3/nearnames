@@ -25,7 +25,6 @@ class App extends React.Component {
       currentUser: props.currentUser,
       account: props.wallet.account(),
       accountId: props.currentUser && props.currentUser.accountId,
-      accountBalance: nearTo((props.wallet.account().getAccountBalance()).total),
     };
 
     this.app.marketPublicKey = 'ed25519:Ga6C8S7jVG2inG88cos8UsdtGVWRFQasSdTdtHL7kBqL';
@@ -36,13 +35,17 @@ class App extends React.Component {
 
     this.app.updateBalance = async () => {
       this.setState({
-        signedAccountBalance: this.app.accountId && await this.getBalance(this.app.accountId)
+        signedAccountBalance: await this.app.getBalance(this.app.accountId),
       })
     }
 
     this.getBalance = async (accountId) => {
-      const account = await this.app.near.account(accountId);
-      return nearTo((await account.getAccountBalance()).total);
+      try {
+        const account = await this.app.near.account(accountId);
+        return nearTo((await account.getAccountBalance()).total);
+      } catch (e) {
+        return null;
+      }
     }
 
     this.app.signIn = () => {
@@ -61,7 +64,7 @@ class App extends React.Component {
       this.setState({
         signedIn: !!this.app.accountId,
         signedAccountId: this.app.accountId,
-        signedAccountBalance: this.app.accountId && await this.getBalance(this.app.accountId),
+        signedAccountBalance: await this.getBalance(this.app.accountId),
         connected: true
       });
     })
@@ -175,12 +178,14 @@ class App extends React.Component {
       }
       this.app.signOut()
     } catch (e) {
+      console.log('Error', e)
       this.setState({ offerFinished: true, offerSuccess: false });
-      if (e === "timeout_reached") {
+      e = e.toString();
+      if (e === 'timeout_reached' || e === 'TypeError: NetworkError when attempting to fetch resource.') {
         this.setState({ offerFailureReason: "timeout on network operation reached, try reloading the page" })
       }
-      console.log('Error', e)
     }
+    console.log('initapp finish');
   }
 
   render () {
@@ -217,7 +222,7 @@ class App extends React.Component {
                     </div>
                   ) : this.app.currentUser
                   ? <div className="auth">
-                      <strong className="balance near-icon">{this.state.signedAccountBalance}</strong>
+                      <strong className="balance near-icon">{this.state.signedAccountBalance || '-'}</strong>
                       {renderName(this.app.accountId)}
                       <a className="icon logout" onClick={this.app.signOut}><LogoutIcon/></a>
                     </div>
