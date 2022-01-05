@@ -1,0 +1,46 @@
+.MuiInputBase-root.MuiOutlinedInput-root {
+  width: 100%;
+  vertical-align: top;
+  height: 40px;
+  color: var(--primary);
+  background-color: var(--main);
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: "Oswald", Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+
+  .MuiSelect-icon.MuiSelect-iconOutlined {
+    color: var(--primary);
+  }
+
+  .MuiOutlinedInput-notchedOutline {
+    border: none;
+    max-height: 40px;
+  }
+
+  .MuiSelect-select.MuiOutlinedInput-input.MuiInputBase-input {
+    padding: 8px 13px;
+  }
+}
+
+.MuiPaper-root.MuiPaper-elevation.MuiPaper-rounded.MuiMenu-paper {
+  border-radius: 6px;
+  color: var(--primary);
+  background-color: var(--main);
+  box-shadow: 0 4px 4px rgba(0, 0, 0, 0.25);
+  margin-top: 3px;
+}
+
+.MuiList-root.MuiList-padding.MuiMenu-list {
+  .MuiMenuItem-root.MuiButtonBase-root {
+    font-family: "Oswald", Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+
+    &:hover {
+      background-color: var(--gray);
+    }
+
+    &.Mui-selected {
+      background-color: var(--main);
+      color: var(--link-active);
+    }
+  }
+}
