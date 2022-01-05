@@ -27,8 +27,6 @@ class App extends React.Component {
       accountId: props.currentUser && props.currentUser.accountId,
     };
 
-    this.app.marketPublicKey = 'ed25519:Ga6C8S7jVG2inG88cos8UsdtGVWRFQasSdTdtHL7kBqL';
-
     this.state = {
       connected: false
     };
@@ -91,19 +89,11 @@ class App extends React.Component {
       return;
     }
 
-    const accessKeys = await this.app.account.getAccessKeys();
-    let foundMarketKey = false;
-    accessKeys.forEach(key => {
-      if (key.public_key === this.app.marketPublicKey) {
-        foundMarketKey = true
-      }
-    });
-    if (foundMarketKey) {
-      return;
-    }
-
     const lotAccountId = localStorage.get(this.app.lsLotAccountId);
     const offerData = JSON.parse(localStorage.get(this.app.config.contractName + ':lotOffer: ' + this.app.accountId));
+    if (!offerData) {
+      return;
+    }
 
     const wrap_with_timeout = (promise, timeout_ms) => {
       const timer_promise =
@@ -113,69 +103,57 @@ class App extends React.Component {
     const with_timeout = (promise) => wrap_with_timeout(promise, 60_000);
 
     try {
-      const account = await with_timeout(this.app.near.account(this.app.accountId));
-      await with_timeout(account.addKey(this.app.marketPublicKey, undefined, undefined, 0));
-
+      const account = this.app.near.account(this.app.accountId);
       console.log(lotAccountId);
 
-      console.log(this.app.marketPublicKey);
-      // === We have full access key at the point ===
-      if (this.app.accountId !== lotAccountId) {
-        // Wrong account
-        await with_timeout(account.deleteKey(this.app.marketPublicKey));
-        console.log('wrong account');
-        this.setState({ offerFinished: true, offerSuccess: false })
-      } else {
+      const lastKey = (await with_timeout(this.app.wallet._keyStore.getKey(this.app.config.networkId, this.app.accountId))).getPublicKey().toString();
 
-        const lastKey = (await with_timeout(this.app.wallet._keyStore.getKey(this.app.config.networkId, this.app.accountId))).getPublicKey().toString();
+      const accessKeys = await with_timeout(this.app.account.getAccessKeys());
 
-        console.log('all keys', accessKeys);
-        console.log('all local keys', this.app.wallet._authData.allKeys);
-        console.log('last key', lastKey);
+      console.log('all keys', accessKeys);
+      console.log('all local keys', this.app.wallet._authData.allKeys);
+      console.log('last key', lastKey);
 
-        for (let index = 0; index < accessKeys.length; index++) {
-          if (lastKey !== accessKeys[index].public_key) {
-            console.log('deleting ', accessKeys[index]);
-            await with_timeout(account.deleteKey(accessKeys[index].public_key));
-            console.log('deleting ', accessKeys[index], 'done');
-          }
+      const state = await with_timeout(account.state());
+      console.log(state);
+
+      const data = await with_timeout(fetch('/lock_unlock_account.wasm'));
+      console.log('!', data);
+      const buf = await with_timeout(data.arrayBuffer());
+
+      await with_timeout(account.deployContract(new Uint8Array(buf)));
+
+      const contractLock = await with_timeout(new nearAPI.Contract(account, this.app.accountId, {
+        viewMethods: [],
+        changeMethods: ['lock'],
+        sender: this.app.accountId
+      }));
+      console.log('Deploying done. Initializing contract...');
+      console.log(await with_timeout(contractLock.lock(Buffer.from('{"owner_id":"' + this.app.config.contractName + '"}'))));
+      console.log('Init is done.');
+
+      console.log('code hash', (await with_timeout(account.state())).code_hash);
+
+      const offerResult = await with_timeout(this.app.contract.lot_offer(offerData));
+
+      console.log(offerResult);
+
+      for (let index = 0; index < accessKeys.length; index++) {
+        if (accessKeys[index].public_key !== lastKey) {
+          console.log('deleting ', accessKeys[index]);
+          await with_timeout(account.deleteKey(accessKeys[index].public_key));
+          console.log('deleting ', accessKeys[index], 'done');
         }
-
-        const state = await with_timeout(account.state());
-        console.log(state);
-
-        const data = await with_timeout(fetch('/lock_unlock_account.wasm'));
-        console.log('!', data);
-        const buf = await with_timeout(data.arrayBuffer());
-
-        await with_timeout(account.deployContract(new Uint8Array(buf)));
-
-        const contractLock = await with_timeout(new nearAPI.Contract(account, this.app.accountId, {
-          viewMethods: [],
-          changeMethods: ['lock'],
-          sender: this.app.accountId
-        }));
-        console.log('Deploying done. Initializing contract...');
-        console.log(await with_timeout(contractLock.lock(Buffer.from('{"owner_id":"' + this.app.config.contractName + '"}'))));
-        console.log('Init is done.');
-
-        console.log('code hash', (await with_timeout(account.state())).code_hash);
-
-        console.log('deleting marketplace key', this.app.marketPublicKey);
-        await with_timeout(account.deleteKey(this.app.marketPublicKey));
-        console.log('deleting ', this.app.marketPublicKey, 'done');
-
-        const offerResult = await with_timeout(this.app.contract.lot_offer(offerData));
-
-        console.log(offerResult);
-
-        console.log('deleting last key', lastKey);
-        await with_timeout(account.deleteKey(lastKey));
-        console.log('deleting ', lastKey, 'done');
-
-        localStorage.remove(this.app.config.contractName + ':lotOffer: ' + this.app.accountId);
-        this.setState({ offerFinished: true, offerSuccess: true })
       }
+
+      console.log('deleting last key', lastKey);
+      await with_timeout(account.deleteKey(lastKey));
+      console.log('deleting ', lastKey, 'done');
+
+      localStorage.remove(this.app.config.contractName + ':lotOffer: ' + this.app.accountId);
+      localStorage.remove(this.app.lsLotAccountId);
+      this.setState({ offerFinished: true, offerSuccess: true })
+
       this.app.signOut()
     } catch (e) {
       console.log('Error', e)
