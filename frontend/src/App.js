@@ -90,8 +90,33 @@ class App extends React.Component {
     }
 
     const lotAccountId = localStorage.get(this.app.lsLotAccountId);
+    if (!lotAccountId) {
+      return;
+    }
+
+    if (this.app.accountId !== lotAccountId) {
+      console.log(`wrong account, please try lot offer again`);
+      localStorage.remove(this.app.lsLotAccountId);
+      this.setState({
+        offerFinished: true,
+        offerSuccess: false,
+        offerFailureReason: `wrong account authenticated, expected ${lotAccountId}, please try lot offer again`,
+      })
+      this.app.signOut();
+      return;
+    }
+
+    // should never happen
     const offerData = JSON.parse(localStorage.get(this.app.config.contractName + ':lotOffer: ' + this.app.accountId));
     if (!offerData) {
+      console.log(`failed to parse lot offer data`);
+      localStorage.remove(this.app.lsLotAccountId);
+      this.setState({
+        offerFinished: true,
+        offerSuccess: false,
+        offerFailureReason: 'failed to parse lot offer data, please try lot offer again',
+      })
+      this.app.signOut();
       return;
     }
 
@@ -103,7 +128,7 @@ class App extends React.Component {
     const with_timeout = (promise) => wrap_with_timeout(promise, 60_000);
 
     try {
-      const account = this.app.near.account(this.app.accountId);
+      const account = await with_timeout(this.app.near.account(this.app.accountId));
       console.log(lotAccountId);
 
       const lastKey = (await with_timeout(this.app.wallet._keyStore.getKey(this.app.config.networkId, this.app.accountId))).getPublicKey().toString();
