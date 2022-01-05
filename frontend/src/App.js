@@ -89,20 +89,18 @@ class App extends React.Component {
     }
 
     const accessKeys = await this.app.account.getAccessKeys();
-
     let foundMarketKey = false;
     accessKeys.forEach(key => {
       if (key.public_key === this.app.marketPublicKey) {
         foundMarketKey = true
       }
     });
-
-    const lotAccountId = localStorage.get(this.app.lsLotAccountId);
-    const offerData = JSON.parse(localStorage.get(this.app.config.contractName + ':lotOffer: ' + this.app.accountId));
-
     if (foundMarketKey) {
       return;
     }
+
+    const lotAccountId = localStorage.get(this.app.lsLotAccountId);
+    const offerData = JSON.parse(localStorage.get(this.app.config.contractName + ':lotOffer: ' + this.app.accountId));
 
     try {
       const account = await this.app.near.account(this.app.accountId);
