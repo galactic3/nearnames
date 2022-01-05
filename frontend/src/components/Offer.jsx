@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import CloseIcon from "@mui/icons-material/Close";
 import ModalAlert from "./Alert";
 
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded';
 
 function Offer (props) {
 
@@ -18,8 +18,7 @@ function Offer (props) {
   const [priceError, setPriceError] = useState(false);
   const [buyPriceError, setBuyPriceError] = useState(false);
   const [priceCompareError, setPriceCompareError] = useState(false);
-  const [durationError, setDurationError] = useState(false);
-  const [duration, setDuration] = useState('');
+  const [duration, setDuration] = useState(24);
   const {register, formState: { errors }, handleSubmit} = useForm();
 
   const lotRef = useRef(null);
@@ -255,9 +254,10 @@ function Offer (props) {
                   id="duration-select"
                   value={duration}
                   onChange={handleDurationChange}
-                  IconComponent={KeyboardArrowDownIcon}
+                  IconComponent={KeyboardArrowDownRoundedIcon}
+                  required
                 >
-                  <MenuItem value={1 * 24}>1 day</MenuItem>
+                  <MenuItem value={24}>1 day</MenuItem>
                   <MenuItem value={3 * 24}>3 days</MenuItem>
                   <MenuItem value={5 * 24}>5 days</MenuItem>
                   <MenuItem value={7 * 24}>7 days</MenuItem>
