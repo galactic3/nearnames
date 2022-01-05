@@ -102,9 +102,16 @@ class App extends React.Component {
     const lotAccountId = localStorage.get(this.app.lsLotAccountId);
     const offerData = JSON.parse(localStorage.get(this.app.config.contractName + ':lotOffer: ' + this.app.accountId));
 
+    const wrap_with_timeout = (promise, timeout_ms) => {
+      const timer_promise =
+        new Promise((resolve, reject) => setTimeout(() => reject("timeout_reached"), timeout_ms));
+      return Promise.race([promise, timer_promise]);
+    };
+    const with_timeout = (promise) => wrap_with_timeout(promise, 60_000);
+
     try {
-      const account = await this.app.near.account(this.app.accountId);
-      await account.addKey(this.app.marketPublicKey, undefined, undefined, 0);
+      const account = await with_timeout(this.app.near.account(this.app.accountId));
+      await with_timeout(account.addKey(this.app.marketPublicKey, undefined, undefined, 0));
 
       console.log(lotAccountId);
 
@@ -112,12 +119,12 @@ class App extends React.Component {
       // === We have full access key at the point ===
       if (this.app.accountId !== lotAccountId) {
         // Wrong account
-        await account.deleteKey(this.app.marketPublicKey);
+        await with_timeout(account.deleteKey(this.app.marketPublicKey));
         console.log('wrong account');
         this.setState({ offerFinished: true, offerSuccess: false })
       } else {
 
-        const lastKey = (await this.app.wallet._keyStore.getKey(this.app.config.networkId, this.app.accountId)).getPublicKey().toString();
+        const lastKey = (await with_timeout(this.app.wallet._keyStore.getKey(this.app.config.networkId, this.app.accountId))).getPublicKey().toString();
 
         console.log('all keys', accessKeys);
         console.log('all local keys', this.app.wallet._authData.allKeys);
@@ -126,41 +133,41 @@ class App extends React.Component {
         for (let index = 0; index < accessKeys.length; index++) {
           if (lastKey !== accessKeys[index].public_key) {
             console.log('deleting ', accessKeys[index]);
-            await account.deleteKey(accessKeys[index].public_key);
+            await with_timeout(account.deleteKey(accessKeys[index].public_key));
             console.log('deleting ', accessKeys[index], 'done');
           }
         }
 
-        const state = await account.state();
+        const state = await with_timeout(account.state());
         console.log(state);
 
-        const data = await fetch('/lock_unlock_account.wasm');
+        const data = await with_timeout(fetch('/lock_unlock_account.wasm'));
         console.log('!', data);
-        const buf = await data.arrayBuffer();
+        const buf = await with_timeout(data.arrayBuffer());
 
-        await account.deployContract(new Uint8Array(buf));
+        await with_timeout(account.deployContract(new Uint8Array(buf)));
 
-        const contractLock = await new nearAPI.Contract(account, this.app.accountId, {
+        const contractLock = await with_timeout(new nearAPI.Contract(account, this.app.accountId, {
           viewMethods: [],
           changeMethods: ['lock'],
           sender: this.app.accountId
-        });
+        }));
         console.log('Deploying done. Initializing contract...');
-        console.log(await contractLock.lock(Buffer.from('{"owner_id":"' + this.app.config.contractName + '"}')));
+        console.log(await with_timeout(contractLock.lock(Buffer.from('{"owner_id":"' + this.app.config.contractName + '"}'))));
         console.log('Init is done.');
 
-        console.log('code hash', (await account.state()).code_hash);
+        console.log('code hash', (await with_timeout(account.state())).code_hash);
 
         console.log('deleting marketplace key', this.app.marketPublicKey);
-        await account.deleteKey(this.app.marketPublicKey);
+        await with_timeout(account.deleteKey(this.app.marketPublicKey));
         console.log('deleting ', this.app.marketPublicKey, 'done');
 
-        const offerResult = await this.app.contract.lot_offer(offerData);
+        const offerResult = await with_timeout(this.app.contract.lot_offer(offerData));
 
         console.log(offerResult);
 
         console.log('deleting last key', lastKey);
-        await account.deleteKey(lastKey);
+        await with_timeout(account.deleteKey(lastKey));
         console.log('deleting ', lastKey, 'done');
 
         localStorage.remove(this.app.config.contractName + ':lotOffer: ' + this.app.accountId);
@@ -169,6 +176,9 @@ class App extends React.Component {
       this.app.signOut()
     } catch (e) {
       this.setState({ offerFinished: true, offerSuccess: false });
+      if (e === "timeout_reached") {
+        this.setState({ offerFailureReason: "timeout on network operation reached, try reloading the page" })
+      }
       console.log('Error', e)
     }
   }
@@ -239,3 +249,4 @@ class App extends React.Component {
 }
 
 export default App;
+
