@@ -1,14 +1,11 @@
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::json_types::{Base58PublicKey, ValidAccountId};
 use near_sdk::{
-    env, ext_contract, near_bindgen, AccountId, PanicOnDefault, Promise, PromiseResult,
+    env, ext_contract, near_bindgen, AccountId, PanicOnDefault, Promise, PromiseResult, PublicKey,
 };
 
 const ON_ACCESS_KEY_ADDED_CALLBACK_GAS: u64 = 20_000_000_000_000;
 /// Indicates there are no deposit for a callback for better readability
 const NO_DEPOSIT: u128 = 0;
-
-near_sdk::setup_alloc!();
 
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
@@ -36,7 +33,7 @@ fn is_promise_success() -> bool {
 #[near_bindgen]
 impl Contract {
     #[init(ignore_state)]
-    pub fn lock(owner_id: ValidAccountId) -> Self {
+    pub fn lock(owner_id: AccountId) -> Self {
         assert_eq!(
             env::predecessor_account_id(),
             env::current_account_id(),
@@ -47,20 +44,20 @@ impl Contract {
         }
     }
 
-    pub fn unlock(&mut self, public_key: Base58PublicKey) {
+    pub fn unlock(&mut self, public_key: PublicKey) {
         assert_eq!(
             env::predecessor_account_id(),
             self.owner_id,
             "Actor is not allowed to add a key"
         );
-        self.owner_id = AccountId::default();
+        self.owner_id = env::current_account_id();
         Promise::new(env::current_account_id())
             .add_full_access_key(public_key.into())
             .then(ext_self::on_access_key_added(
                 env::predecessor_account_id(),
-                &env::current_account_id(),
+                env::current_account_id(),
                 NO_DEPOSIT,
-                ON_ACCESS_KEY_ADDED_CALLBACK_GAS,
+                ON_ACCESS_KEY_ADDED_CALLBACK_GAS.into(),
             ));
     }
 
