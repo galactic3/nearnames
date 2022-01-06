@@ -20,9 +20,11 @@
   img {
     width: 1000px;
     margin-bottom: 10px;
+    max-width: 100%;
     cursor: pointer;
     &.zoom {
       width: auto;
+      max-width: none;
     }
   }
 }
@@ -284,8 +286,15 @@
   .button_wrapper {
     display: flex;
     justify-content: space-between;
+    padding: 0;
+    margin: 24px 0;
+    border-top: 0 none;
     button {
-      width: 50%;
+      width: 48%;
+      &.outlined {
+        height: 40px;
+        line-height: 26px;
+      }
     }
   }
 }

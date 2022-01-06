@@ -7,6 +7,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import ModalAlert from "./Alert";
 
 import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded';
+import useConfirm from "../Hooks/useConfirm";
 
 function Offer (props) {
 
@@ -20,6 +21,7 @@ function Offer (props) {
   const [priceCompareError, setPriceCompareError] = useState(false);
   const [duration, setDuration] = useState(24);
   const {register, formState: { errors }, handleSubmit} = useForm();
+  const { isConfirmed } = useConfirm();
 
   const lotRef = useRef(null);
   const sellerRef = useRef(null);
@@ -75,21 +77,6 @@ function Offer (props) {
     }
   }
 
-  const checkAccountExist = async (account) => {
-    let balance = null;
-    try {
-      balance = nearTo((await account.getAccountBalance()).total);
-      if (balance < 1.5) {
-        alert('Not enough balance - should be at least 1.5 NEAR available');
-        setOfferButtonDisabled(false);
-        console.error('Not enough balance - should be at least 1.5 NEAR available')
-      }
-    } catch (e) {
-      alert('Account not exist - you have to create it first');
-      console.error('Account not exist - you have to create it first');
-    }
-  }
-
   const onSubmit = async (e) => {
     e.preventDefault();
     setOfferButtonDisabled(true);
@@ -104,6 +91,8 @@ function Offer (props) {
     const seller_account_id = seller_id.value.endsWith(accountSuffix) ? seller_id.value : seller_id.value  + accountSuffix;
 
     fieldset.disabled = true;
+
+    console.log('lot check');
 
     const account = await props.app.near.account(lot_account_id);
     let balance = null;
@@ -122,6 +111,17 @@ function Offer (props) {
       fieldset.disabled = false;
       throw console.error('Not enough balance - should be at least 1.5 NEAR available')
     }
+
+    if (balance > 2) {
+      const confirmed = await isConfirmed('You\'re about to sell account ' + lot_account_id + ' with signification balance on it (' + balance + ' NEAR). You might want to withdraw balance before offer, leaving only amount required for storage (1.5-2 NEAR). Do you want to proceed anyway?');
+      if (!confirmed) {
+        setOfferButtonDisabled(false);
+        fieldset.disabled = false;
+        return;
+      }
+    }
+
+    console.log('seller check');
 
     const seller = await props.app.near.account(seller_account_id);
 
@@ -154,8 +154,8 @@ function Offer (props) {
     await customRequestSigninFullAccess(
       props.app.wallet,
       props.app.config.contractName,
-      window.location.origin + window.location.pathname + '/#/offerProcess',
-      window.location.origin + window.location.pathname + + '/#/lots'
+      window.location.origin + window.location.pathname + '#/offerProcess',
+      window.location.origin + window.location.pathname + '#/lots'
     )
   };
 

@@ -39,6 +39,7 @@ export const customRequestSigninFullAccess = async (connection, contractIdOrOpti
     await connection._keyStore.setKey(connection._networkId, PENDING_ACCESS_KEY_PREFIX + accessKey.getPublicKey(), accessKey);
   }
   if (options.methodNames) {
+    debugger;
     options.methodNames.forEach(methodName => {
       newUrl.searchParams.append('methodNames', methodName);
     });

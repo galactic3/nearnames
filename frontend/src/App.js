@@ -10,6 +10,8 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import CreateOffer from "./components/CreateOffer";
 import {nearTo, renderName} from "./utils";
 import AboutPage from "./components/About";
+import ConfirmContextProvider from "./Providers/ConfirmContextProvider";
+import ModalConfirm from "./components/Confirm";
 
 class App extends React.Component {
   constructor(props) {
@@ -64,7 +66,7 @@ class App extends React.Component {
       this.setState({
         signedIn: !!this.app.accountId,
         signedAccountId: this.app.accountId,
-        signedAccountBalance: await this.getBalance(this.app.accountId),
+        signedAccountBalance: this.app.accountId && await this.getBalance(this.app.accountId),
         connected: true
       });
     })
@@ -215,7 +217,11 @@ class App extends React.Component {
                     <NavLink activeClassName='active' className='nav-link' aria-current='page' to='/about'>About</NavLink>
                   </li>
                 </ul> }
-                <CreateOffer {...passProps}/>
+
+                <ConfirmContextProvider>
+                  <CreateOffer {...passProps}/>
+                  <ModalConfirm/>
+                </ConfirmContextProvider>
                 { !this.state.connected ? (
                     <div className="auth">
                       <span className='spinner' role='status' aria-hidden='true'>Connecting...</span>
