@@ -126,6 +126,7 @@ function LotsList(props) {
         bids={selectedLotBids}
         signedAccount={signedAccount}
         onClose={() => closeBid()}
+        withdraw={withdraw}
       />
       <ModalAlert
         open={modalAlertShow}

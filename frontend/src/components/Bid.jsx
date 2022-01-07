@@ -43,6 +43,11 @@ function ModalBid (props) {
     setShowBidList(!showBidList);
   };
 
+  const withdrawAndClose = async (lot, e) => {
+    await props.withdraw(lot, e);
+    props.onClose();
+  };
+
   return (
     <Modal onClose={props.onClose} open={props.open}>
       <Box className="modal-container bid_modal">
@@ -71,6 +76,9 @@ function ModalBid (props) {
                placeholder={'min: ' + defaultValue} step={0.01} min={defaultValue} defaultValue={defaultValue}/>
         <button name="bid" onClick={(e) => bid(e, lot, bidPrice.current.value)} disabled={bidButtonDisabled}>Bid</button>
         {bidPriceError && <span className="error-input">bid value should more than: {getNextBidAmount(lot)}</span>}
+      </div>}
+      {(!isNotSeller && accountId && !bids.length) && <div className="button-wrapper">
+        <button className="outlined full-width" onClick={(e) => withdrawAndClose(lot, e)}>Withdraw</button>
       </div>}
       <div className="bid_list">
         {bids.length ? <a className="button-link" onClick={(e) => openBidList(e)}>{showBidList ? 'Hide' : 'Show'} bid list</a> : ''}
