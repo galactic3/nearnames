@@ -397,25 +397,25 @@
 }
 
 footer {
-    padding-top: 50px;
+    padding: 20px 0;
     width: 100%;
 
     .legal-notice {
-        margin: auto;
-        max-width: 600px;
+        width: 100%;
         text-align: center;
 
-        color: var(--secondary);
-        font-size: 16px;
+        color: var(--light-gray);
+        font-size: 10px;
     }
 }
 
 .beta-warning {
     width: 100%;
-    height: 70px;
-    line-height: 70px;
+    height: 30px;
+    line-height: 30px;
     text-align: center;
 
-    background-color: var(--red);
-    font-size: 24px;
+    background-color: var(--light-red);
+    color: var(--red);
+    font-size: 16px;
 }

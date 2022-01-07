@@ -211,7 +211,7 @@ function App (props) {
       <Router basename='/'>
         <header>
           <div className='beta-warning'>
-            WARNING: beta version. Test in progress. NOT audited. Use at your own risk!
+            Beta software. Test in prod. Not audited. Use at your own risk!
           </div>
         </header>
         <header>
