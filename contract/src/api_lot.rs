@@ -31,6 +31,13 @@ impl From<(&Lot, Timestamp, &Contract)> for LotView {
     fn from(args: (&Lot, Timestamp, &Contract)) -> Self {
         let (lot, now, contract) = args;
         let last_bid = lot.last_bid();
+        let last_bid_amount = last_bid.as_ref().map(|x| x.amount);
+        let next_bid_amount = lot::Lot::calculate_next_bid_amount(
+            last_bid_amount,
+            contract.bid_step.clone(),
+            lot.buy_now_price,
+            lot.reserve_price
+        );
 
         Self {
             lot_id: lot.lot_id.clone(),
@@ -40,10 +47,8 @@ impl From<(&Lot, Timestamp, &Contract)> for LotView {
             buy_now_price: lot.buy_now_price.into(),
             start_timestamp: lot.start_timestamp.into(),
             finish_timestamp: lot.finish_timestamp.into(),
-            last_bid_amount: last_bid.as_ref().map(|x| x.amount.into()),
-            next_bid_amount: lot
-                .next_bid_amount(now, contract.bid_step.clone())
-                .map(|x| x.into()),
+            last_bid_amount: last_bid_amount.map(|x| x.into()),
+            next_bid_amount: next_bid_amount.map(|x| x.into()),
             is_active: lot.is_active(now),
             is_withdrawn: lot.is_withdrawn,
             status: lot.status(now).to_string(),
