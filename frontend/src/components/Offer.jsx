@@ -8,6 +8,7 @@ import ModalAlert from "./Alert";
 
 import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded';
 import useConfirm from "../Hooks/useConfirm";
+import Alert from "@mui/material/Alert";
 
 function Offer (props) {
 
@@ -18,6 +19,7 @@ function Offer (props) {
   const [sameAccountError, setSameAccountError] = useState('');
   const [priceError, setPriceError] = useState(false);
   const [buyPriceError, setBuyPriceError] = useState(false);
+  const [lotId, setLotId] = useState('');
   const [priceCompareError, setPriceCompareError] = useState(false);
   const [duration, setDuration] = useState(24);
   const {register, formState: { errors }, handleSubmit} = useForm();
@@ -40,6 +42,10 @@ function Offer (props) {
   const alertHide = () => {
     setAlertShow(false);
   };
+
+  const onBlur = (e) => {
+    setLotId(e.target.value);
+  }
 
   const checkAccounts = async () => {
     if (lotRef.current.value && sellerRef.current.value &&
@@ -68,7 +74,8 @@ function Offer (props) {
       setBuyPriceError(false);
       setOfferButtonDisabled(false);
     }
-    if (buyPriceRef.current.value && priceRef.current.value >= buyPriceRef.current.value) {
+
+    if (buyPriceRef.current.value && (buyPriceRef.current.value - priceRef.current.value) < 0) {
       setPriceCompareError(true);
       setOfferButtonDisabled(true);
     } else {
@@ -112,8 +119,13 @@ function Offer (props) {
       throw console.error('Not enough balance - should be at least 1.5 NEAR available')
     }
 
-    if (balance > 2) {
-      const confirmed = await isConfirmed('You\'re about to sell account ' + lot_account_id + ' with signification balance on it (' + balance + ' NEAR). You might want to withdraw balance before offer, leaving only amount required for storage (1.5-2 NEAR). Do you want to proceed anyway?');
+    if (balance > 50 || balance > reserve_price.value) {
+      console.log(reserve_price.value);
+      let msg = `You're about to sell account ${lot_account_id} with amount bigger than reserve price on it (${balance} NEAR)`;
+      if (balance > 50) {
+        msg = `You're about to sell account ${lot_account_id} with signification amount on it (${balance} NEAR)`;
+      }
+      const confirmed = await isConfirmed(msg + 'You might want to withdraw balance before offer, leaving only amount required for storage (1.5-2 NEAR). Do you want to proceed anyway?');
       if (!confirmed) {
         setOfferButtonDisabled(false);
         fieldset.disabled = false;
@@ -185,6 +197,7 @@ function Offer (props) {
                   className="name"
                   autoComplete="off"
                   onChange={checkAccounts}
+                  onBlur={(e) => onBlur(e)}
                   type="text"
                   ref={lotRef}
                   id="lot_id"
@@ -209,6 +222,7 @@ function Offer (props) {
               </div>
               <span className="error-input">{errors.sellerId?.type === 'required' && "Seller account is required"}</span>
             </div>
+            {lotId && <Alert className="alert-container" severity="warning">Please SELECT <b>{lotId}</b> in wallet! Failure to choose correct account may lead to loss of funds.</Alert>}
             <div className='form-group'>
               <label htmlFor="reserve_price">Min price:</label>
               <div className="input-wrapper">
@@ -225,7 +239,7 @@ function Offer (props) {
                   required
                 /><span>Near</span>
               </div>
-              {priceCompareError && !priceError && !buyPriceError && <span className="error-input">Buy now price must be less then reserve</span>}
+              {priceCompareError && !priceError && !buyPriceError && <span className="error-input">Buy now price must be more then reserve</span>}
               {priceError && <span className="error-input">Min price should be more than 1.5</span>}
               <span className="error-input">{errors.price?.type === 'required' && "Price is required"}</span>
             </div>
@@ -266,22 +280,22 @@ function Offer (props) {
               </div>
             </div>
             <div className='form-group confirmation'>
+              <label>
+                <p>To ensure that buyer will receive control over the account after the sale, we require lot account to give control over itself to the marketplace contract. After full access is given, UI:</p>
+                <ul className="default">
+                  <li>deploys lock contract to lot account</li>
+                  <li>configures marketplace account as owner</li>
+                  <li>calls lot_offer to put account on sale</li>
+                  <li>removes all access keys from the account</li>
+                </ul>
+                <p>After that moment, lot can be only unlocked by call from marketplace account.</p>
+              </label>
               <div className="input-checkbox">
                 <input
                   id="confirm"
                   type="checkbox"
                   required
-                />
-                <label htmlFor="confirm">
-                  <p>To ensure that buyer will receive control over the account after the sale, we require lot account to give control over itself to the marketplace contract. After full access is given, UI:</p>
-                  <ul className="default">
-                    <li>deploys lock contract to lot account</li>
-                    <li>configures marketplace account as owner</li>
-                    <li>calls lot_offer to put account on sale</li>
-                    <li>removes all access keys from the account</li>
-                  </ul>
-                  <p>After that moment, lot can be only unlocked by call from marketplace account.</p>
-                </label>
+                /><label htmlFor="confirm">Yes, I understand</label>
               </div>
               <span className="error-input">{errors.confirm?.type === 'required' && "Please apply checkbox"}</span>
             </div>
