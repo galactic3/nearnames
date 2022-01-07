@@ -53,13 +53,14 @@ function App (props) {
   const signIn = () => {
     props.wallet.requestSignIn(
       props.nearConfig.contractName,
-      'Nearnames'
+      'Nearnames',
+      window.location.origin + window.location.pathname
     );
   };
 
-  const signOut = (withReload) => {
-    props.wallet.signOut();
-    setSignedAccount('');
+  const signOut = async (withReload) => {
+    await props.wallet.signOut();
+    setSignedAccount(props.currentUser && props.currentUser.accountId);
     withReload && window.location.replace(window.location.origin + window.location.pathname);
   };
 
