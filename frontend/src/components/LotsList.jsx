@@ -95,7 +95,12 @@ function LotsList(props) {
       return;
     }
     console.log(lot.lot_id, bid_price);
-    contract.lot_bid({'lot_id': lot.lot_id}, BOATLOAD_OF_GAS, bid_price).then(() => {
+    contract.lot_bid({
+      args: { lot_id: lot.lot_id },
+      gas: BOATLOAD_OF_GAS,
+      amount: bid_price,
+      callbackUrl: new URL('/#/profile', window.location.origin),
+    }).then(() => {
       props.getLots();
     });
   };
