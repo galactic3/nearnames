@@ -1,15 +1,23 @@
 import React from 'react';
 import {Box, IconButton, Modal} from "@mui/material";
 import CloseIcon from '@mui/icons-material/Close';
+import useConfirm from "../Hooks/useConfirm";
 
 function ModalConfirm (props) {
 
+  const {
+    prompt = "",
+    isOpen = false,
+    proceed,
+    cancel
+  } = useConfirm();
+
   return (
-    <Modal {...props}>
+    <Modal open={isOpen}>
       <Box className="modal-container alert_modal">
       <IconButton
         aria-label="close"
-        onClick={props.onClose}
+        onClick={cancel}
         className="button-icon"
         sx={{
           position: 'absolute',
@@ -21,10 +29,10 @@ function ModalConfirm (props) {
         <CloseIcon />
       </IconButton>
         <h3>Warning</h3>
-        <div className="alert-content">{props.content}</div>
+        <div className="alert-content">{prompt}</div>
         <div className="button_wrapper">
-          <button className="outlined" onClick={() => props.onClose()}>Cancel</button>
-          <button className="" onClick={() => props.onClose()}>Continue</button>
+          <button className="outlined" onClick={cancel}>Cancel</button>
+          <button className="" onClick={proceed}>Continue</button>
         </div>
       </Box>
     </Modal>

@@ -21,10 +21,9 @@ function ModalBid (props) {
   const bidPrice = useRef(null);
 
   const lot = props.lot;
-
   const bid = props.bid;
-
-  const isNotSeller = props.currentUser !== lot.seller_id;
+  const accountId = props.signedAccount;
+  const isNotSeller = accountId !== lot.seller_id;
 
   const bids = props.bids;
 
@@ -65,7 +64,7 @@ function ModalBid (props) {
         <span className="seller_name"><AccountCircle className="icon"/>{renderName(lot.seller_id)}</span>
         <span className="countdown"><AccessTimeFilledIcon className="icon"/><Countdown date={getCountdownTime(lot)}/></span>
       </div>
-      {(isNotSeller && props.currentUser && !lot.notSafe) && <div className="bid_price">
+      {(isNotSeller && accountId && !lot.notSafe) && <div className="bid_price">
         <span className="buy-now_price">Buy now: <strong className="near-icon">{getBuyNowPrice(lot)}</strong></span>
         <button name="buy_now" onClick={(e) => bid(e, lot, getBuyNowPrice(lot))}>Buy now</button>
         <input type="number" name="bid_input" className="large" onChange={checkBid} ref={bidPrice}

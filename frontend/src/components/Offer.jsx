@@ -7,6 +7,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import ModalAlert from "./Alert";
 
 import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded';
+import useConfirm from "../Hooks/useConfirm";
 
 function Offer (props) {
 
@@ -20,6 +21,7 @@ function Offer (props) {
   const [priceCompareError, setPriceCompareError] = useState(false);
   const [duration, setDuration] = useState(24);
   const {register, formState: { errors }, handleSubmit} = useForm();
+  const { isConfirmed } = useConfirm();
 
   const lotRef = useRef(null);
   const sellerRef = useRef(null);
@@ -75,29 +77,14 @@ function Offer (props) {
     }
   }
 
-  const checkAccountExist = async (account) => {
-    let balance = null;
-    try {
-      balance = nearTo((await account.getAccountBalance()).total);
-      if (balance < 1.5) {
-        alert('Not enough balance - should be at least 1.5 NEAR available');
-        setOfferButtonDisabled(false);
-        console.error('Not enough balance - should be at least 1.5 NEAR available')
-      }
-    } catch (e) {
-      alert('Account not exist - you have to create it first');
-      console.error('Account not exist - you have to create it first');
-    }
-  }
-
   const onSubmit = async (e) => {
     e.preventDefault();
     setOfferButtonDisabled(true);
 
     const { fieldset, lot_id, seller_id, reserve_price, buy_now_price } = e.target.elements;
 
-    if (props.signedIn) {
-      props.app.wallet.signOut()
+    if (props.signedAccount) {
+      props.wallet.signOut()
     }
 
     const lot_account_id = lot_id.value.endsWith(accountSuffix) ? lot_id.value : lot_id.value + accountSuffix;
@@ -105,7 +92,9 @@ function Offer (props) {
 
     fieldset.disabled = true;
 
-    const account = await props.app.near.account(lot_account_id);
+    console.log('lot check');
+
+    const account = await props.near.account(lot_account_id);
     let balance = null;
     try {
       balance = nearTo((await account.getAccountBalance()).total);
@@ -123,7 +112,18 @@ function Offer (props) {
       throw console.error('Not enough balance - should be at least 1.5 NEAR available')
     }
 
-    const seller = await props.app.near.account(seller_account_id);
+    if (balance > 2) {
+      const confirmed = await isConfirmed('You\'re about to sell account ' + lot_account_id + ' with signification balance on it (' + balance + ' NEAR). You might want to withdraw balance before offer, leaving only amount required for storage (1.5-2 NEAR). Do you want to proceed anyway?');
+      if (!confirmed) {
+        setOfferButtonDisabled(false);
+        fieldset.disabled = false;
+        return;
+      }
+    }
+
+    console.log('seller check');
+
+    const seller = await props.near.account(seller_account_id);
 
     try {
       balance = nearTo((await seller.getAccountBalance()).total);
@@ -143,19 +143,19 @@ function Offer (props) {
 
     const accessKeys = await account.getAccessKeys();
 
-    ls.set(props.app.lsPrevKeys, accessKeys);
-    ls.set(props.app.lsLotAccountId, lot_account_id);
+    ls.set(props.lsPrevKeys, accessKeys);
+    ls.set(props.lsLotAccountId, lot_account_id);
 
-    ls.set(props.app.config.contractName + ':lotOffer: ' + lot_account_id,
+    ls.set(props.nearConfig.contractName + ':lotOffer: ' + lot_account_id,
       JSON.stringify(offerData));
 
     // adding random Full Access Key
 
     await customRequestSigninFullAccess(
-      props.app.wallet,
-      props.app.config.contractName,
-      window.location.origin + window.location.pathname + '/#/offerProcess',
-      window.location.origin + window.location.pathname + + '/#/lots'
+      props.wallet,
+      props.nearConfig.contractName,
+      window.location.origin + window.location.pathname + '#/offerProcess',
+      window.location.origin + window.location.pathname + '#/lots'
     )
   };
 

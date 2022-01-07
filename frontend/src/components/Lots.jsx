@@ -6,7 +6,7 @@ import { loadListPaginated } from '../utils';
 
 function Lots(props) {
 
-  const contract = props.app.contract;
+  const contract = props.contract;
 
   const notSafeLots = ls.get('NotSafeLots') || '';
 

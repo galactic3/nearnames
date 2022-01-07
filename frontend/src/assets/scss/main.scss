@@ -20,9 +20,11 @@
   img {
     width: 1000px;
     margin-bottom: 10px;
+    max-width: 100%;
     cursor: pointer;
     &.zoom {
       width: auto;
+      max-width: none;
     }
   }
 }
@@ -131,7 +133,7 @@
   display: flex;
   align-items: center;
   background: var(--fg);
-  margin: 24px 0 12px;
+  margin: 24px 0 20px;
   height: 92px;
   padding: 12px 4px;
   border-radius: 10px;
@@ -284,8 +286,15 @@
   .button_wrapper {
     display: flex;
     justify-content: space-between;
+    padding: 0;
+    margin: 24px 0;
+    border-top: 0 none;
     button {
-      width: 50%;
+      width: 48%;
+      &.outlined {
+        height: 40px;
+        line-height: 26px;
+      }
     }
   }
 }
@@ -378,5 +387,11 @@
     strong {
       color: var(--light-gray);
     }
+  }
+}
+
+.offer-container {
+  .alert-container {
+    margin: 20px 0;
   }
 }
