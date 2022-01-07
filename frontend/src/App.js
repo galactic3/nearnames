@@ -210,6 +210,11 @@ function App (props) {
     <main>
       <Router basename='/'>
         <header>
+          <div className='beta-warning'>
+            WARNING: beta version. Test in progress. NOT audited. Use at your own risk!
+          </div>
+        </header>
+        <header>
           <div className="container">
             <h1><NavLink aria-current='page' to='/'>Near names</NavLink></h1>
 
