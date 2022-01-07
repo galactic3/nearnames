@@ -210,11 +210,9 @@ function App (props) {
     <ConfirmContextProvider>
     <main>
       <Router basename='/'>
-        <header>
-          <div className='beta-warning'>
-            Beta software. Test in prod. Not audited. Use at your own risk!
-          </div>
-        </header>
+        <div className='beta-warning'>
+          Beta software. Test in prod. Not audited. Use at your own risk!
+        </div>
         <header>
           <div className="container">
             <h1><NavLink aria-current='page' to='/'>Near names</NavLink></h1>
