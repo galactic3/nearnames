@@ -91,12 +91,13 @@ impl Lot {
         self.bids.to_vec()
     }
 
-
-    pub fn lot_is_active(last_bid_amount: Option<Balance>,
-                         buy_now_price: Balance,
-                         finish_timestamp: Timestamp,
-                         time_now: Timestamp,
-                         is_withdrawn: bool) -> bool {
+    pub fn lot_is_active(
+        last_bid_amount: Option<Balance>,
+        buy_now_price: Balance,
+        finish_timestamp: Timestamp,
+        time_now: Timestamp,
+        is_withdrawn: bool,
+    ) -> bool {
         if time_now >= finish_timestamp {
             return false;
         }
@@ -113,7 +114,13 @@ impl Lot {
     }
 
     pub fn is_active(&self, time_now: Timestamp) -> bool {
-        Self::lot_is_active(self.last_bid_amount(), self.buy_now_price, self.finish_timestamp, time_now, self.is_withdrawn)
+        Self::lot_is_active(
+            self.last_bid_amount(),
+            self.buy_now_price,
+            self.finish_timestamp,
+            time_now,
+            self.is_withdrawn,
+        )
     }
 
     pub fn last_bid(&self) -> Option<Bid> {
@@ -128,10 +135,12 @@ impl Lot {
         self.last_bid().map(|x| x.amount)
     }
 
-    pub fn calculate_next_bid_amount(last_bid_amount: Option<Balance>,
-                                     bid_step: Fraction,
-                                     buy_now_price: Balance,
-                                     reserve_price: Balance) -> Option<Balance> {
+    pub fn calculate_next_bid_amount(
+        last_bid_amount: Option<Balance>,
+        bid_step: Fraction,
+        buy_now_price: Balance,
+        reserve_price: Balance,
+    ) -> Option<Balance> {
         if let Some(last_bid_amount) = last_bid_amount {
             let mut next_bid_amount = last_bid_amount + bid_step * last_bid_amount;
 
@@ -148,11 +157,22 @@ impl Lot {
     pub fn next_bid_amount(&self, time_now: Timestamp, bid_step: Fraction) -> Option<Balance> {
         let last_bid_amount = self.last_bid_amount();
 
-        if !Self::lot_is_active(last_bid_amount, self.buy_now_price, self.finish_timestamp, time_now, self.is_withdrawn) {
-            return None
+        if !Self::lot_is_active(
+            last_bid_amount,
+            self.buy_now_price,
+            self.finish_timestamp,
+            time_now,
+            self.is_withdrawn,
+        ) {
+            return None;
         }
 
-        Self::calculate_next_bid_amount(last_bid_amount, bid_step, self.buy_now_price, self.reserve_price)
+        Self::calculate_next_bid_amount(
+            last_bid_amount,
+            bid_step,
+            self.buy_now_price,
+            self.reserve_price,
+        )
     }
 
     pub fn potential_claimer_id(&self) -> Option<ProfileId> {
