@@ -120,11 +120,7 @@ mod tests {
 
         testing_env!(get_context_view(to_ts(11)));
         let response: ProfileView = contract.profile_get(profile_id.clone());
-        assert_eq!(
-            response.profile_id,
-            profile_id,
-            "wrong rewards_available",
-        );
+        assert_eq!(response.profile_id, profile_id, "wrong rewards_available",);
         assert_eq!(
             response.rewards_available,
             to_yocto("3").into(),
@@ -145,12 +141,20 @@ mod tests {
         contract.profile_rewards_claim();
 
         let profile = contract.profile_get(profile_id.clone());
-        assert_eq!(profile.rewards_available.0, to_yocto("0"), "wrong rewards_available");
-        assert_eq!(profile.rewards_claimed.0, to_yocto("5"), "wrong rewards_claimed");
+        assert_eq!(
+            profile.rewards_available.0,
+            to_yocto("0"),
+            "wrong rewards_available"
+        );
+        assert_eq!(
+            profile.rewards_claimed.0,
+            to_yocto("5"),
+            "wrong rewards_claimed"
+        );
     }
 
     #[test]
-    #[should_panic(expected="profile_rewards_claim: not enough rewards")]
+    #[should_panic(expected = "profile_rewards_claim: not enough rewards")]
     pub fn test_api_profile_rewards_claim_fail_not_enough() {
         let mut contract = build_contract();
         let profile_id: ProfileId = "alice".parse().unwrap();

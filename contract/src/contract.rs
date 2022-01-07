@@ -1,6 +1,7 @@
 use crate::*;
 
-pub const ERR_PROFILE_INTERNAL_SAVE_ALREADY_EXISTS: &str = "internal_profile_save: profile already exists";
+pub const ERR_PROFILE_INTERNAL_SAVE_ALREADY_EXISTS: &str =
+    "internal_profile_save: profile already exists";
 
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
@@ -150,8 +151,16 @@ pub mod tests_profile {
         let profile = contract.internal_profile_get(&profile_id);
         assert_eq!(contract.profiles_len(), 1, "wrong profiles len");
         assert_eq!(profile.profile_id, profile_id, "wrong rewards_available");
-        assert_eq!(profile.rewards_available(), to_yocto("3"), "wrong rewards_available");
-        assert_eq!(profile.rewards_claimed(), to_yocto("2"), "wrong rewards_claimed");
+        assert_eq!(
+            profile.rewards_available(),
+            to_yocto("3"),
+            "wrong rewards_available"
+        );
+        assert_eq!(
+            profile.rewards_claimed(),
+            to_yocto("2"),
+            "wrong rewards_claimed"
+        );
     }
 
     #[test]
@@ -161,8 +170,16 @@ pub mod tests_profile {
         let profile = contract.internal_profile_extract(&profile_id);
         assert_eq!(contract.profiles_len(), 0, "wrong profiles len");
         assert_eq!(profile.profile_id, profile_id, "wrong rewards_available");
-        assert_eq!(profile.rewards_available(), to_yocto("3"), "wrong rewards_available");
-        assert_eq!(profile.rewards_claimed(), to_yocto("2"), "wrong rewards_claimed");
+        assert_eq!(
+            profile.rewards_available(),
+            to_yocto("3"),
+            "wrong rewards_available"
+        );
+        assert_eq!(
+            profile.rewards_claimed(),
+            to_yocto("2"),
+            "wrong rewards_claimed"
+        );
     }
 
     #[test]
@@ -172,7 +189,7 @@ pub mod tests_profile {
     }
 
     #[test]
-    #[should_panic(expected="internal_profile_save: profile already exists")]
+    #[should_panic(expected = "internal_profile_save: profile already exists")]
     fn test_api_profile_internal_save_fail_already_exists() {
         let (mut contract, profile_id) = create_contract_with_profile_bob();
         let profile = Profile::new(&profile_id);

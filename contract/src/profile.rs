@@ -75,8 +75,16 @@ pub mod tests {
         let profile = Profile::new(&profile_id);
 
         assert_eq!(profile.profile_id, profile_id, "wrong profile_id");
-        assert_eq!(profile.rewards_available, to_yocto("0"), "wrong rewards_available");
-        assert_eq!(profile.rewards_claimed, to_yocto("0"), "wrong rewards_claimed");
+        assert_eq!(
+            profile.rewards_available,
+            to_yocto("0"),
+            "wrong rewards_available"
+        );
+        assert_eq!(
+            profile.rewards_claimed,
+            to_yocto("0"),
+            "wrong rewards_claimed"
+        );
     }
 
     #[test]
@@ -86,7 +94,11 @@ pub mod tests {
 
         profile.rewards_transfer(to_yocto("3"));
         profile.rewards_transfer(to_yocto("2"));
-        assert_eq!(profile.rewards_available, to_yocto("5"), "wrong rewards_available");
+        assert_eq!(
+            profile.rewards_available,
+            to_yocto("5"),
+            "wrong rewards_available"
+        );
     }
 
     #[test]
