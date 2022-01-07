@@ -395,3 +395,27 @@
     margin: 20px 0;
   }
 }
+
+footer {
+    padding-top: 50px;
+    width: 100%;
+
+    .legal-notice {
+        margin: auto;
+        max-width: 600px;
+        text-align: center;
+
+        color: var(--secondary);
+        font-size: 16px;
+    }
+}
+
+.beta-warning {
+    width: 100%;
+    height: 70px;
+    line-height: 70px;
+    text-align: center;
+
+    background-color: var(--red);
+    font-size: 24px;
+}
