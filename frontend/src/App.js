@@ -263,7 +263,7 @@ function App (props) {
           </Route>
         </Switch>
         <footer>
-          <div className="legal-notice">
+          <div className="container legal-notice">
             THE SERVICES ARE PROVIDED “AS IS” AND “AS AVAILABLE” WITHOUT WARRANTIES OF ANY
             KIND. WE DO NOT GUARANTEE, REPRESENT OR WARRANT THAT YOUR USE OF OUR SERVICE
             WILL BE UNINTERRUPTED, TIMELY, SECURE OR ERROR-FREE. WE DO NOT WARRANT THAT THE
