@@ -14,7 +14,7 @@ function Lot(props) {
 
   const lot = props.lot;
   const contract = props.contract;
-  const accountId = props.currentUser && props.currentUser.accountId;
+  const accountId = props.signedAccount;
   const isNotSeller = accountId !== lot.seller_id;
   const isLastBidder = accountId === getLastBidder(bids);
 

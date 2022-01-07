@@ -83,7 +83,7 @@ function Offer (props) {
 
     const { fieldset, lot_id, seller_id, reserve_price, buy_now_price } = e.target.elements;
 
-    if (props.currentUser) {
+    if (props.signedAccount) {
       props.wallet.signOut()
     }
 

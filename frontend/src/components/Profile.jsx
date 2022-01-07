@@ -4,7 +4,7 @@ import { BOATLOAD_OF_GAS, nearTo, renderName, loadListPaginated } from "../utils
 import LotsList from "./LotsList";
 
 function Profile (props) {
-  const profileId = props.currentUser.accountId;
+  const profileId = props.signedAccount;
   const [profile, setProfile] = useState([]);
   const [lotsOffering, setLotsOffering] = useState([]);
   const [lotsBidding, setLotsBidding] = useState([]);

@@ -196,6 +196,7 @@ function App (props) {
 
   const passProps = {
     connected,
+    signedAccount,
     ...props
   };
 
@@ -233,7 +234,7 @@ function App (props) {
                 ? <div className="auth">
                     <strong className="balance near-icon">{nearTo(signedAccountBalance) || '-'}</strong>
                     {renderName(signedAccount)}
-                    <a className="icon logout" onClick={() => signOut()}><LogoutIcon/></a>
+                    <a className="icon logout" onClick={() => signOut(true)}><LogoutIcon/></a>
                   </div>
                 : <div className="auth"><button className="login" onClick={signIn}>Log in</button></div>
               }

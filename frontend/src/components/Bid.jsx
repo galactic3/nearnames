@@ -22,7 +22,7 @@ function ModalBid (props) {
 
   const lot = props.lot;
   const bid = props.bid;
-  const accountId = props.currentUser && props.currentUser.accountId;
+  const accountId = props.signedAccount;
   const isNotSeller = accountId !== lot.seller_id;
 
   const bids = props.bids;

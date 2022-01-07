@@ -10,7 +10,7 @@ function LotsList(props) {
 
   const contract = props.contract;
   const config = props.nearConfig;
-  const currentUser = props.currentUser;
+  const signedAccount = props.signedAccount;
   const notSafeLots = ls.get('NotSafeLots') || '';
 
   const [modalClaimShow, setModalClaimShow] = useState(false);
@@ -108,7 +108,7 @@ function LotsList(props) {
         <ul className="lot_list">
           {props.lots.map((lot, i) =>
             <Lot lot={lot} key={i} openBid={openBid} withdraw={withdraw} claim={claimOpen}
-                 contract={contract} loader={loaderShow} showStatus={props.showStatus} currentUser={currentUser}/>
+                 contract={contract} loader={loaderShow} showStatus={props.showStatus} signedAccount={signedAccount}/>
           )}
         </ul>
       }
@@ -124,7 +124,7 @@ function LotsList(props) {
         lot={selectedLot}
         bid={bid}
         bids={selectedLotBids}
-        currentUser={currentUser}
+        signedAccount={signedAccount}
         onClose={() => closeBid()}
       />
       <ModalAlert
