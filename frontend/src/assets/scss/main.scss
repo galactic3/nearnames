@@ -133,7 +133,7 @@
   display: flex;
   align-items: center;
   background: var(--fg);
-  margin: 24px 0 12px;
+  margin: 24px 0 20px;
   height: 92px;
   padding: 12px 4px;
   border-radius: 10px;
@@ -387,5 +387,11 @@
     strong {
       color: var(--light-gray);
     }
+  }
+}
+
+.offer-container {
+  .alert-container {
+    margin: 20px 0;
   }
 }

@@ -7,13 +7,12 @@ const useConfirm = () => {
 
   const isConfirmed = (prompt) => {
     const promise = new Promise((resolve, reject) => {
-      console.log(confirm, setConfirm);
-      setConfirm({ prompt, isOpen: true, proceed: resolve, cancel: reject });
+      confirm && setConfirm({ prompt, isOpen: true, proceed: resolve, cancel: reject });
       setNeedsCleanup(true);
     });
 
     const reset = () => {
-      setConfirm({ prompt: "", proceed: null, cancel: null, isOpen: false });
+      confirm && setConfirm({ prompt: "", proceed: null, cancel: null, isOpen: false });
       setNeedsCleanup(false);
     };
 
@@ -32,7 +31,7 @@ const useConfirm = () => {
   //Call cancel in a cleanup func to avoid dangling confirm dialog
   useEffect(() => {
     return () => {
-      if (confirm.cancel && needsCleanup) {
+      if (confirm && confirm.cancel && needsCleanup) {
         confirm.cancel();
       }
     };

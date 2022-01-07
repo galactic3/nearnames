@@ -8,8 +8,9 @@ import ls from "local-storage";
 
 function LotsList(props) {
 
-  const contract = props.app.contract;
-  const config = props.app.config;
+  const contract = props.contract;
+  const config = props.nearConfig;
+  const currentUser = props.currentUser;
   const notSafeLots = ls.get('NotSafeLots') || '';
 
   const [modalClaimShow, setModalClaimShow] = useState(false);
@@ -76,10 +77,10 @@ function LotsList(props) {
     }
     e.target.disabled = true;
     const bid_price = isBuyNowButton ? lot.buy_now_price : nValue;
-    const { codeHash, accessKeysLen, lockerOwner } = await fetchBidSafety(lot.lot_id, props.app.near);
+    const { codeHash, accessKeysLen, lockerOwner } = await fetchBidSafety(lot.lot_id, props.near);
     const isSafe = codeHash === 'DKUq738xnns9pKjpv9GifM68UoFSmfnBYNp3hsfkkUFa' &&
       accessKeysLen === 0 &&
-      lockerOwner === props.app.config.contractName;
+      lockerOwner === props.nearConfig.contractName;
     console.log(codeHash, accessKeysLen, lockerOwner);
     if (!isSafe) {
       alertOpen('account is not safe');
@@ -107,7 +108,7 @@ function LotsList(props) {
         <ul className="lot_list">
           {props.lots.map((lot, i) =>
             <Lot lot={lot} key={i} openBid={openBid} withdraw={withdraw} claim={claimOpen}
-                 contract={contract} loader={loaderShow} showStatus={props.showStatus} currentUser={props.app.accountId}/>
+                 contract={contract} loader={loaderShow} showStatus={props.showStatus} currentUser={currentUser}/>
           )}
         </ul>
       }
@@ -123,7 +124,7 @@ function LotsList(props) {
         lot={selectedLot}
         bid={bid}
         bids={selectedLotBids}
-        currentUser={props.app.accountId}
+        currentUser={currentUser}
         onClose={() => closeBid()}
       />
       <ModalAlert

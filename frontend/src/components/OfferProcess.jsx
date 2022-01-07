@@ -1,43 +1,47 @@
 import React from 'react'
+import Alert from "@mui/material/Alert";
+import {CircularProgress} from "@mui/material";
 
 function OfferProcessPage (props) {
-  let finished = false;
-  let success = false;
-  if (props.connected) {
-    finished = props.offerFinished;
-    success = props.offerSuccess;
-    offerFailureReason = props.offerFailureReason;
-  }
+
+  let finished = props.offerFinished;
+  let success = props.offerSuccess;
+  let offerFailureReason = props.offerFailureReason;
+  let offerSuccessMessage = props.offerSuccessMessage;
 
   return (
-    <div className='container'>
+    <div className='container offer-container'>
       {finished
         ? (success
           ? (
-            <p className='alert alert-success'>
-            Success!
-            </p>
+            <Alert className="alert-container" severity="success">Success! {offerSuccessMessage}</Alert>
           ) : (
-            <p className='alert alert-danger'>
+            <Alert className="alert-container" severity="error">
               Something went wrong, prease refresh the page.
               <br/>
               {offerFailureReason && <span>Failure reason: {offerFailureReason}.</span>}
-            </p>
+            </Alert>
           )
         ) : (
           <div>
-            <div className='d-flex m-5 justify-content-center' key='1'>
-              <div className='spinner-grow' role='status'>
-                <span className='visually-hidden'>Loading...</span>
-              </div>
-            </div>
-            <p className='alert alert-warning'>
-            Do not refresh or close the page
-            </p>
 
-            <p className='alert alert-secondary'>
-            It may take up to 5 minutes to complete
-            </p>
+            <Alert className="alert-container" severity="warning">Do not refresh or close the page</Alert>
+
+            <Alert className="alert-container" severity="info">It may take up to 5 minutes to complete</Alert>
+
+            <ul className="offer-process-list">
+              {props.offerProcessOutput.map((msg, i) =>
+                <li key={i}>{msg}</li>
+              )}
+            </ul>
+
+            <div className="spinner">
+              <CircularProgress sx={{
+                color: 'var(--link)',
+                margin: 'auto'
+              }}/>
+            </div>
+
           </div>
         )}
 

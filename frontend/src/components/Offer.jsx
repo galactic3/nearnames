@@ -83,8 +83,8 @@ function Offer (props) {
 
     const { fieldset, lot_id, seller_id, reserve_price, buy_now_price } = e.target.elements;
 
-    if (props.signedIn) {
-      props.app.wallet.signOut()
+    if (props.currentUser) {
+      props.wallet.signOut()
     }
 
     const lot_account_id = lot_id.value.endsWith(accountSuffix) ? lot_id.value : lot_id.value + accountSuffix;
@@ -94,7 +94,7 @@ function Offer (props) {
 
     console.log('lot check');
 
-    const account = await props.app.near.account(lot_account_id);
+    const account = await props.near.account(lot_account_id);
     let balance = null;
     try {
       balance = nearTo((await account.getAccountBalance()).total);
@@ -123,7 +123,7 @@ function Offer (props) {
 
     console.log('seller check');
 
-    const seller = await props.app.near.account(seller_account_id);
+    const seller = await props.near.account(seller_account_id);
 
     try {
       balance = nearTo((await seller.getAccountBalance()).total);
@@ -143,17 +143,17 @@ function Offer (props) {
 
     const accessKeys = await account.getAccessKeys();
 
-    ls.set(props.app.lsPrevKeys, accessKeys);
-    ls.set(props.app.lsLotAccountId, lot_account_id);
+    ls.set(props.lsPrevKeys, accessKeys);
+    ls.set(props.lsLotAccountId, lot_account_id);
 
-    ls.set(props.app.config.contractName + ':lotOffer: ' + lot_account_id,
+    ls.set(props.nearConfig.contractName + ':lotOffer: ' + lot_account_id,
       JSON.stringify(offerData));
 
     // adding random Full Access Key
 
     await customRequestSigninFullAccess(
-      props.app.wallet,
-      props.app.config.contractName,
+      props.wallet,
+      props.nearConfig.contractName,
       window.location.origin + window.location.pathname + '#/offerProcess',
       window.location.origin + window.location.pathname + '#/lots'
     )

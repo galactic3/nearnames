@@ -1,5 +1,5 @@
 import 'regenerator-runtime/runtime';
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import * as nearAPI from 'near-api-js';
 import localStorage from 'local-storage';
 import {HashRouter as Router, NavLink, Redirect, Route, Switch} from 'react-router-dom';
@@ -13,112 +13,91 @@ import AboutPage from "./components/About";
 import ConfirmContextProvider from "./Providers/ConfirmContextProvider";
 import ModalConfirm from "./components/Confirm";
 
-class App extends React.Component {
-  constructor(props) {
-    super(props);
+function App (props) {
 
-    this.app = {
-      lsLotAccountId: props.nearConfig.contractName + ':v01:' + 'lotAccountId',
-      lsPrevKeys: props.nearConfig.contractName + ':v01:' + 'prevKeys',
-      near: props.near,
-      wallet: props.wallet,
-      config: props.nearConfig,
-      contract: props.contract,
-      currentUser: props.currentUser,
-      account: props.wallet.account(),
-      accountId: props.currentUser && props.currentUser.accountId,
-    };
+  const lsPrevKeys = props.nearConfig.contractName + ':v01:' + 'prevKeys';
+  const lsLotAccountId = props.nearConfig.contractName + ':v01:' + 'lotAccountId';
 
-    this.state = {
-      connected: false
-    };
+  const [connected, setConnected] = useState(false);
+  const [signedAccount, setSignedAccount] = useState(props.currentUser && props.currentUser.accountId);
+  const [signedAccountBalance, setSignedAccountBalance] = useState(props.currentUser && props.currentUser.balance);
 
-    this.app.updateBalance = async () => {
-      this.setState({
-        signedAccountBalance: await this.app.getBalance(this.app.accountId),
-      })
-    }
+  const [offerProcessState, setOfferProcessState] = useState({
+    offerFinished: false,
+    offerSuccess: false,
+    offerFailureReason: '',
+    offerSuccessMessage: '',
+  })
 
-    this.getBalance = async (accountId) => {
-      try {
-        const account = await this.app.near.account(accountId);
-        return nearTo((await account.getAccountBalance()).total);
-      } catch (e) {
-        return null;
-      }
-    }
+  const [offerProcessOutput, setOfferProcessOutput] = useState([]);
 
-    this.app.signIn = () => {
-      props.wallet.requestSignIn(
-        props.nearConfig.contractName,
-        'Name hub'
-      );
-    };
+  useEffect(async () => {
+    await initOffer();
+    setConnected(true);
+  }, []);
 
-    this.app.signOut = () => {
-      props.wallet.signOut();
-      window.location.replace(window.location.origin + window.location.pathname);
-    };
-
-    this.initApp().then(async () => {
-      this.setState({
-        signedIn: !!this.app.accountId,
-        signedAccountId: this.app.accountId,
-        signedAccountBalance: this.app.accountId && await this.getBalance(this.app.accountId),
-        connected: true
-      });
-    })
+  const updateBalance = async () => {
+    setSignedAccountBalance(await getBalance(signedAccount));
   }
 
-  async initApp () {
+  const getBalance = async (accountId) => {
+    debugger;
+    try {
+      const account = await props.near.account(accountId);
+      return (await account.getAccountBalance()).total;
+    } catch (e) {
+      return null;
+    }
+  }
 
-    /*this.app.logOut = () => {
-      this.app.wallet.signOut();
-      this.app.accountId = null;
-      this.setState({
-        signedIn: !!this.app.accountId,
-        signedAccountId: this.app.accountId
-      })
-    };*/
+  const signIn = () => {
+    props.wallet.requestSignIn(
+      props.nearConfig.contractName,
+      'Nearnames'
+    );
+  };
 
-    this.app.refreshAllowance = async () => {
-      alert("You're out of access key allowance. Need sign in again to refresh it");
-      await this.app.logOut();
-      await this.signIn();
-    };
+  const signOut = (withReload) => {
+    props.wallet.signOut();
+    setSignedAccount('');
+    withReload && window.location.replace(window.location.origin + window.location.pathname);
+  };
 
-    if (!this.app.accountId) {
+  const initOffer = async() => {
+
+    if (!signedAccount) {
       return;
     }
 
-    const lotAccountId = localStorage.get(this.app.lsLotAccountId);
+    const lotAccountId = localStorage.get(lsLotAccountId);
     if (!lotAccountId) {
       return;
     }
 
-    if (this.app.accountId !== lotAccountId) {
-      console.log(`wrong account, please try lot offer again`);
-      localStorage.remove(this.app.lsLotAccountId);
-      this.setState({
+    if (signedAccount !== lotAccountId) {
+      localStorage.remove(lsLotAccountId);
+      const newState = {
         offerFinished: true,
         offerSuccess: false,
         offerFailureReason: `wrong account authenticated, expected ${lotAccountId}, please try lot offer again`,
-      })
-      this.app.signOut();
+      };
+      setOfferProcessState(offerProcessState => ({...offerProcessState, ...newState}));
+      signOut();
       return;
     }
 
     // should never happen
-    const offerData = JSON.parse(localStorage.get(this.app.config.contractName + ':lotOffer: ' + this.app.accountId));
+    const offerData = JSON.parse(localStorage.get(props.nearConfig.contractName + ':lotOffer: ' + signedAccount));
     if (!offerData) {
       console.log(`failed to parse lot offer data`);
-      localStorage.remove(this.app.lsLotAccountId);
-      this.setState({
+      localStorage.remove(lsLotAccountId);
+      const newState = {
         offerFinished: true,
         offerSuccess: false,
         offerFailureReason: 'failed to parse lot offer data, please try lot offer again',
-      })
-      this.app.signOut();
+      };
+      setOfferProcessState(offerProcessState => ({...offerProcessState, ...newState}));
+      signOut();
       return;
     }
 
@@ -130,136 +109,158 @@ class App extends React.Component {
     const with_timeout = (promise) => wrap_with_timeout(promise, 60_000);
 
     try {
-      const account = await with_timeout(this.app.near.account(this.app.accountId));
-      console.log(lotAccountId);
 
-      const lastKey = (await with_timeout(this.app.wallet._keyStore.getKey(this.app.config.networkId, this.app.accountId))).getPublicKey().toString();
+      const account = await with_timeout(props.near.account(signedAccount));
 
-      const accessKeys = await with_timeout(this.app.account.getAccessKeys());
+      setOfferProcessOutput(offerProcessOutput => [...offerProcessOutput, 'geting access keys']);
+
+      const lastKey = (await with_timeout(props.wallet._keyStore.getKey(props.nearConfig.networkId, signedAccount))).getPublicKey().toString();
+
+      const accessKeys = await with_timeout(props.wallet.account().getAccessKeys());
 
       console.log('all keys', accessKeys);
-      console.log('all local keys', this.app.wallet._authData.allKeys);
+      console.log('all local keys', props.wallet._authData.allKeys);
       console.log('last key', lastKey);
 
-      const state = await with_timeout(account.state());
-      console.log(state);
+      setOfferProcessOutput(offerProcessOutput => [...offerProcessOutput, 'fetching contract']);
 
       const data = await with_timeout(fetch('/lock_unlock_account.wasm'));
-      console.log('!', data);
       const buf = await with_timeout(data.arrayBuffer());
+
+      setOfferProcessOutput(offerProcessOutput => [...offerProcessOutput, 'Deploying contract']);
 
       await with_timeout(account.deployContract(new Uint8Array(buf)));
 
-      const contractLock = await with_timeout(new nearAPI.Contract(account, this.app.accountId, {
+      const contractLock = await with_timeout(new nearAPI.Contract(account, signedAccount, {
         viewMethods: [],
         changeMethods: ['lock'],
-        sender: this.app.accountId
+        sender: signedAccount
       }));
+
+      setOfferProcessOutput(offerProcessOutput => [...offerProcessOutput, 'Deploying done. Initializing contract...']);
       console.log('Deploying done. Initializing contract...');
-      console.log(await with_timeout(contractLock.lock(Buffer.from('{"owner_id":"' + this.app.config.contractName + '"}'))));
+      console.log(await with_timeout(contractLock.lock(Buffer.from('{"owner_id":"' + props.nearConfig.contractName + '"}'))));
+
+      setOfferProcessOutput(offerProcessOutput => [...offerProcessOutput, 'Init is done.']);
       console.log('Init is done.');
 
       console.log('code hash', (await with_timeout(account.state())).code_hash);
 
-      const offerResult = await with_timeout(this.app.contract.lot_offer(offerData));
+
+      setOfferProcessOutput(offerProcessOutput => [...offerProcessOutput, 'Create lot offer.']);
+
+      const offerResult = await with_timeout(props.contract.lot_offer(offerData));
 
       console.log(offerResult);
 
       for (let index = 0; index < accessKeys.length; index++) {
         if (accessKeys[index].public_key !== lastKey) {
+          setOfferProcessOutput(offerProcessOutput => [...offerProcessOutput, 'deleting ' + accessKeys[index].public_key]);
           console.log('deleting ', accessKeys[index]);
           await with_timeout(account.deleteKey(accessKeys[index].public_key));
           console.log('deleting ', accessKeys[index], 'done');
         }
       }
 
+      setOfferProcessOutput(offerProcessOutput => [...offerProcessOutput, 'deleting last key ' + lastKey]);
       console.log('deleting last key', lastKey);
       await with_timeout(account.deleteKey(lastKey));
+      setOfferProcessOutput(offerProcessOutput => [...offerProcessOutput, 'deleting done']);
       console.log('deleting ', lastKey, 'done');
 
-      localStorage.remove(this.app.config.contractName + ':lotOffer: ' + this.app.accountId);
-      localStorage.remove(this.app.lsLotAccountId);
-      this.setState({ offerFinished: true, offerSuccess: true })
-
-      this.app.signOut()
+      localStorage.remove(props.nearConfig.contractName + ':lotOffer: ' + signedAccount);
+      localStorage.remove(lsLotAccountId);
+      const newState = {
+        offerFinished: true,
+        offerSuccess: true,
+        offerSuccessMessage: `Account ${signedAccount} is now on sale. Log in as ${offerData.seller_id} to see it on your profile and be able collect rewards as soon as the first bid is made.`
+      };
+      setOfferProcessState(offerProcessState => ({...offerProcessState, ...newState}));
     } catch (e) {
       console.log('Error', e)
-      this.setState({ offerFinished: true, offerSuccess: false });
+      let offerFailureReason = '';
       e = e.toString();
       if (e === 'timeout_reached' || e === 'TypeError: NetworkError when attempting to fetch resource.') {
-        this.setState({ offerFailureReason: "timeout on network operation reached, try reloading the page" })
+        offerFailureReason = 'timeout on network operation reached, try reloading the page';
       }
+      const newState = {
+        offerFinished: true,
+        offerSuccess: false,
+        offerFailureReason
+      };
+      setOfferProcessState(offerProcessState => ({...offerProcessState, ...newState}));
     }
-    console.log('initapp finish');
+    signOut();
+    console.log('init offer finish');
   }
 
-  render () {
-    const passProps = {
-      app: this.app,
-      refreshAllowance: () => this.app.refreshAllowance(),
-      ...this.state
-    };
+  const passProps = {
+    connected,
+    ...props
+  };
 
-    return (
-      <main>
-        <Router basename='/'>
-          <header>
-            <div className="container">
-              <h1><NavLink aria-current='page' to='/'>Near names</NavLink></h1>
-
-              { this.state.connected &&
-                <ul className='nav'>
-                  <li className='nav-item'>
-                    <NavLink activeClassName='active' className='nav-link' aria-current='page' to='/lots'>Lots</NavLink>
-                  </li>
-                { this.app.currentUser && (<li className='nav-item'>
-                    <NavLink activeClassName='active' className='nav-link' aria-current='page'
-                          to='profile'>Profile</NavLink>
-                  </li>)}
-                  <li className='nav-item'>
-                    <NavLink activeClassName='active' className='nav-link' aria-current='page' to='/about'>About</NavLink>
-                  </li>
-                </ul> }
-
-                <ConfirmContextProvider>
-                  <CreateOffer {...passProps}/>
-                  <ModalConfirm/>
-                </ConfirmContextProvider>
-                { !this.state.connected ? (
-                    <div className="auth">
-                      <span className='spinner' role='status' aria-hidden='true'>Connecting...</span>
-                    </div>
-                  ) : this.app.currentUser
-                  ? <div className="auth">
-                      <strong className="balance near-icon">{this.state.signedAccountBalance || '-'}</strong>
-                      {renderName(this.app.accountId)}
-                      <a className="icon logout" onClick={this.app.signOut}><LogoutIcon/></a>
-                    </div>
-                  : <div className="auth"><button className="login" onClick={this.app.signIn}>Log in</button></div>
-                }
-            </div>
-          </header>
-          <Switch>
-            <Route exact path='/'>
-              <Redirect to='/lots'/>
-            </Route>
-            <Route exact path='/lots'>
-              <Lots {...passProps}/>
-            </Route>
-            <Route exact path='/offerProcess'>
-              <OfferProcessPage {...passProps} />
-            </Route>
-            <Route exact path='/profile'>
-              <ProfilePage {...passProps}/>
-            </Route>
-            <Route exact path='/about'>
-              <AboutPage/>
-            </Route>
-          </Switch>
-        </Router>
-      </main>
-    )
+  const offerProps = {
+    lsPrevKeys,
+    lsLotAccountId,
   }
+
+  return (
+    <ConfirmContextProvider>
+    <main>
+      <Router basename='/'>
+        <header>
+          <div className="container">
+            <h1><NavLink aria-current='page' to='/'>Near names</NavLink></h1>
+
+              <ul className='nav'>
+                <li className='nav-item'>
+                  <NavLink activeClassName='active' className='nav-link' aria-current='page' to='/lots'>Lots</NavLink>
+                </li>
+              { signedAccount && (<li className='nav-item'>
+                  <NavLink activeClassName='active' className='nav-link' aria-current='page'
+                        to='profile'>Profile</NavLink>
+                </li>)}
+                <li className='nav-item'>
+                  <NavLink activeClassName='active' className='nav-link' aria-current='page' to='/about'>About</NavLink>
+                </li>
+              </ul>
+                <CreateOffer {...{...passProps, ...offerProps}}/>
+              { !connected ? (
+                  <div className="auth">
+                    <span className='spinner' role='status' aria-hidden='true'>Connecting...</span>
+                  </div>
+                ) : signedAccount
+                ? <div className="auth">
+                    <strong className="balance near-icon">{nearTo(signedAccountBalance) || '-'}</strong>
+                    {renderName(signedAccount)}
+                    <a className="icon logout" onClick={() => signOut()}><LogoutIcon/></a>
+                  </div>
+                : <div className="auth"><button className="login" onClick={signIn}>Log in</button></div>
+              }
+          </div>
+        </header>
+        <Switch>
+          <Route exact path='/'>
+            <Redirect to='/lots'/>
+          </Route>
+          <Route exact path='/lots'>
+            <Lots {...passProps}/>
+          </Route>
+          <Route exact path='/offerProcess'>
+            <OfferProcessPage {...{...offerProcessState, offerProcessOutput}} />
+          </Route>
+          <Route exact path='/profile'>
+            <ProfilePage {...{...passProps, updateBalance}}/>
+          </Route>
+          <Route exact path='/about'>
+            <AboutPage/>
+          </Route>
+        </Switch>
+      </Router>
+      <ModalConfirm/>
+    </main>
+  </ConfirmContextProvider>
+  )
 }
 
 export default App;

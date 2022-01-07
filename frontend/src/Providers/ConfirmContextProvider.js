@@ -1,6 +1,6 @@
 import React, { createContext, useState } from "react";
 
-export const ConfirmContext = createContext();
+export const ConfirmContext = createContext([]);
 
 const ConfirmContextProvider = ({ children }) => {
   const [confirm, setConfirm] = useState({

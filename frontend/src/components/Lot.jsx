@@ -14,8 +14,9 @@ function Lot(props) {
 
   const lot = props.lot;
   const contract = props.contract;
-  const isNotSeller = props.currentUser !== lot.seller_id;
-  const isLastBidder = props.currentUser === getLastBidder(bids);
+  const accountId = props.currentUser && props.currentUser.accountId;
+  const isNotSeller = accountId !== lot.seller_id;
+  const isLastBidder = accountId === getLastBidder(bids);
 
   useEffect(() => {
     contract.lot_bid_list({'lot_id': lot.lot_id}).then(setBids);
@@ -26,7 +27,7 @@ function Lot(props) {
       case 'OnSale':
         return (
           <div className="button_wrapper">
-            <button name="bid" className="outlined" onClick={(e) => props.openBid(lot, bids, e)}>{isNotSeller && props.currentUser ? 'Buy or bid' : 'Show details'}</button>
+            <button name="bid" className="outlined" onClick={(e) => props.openBid(lot, bids, e)}>{isNotSeller && accountId ? 'Buy or bid' : 'Show details'}</button>
           </div>)
       case 'SaleSuccess':
         return (isLastBidder ? <div className="button_wrapper">

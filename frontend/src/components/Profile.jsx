@@ -4,14 +4,14 @@ import { BOATLOAD_OF_GAS, nearTo, renderName, loadListPaginated } from "../utils
 import LotsList from "./LotsList";
 
 function Profile (props) {
-  const profileId = props.app.currentUser.accountId;
+  const profileId = props.currentUser.accountId;
   const [profile, setProfile] = useState([]);
   const [lotsOffering, setLotsOffering] = useState([]);
   const [lotsBidding, setLotsBidding] = useState([]);
   const [loader, setLoader] = useState(false);
   const [claimLoader, setClaimLoader] = useState(false);
 
-  const contract = props.app.contract;
+  const contract = props.contract;
 
   const getLotsOffering = async () => {
     await loadListPaginated(
@@ -39,7 +39,7 @@ function Profile (props) {
       await contract.profile_rewards_claim({}, BOATLOAD_OF_GAS).then(() => {
         contract.profile_get({profile_id: profileId}).then(async (profile) => {
           setProfile(profile);
-          await props.app.updateBalance();
+          await props.updateBalance();
           setClaimLoader(false);
         });
       });
