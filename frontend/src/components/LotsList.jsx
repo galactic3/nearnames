@@ -5,9 +5,10 @@ import ModalBid from "./Bid";
 import {BOATLOAD_OF_GAS, fetchBidSafety, toNear} from "../utils";
 import ModalAlert from "./Alert";
 import ls from "local-storage";
+import { useHistory } from "react-router-dom";
 
 function LotsList(props) {
-
+  const history = useHistory();
   const contract = props.contract;
   const config = props.nearConfig;
   const signedAccount = props.signedAccount;
@@ -22,11 +23,15 @@ function LotsList(props) {
   const [selectedLotBids, setSelectedLotBids] = useState([]);
 
   const withdraw = async (lot, e) => {
-    e.target.disabled = true;
-    setLoaderShow(true);
-    await contract.lot_withdraw({'lot_id': lot.lot_id}, BOATLOAD_OF_GAS);
-    setLoaderShow(false);
-    e.target.disabled = false;
+    try {
+      e.target.disabled = true;
+      setLoaderShow(true);
+      await contract.lot_withdraw({'lot_id': lot.lot_id}, BOATLOAD_OF_GAS);
+      history.push("/profile");
+    } finally {
+      setLoaderShow(false);
+      e.target.disabled = false;
+    }
     props.getLots();
   };
 
