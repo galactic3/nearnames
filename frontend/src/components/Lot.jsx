@@ -25,6 +25,11 @@ function Lot(props) {
   const renderButton = (lot) => {
     switch(lot.status) {
       case 'OnSale':
+        if (!isNotSeller && !lot.last_bidder_id) {
+          return (<div className="button_wrapper">
+            <button name="withdraw" className="outlined" disabled={props.loader} onClick={(e) => props.withdraw(lot, e)}>{props.loader ? 'Loading...' : 'Withdraw'}</button>
+          </div>);
+        }
         return (
           <div className="button_wrapper">
             <button name="bid" className="outlined" onClick={(e) => props.openBid(lot, bids, e)}>{isNotSeller && accountId ? 'Buy or bid' : 'Show details'}</button>
