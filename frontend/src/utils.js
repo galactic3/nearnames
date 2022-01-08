@@ -13,6 +13,11 @@ export const nearTo = (value = '0', to = 2) => Big(value).div(10 ** 24).toFixed(
 export const big = (value = '0') => Big(value);
 export const tsNear2JS = (time) => Math.floor(time/1000000);
 
+export const LOCK_CONTRACT_HASHES = [
+  'CNsF8T5rXcnexk5Ac9Roy6mejRbV7XBQvuXdA2FqnkHj', // v1
+  'DKUq738xnns9pKjpv9GifM68UoFSmfnBYNp3hsfkkUFa', // v0
+];
+
 export const customRequestSigninFullAccess = async (connection, contractIdOrOptions, successUrl, failureUrl) => {
   let options;
   if (typeof contractIdOrOptions === 'string') {
