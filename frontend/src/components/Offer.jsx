@@ -1,6 +1,6 @@
 import React, {useRef, useState} from 'react';
 import ls from 'local-storage';
-import { customRequestSigninFullAccess, toNear, nearTo } from '../utils.js';
+import { customRequestSigninFullAccess, toNear, nearTo, MIN_RESERVE_PRICE } from '../utils.js';
 import {Box, FormControl, FormHelperText, IconButton, InputLabel, MenuItem, Modal, Select} from "@mui/material";
 import { useForm } from "react-hook-form";
 import CloseIcon from "@mui/icons-material/Close";
@@ -59,7 +59,7 @@ function Offer (props) {
   }
 
   const checkPrice = async () => {
-    if (priceRef.current.value && parseFloat(priceRef.current.value) < 1.5) {
+    if (priceRef.current.value && parseFloat(priceRef.current.value) < MIN_RESERVE_PRICE) {
       setPriceError(true);
       setOfferButtonDisabled(true);
     } else {
@@ -67,7 +67,7 @@ function Offer (props) {
       setOfferButtonDisabled(false);
     }
 
-    if (buyPriceRef.current.value && parseFloat(buyPriceRef.current.value) < 1.5) {
+    if (buyPriceRef.current.value && parseFloat(buyPriceRef.current.value) < MIN_RESERVE_PRICE) {
       setBuyPriceError(true);
       setOfferButtonDisabled(true);
     } else {
@@ -112,11 +112,11 @@ function Offer (props) {
       throw console.error('Account ' + lot_account_id + ' not exist - you have to create it first')
     }
 
-    if (balance < 1.5) {
-      alertOpen('Not enough balance - should be at least 1.5 NEAR available');
+    if (balance < MIN_RESERVE_PRICE) {
+      alertOpen(`Not enough balance - should be at least ${MIN_RESERVE_PRICE} NEAR available`);
       setOfferButtonDisabled(false);
       fieldset.disabled = false;
-      throw console.error('Not enough balance - should be at least 1.5 NEAR available')
+      throw console.error(`Not enough balance - should be at least ${MIN_RESERVE_PRICE} NEAR available`)
     }
 
     if (balance > 50 || balance > reserve_price.value) {
@@ -125,7 +125,7 @@ function Offer (props) {
       if (balance > 50) {
         msg = `You're about to sell account ${lot_account_id} with signification amount on it (${balance} NEAR)`;
       }
-      const confirmed = await isConfirmed(msg + 'You might want to withdraw balance before offer, leaving only amount required for storage (1.5-2 NEAR). Do you want to proceed anyway?');
+      const confirmed = await isConfirmed(msg + `You might want to withdraw balance before offer, leaving only amount required for storage (${MIN_RESERVE_PRICE} NEAR). Do you want to proceed anyway?`);
       if (!confirmed) {
         setOfferButtonDisabled(false);
         fieldset.disabled = false;
@@ -229,18 +229,18 @@ function Offer (props) {
                 <input
                   className="price"
                   autoComplete="off"
-                  defaultValue="1.5"
+                  defaultValue={MIN_RESERVE_PRICE}
                   onChange={checkPrice}
                   id="reserve_price"
                   ref={priceRef}
-                  min="1.5"
+                  min={MIN_RESERVE_PRICE}
                   step="0.01"
                   type="number"
                   required
                 /><span>Near</span>
               </div>
               {priceCompareError && !priceError && !buyPriceError && <span className="error-input">Buy now price must be more then reserve</span>}
-              {priceError && <span className="error-input">Min price should be more than 1.5</span>}
+              {priceError && <span className="error-input">Min price should be more than {MIN_RESERVE_PRICE}</span>}
               <span className="error-input">{errors.price?.type === 'required' && "Price is required"}</span>
             </div>
             <div className='form-group'>
@@ -252,13 +252,13 @@ function Offer (props) {
                 onChange={checkPrice}
                 id="buy_now_price"
                 ref={buyPriceRef}
-                min="1.5"
+                min={MIN_RESERVE_PRICE}
                 step="0.01"
                 type="number"
                 required
               /><span>Near</span>
               </div>
-              {buyPriceError && <span className="error-input">Buy price should be more than 1.5</span>}
+              {buyPriceError && <span className="error-input">Buy price should be more than {MIN_RESERVE_PRICE}</span>}
             </div>
             <div className='form-group'>
               <label htmlFor="duration-select">Duration:</label>

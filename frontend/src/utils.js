@@ -17,6 +17,7 @@ export const LOCK_CONTRACT_HASHES = [
   'CNsF8T5rXcnexk5Ac9Roy6mejRbV7XBQvuXdA2FqnkHj', // v1
   'DKUq738xnns9pKjpv9GifM68UoFSmfnBYNp3hsfkkUFa', // v0
 ];
+export const MIN_RESERVE_PRICE = 0.6;
 
 export const customRequestSigninFullAccess = async (connection, contractIdOrOptions, successUrl, failureUrl) => {
   let options;
