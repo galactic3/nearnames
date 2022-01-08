@@ -136,11 +136,16 @@ impl Lot {
     }
 
     pub fn calculate_next_bid_amount(
+        is_active: bool,
         last_bid_amount: Option<Balance>,
         bid_step: Fraction,
         buy_now_price: Balance,
         reserve_price: Balance,
     ) -> Option<Balance> {
+        if !is_active {
+            return None;
+        }
+
         if let Some(last_bid_amount) = last_bid_amount {
             let mut next_bid_amount = last_bid_amount + bid_step * last_bid_amount;
 
@@ -156,18 +161,16 @@ impl Lot {
 
     pub fn next_bid_amount(&self, time_now: Timestamp, bid_step: Fraction) -> Option<Balance> {
         let last_bid_amount = self.last_bid_amount();
-
-        if !Self::lot_is_active(
+        let is_active = Self::lot_is_active(
             last_bid_amount,
             self.buy_now_price,
             self.finish_timestamp,
             time_now,
             self.is_withdrawn,
-        ) {
-            return None;
-        }
+        );
 
         Self::calculate_next_bid_amount(
+            is_active,
             last_bid_amount,
             bid_step,
             self.buy_now_price,
