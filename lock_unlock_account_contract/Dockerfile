@@ -3,7 +3,6 @@ FROM rust:1.57.0
 LABEL description="Container for builds"
 
 RUN apt-get update && apt-get install -y \
-    git less vim llvm clang \
     binaryen wabt \
     && rm -rf /var/lib/apt/lists/*
 
