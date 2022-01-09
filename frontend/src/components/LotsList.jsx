@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Lot from "./Lot";
 import ModalClaim from "./Claim";
 import ModalBid from "./Bid";
-import {BOATLOAD_OF_GAS, fetchBidSafety, toNear} from "../utils";
+import { BOATLOAD_OF_GAS, fetchBidSafety, toNear, LOCK_CONTRACT_HASHES } from "../utils";
 import ModalAlert from "./Alert";
 import ls from "local-storage";
 import { useHistory } from "react-router-dom";
@@ -82,7 +82,8 @@ function LotsList(props) {
     e.target.disabled = true;
     const bid_price = isBuyNowButton ? lot.buy_now_price : nValue;
     const { codeHash, accessKeysLen, lockerOwner } = await fetchBidSafety(lot.lot_id, props.near);
-    const isSafe = codeHash === 'DKUq738xnns9pKjpv9GifM68UoFSmfnBYNp3hsfkkUFa' &&
+
+    const isSafe = LOCK_CONTRACT_HASHES.includes(codeHash) &&
       accessKeysLen === 0 &&
       lockerOwner === props.nearConfig.contractName;
     console.log(codeHash, accessKeysLen, lockerOwner);
