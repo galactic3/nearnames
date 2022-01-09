@@ -2,7 +2,7 @@ use crate::*;
 
 pub const NO_DEPOSIT: Balance = 0;
 pub const GAS_EXT_CALL_UNLOCK: u64 = 40_000_000_000_000;
-pub const GAS_EXT_CALL_CLEAN_UP: u64 = 100_000_000_000_000;
+pub const GAS_EXT_CALL_CLEAN_UP: u64 = 200_000_000_000_000;
 
 pub const ERR_LOT_CLEAN_UP_STILL_ACTIVE: &str = "UNREACHABLE: cannot clean up still active lot";
 pub const ERR_LOT_CLEAN_UP_UNLOCK_FAILED: &str = "Expected unlock promise to be successful";
