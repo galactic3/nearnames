@@ -18,19 +18,18 @@ function LotsList(props) {
   const [modalBidShow, setModalBidShow] = useState(false);
   const [modalAlertShow, setModalAlertShow] = useState(false);
   const [alertContent, setAlertContent] = useState('');
-  const [loaderShow, setLoaderShow] = useState(false);
   const [selectedLot, setSelectedLot] = useState(false);
   const [selectedLotBids, setSelectedLotBids] = useState([]);
 
   const withdraw = async (lot, e) => {
     try {
       e.target.disabled = true;
-      setLoaderShow(true);
+      e.target.innerText = 'Loading...';
       await contract.lot_withdraw({'lot_id': lot.lot_id}, BOATLOAD_OF_GAS);
       history.push("/profile");
     } finally {
-      setLoaderShow(false);
       e.target.disabled = false;
+      e.target.innerText = 'Withdraw';
     }
     props.getLots();
   };
@@ -117,8 +116,8 @@ function LotsList(props) {
         </div> :
         <ul className="lot_list">
           {props.lots.map((lot, i) =>
-            <Lot lot={lot} key={i} openBid={openBid} withdraw={withdraw} claim={claimOpen}
-                 contract={contract} loader={loaderShow} showStatus={props.showStatus} signedAccount={signedAccount}/>
+            <Lot lot={lot} key={i} ыopenBid={openBid} withdraw={withdraw} claim={claimOpen}
+                 contract={contract} showStatus={props.showStatus} signedAccount={signedAccount}/>
           )}
         </ul>
       }

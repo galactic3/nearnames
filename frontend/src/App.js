@@ -41,7 +41,6 @@ function App (props) {
   }
 
   const getBalance = async (accountId) => {
-    debugger;
     try {
       const account = await props.near.account(accountId);
       return (await account.getAccountBalance()).total;
@@ -60,7 +59,7 @@ function App (props) {
 
   const signOut = async (withReload) => {
     await props.wallet.signOut();
-    setSignedAccount(props.currentUser && props.currentUser.accountId);
+    setSignedAccount('');
     withReload && window.location.replace(window.location.origin + window.location.pathname);
   };
 
@@ -147,7 +146,6 @@ function App (props) {
 
       console.log('code hash', (await with_timeout(account.state())).code_hash);
 
-
       setOfferProcessOutput(offerProcessOutput => [...offerProcessOutput, 'Create lot offer.']);
 
       const offerResult = await with_timeout(props.contract.lot_offer(offerData));
@@ -190,9 +188,10 @@ function App (props) {
         offerFailureReason
       };
       setOfferProcessState(offerProcessState => ({...offerProcessState, ...newState}));
+    } finally {
+      signOut();
+      console.log('init offer finish');
     }
-    signOut();
-    console.log('init offer finish');
   }
 
   const passProps = {

@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {getBuyNowPrice, getCountdownTime, getCurrentPrice, nearTo, renderName, tsNear2JS} from "../utils";
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import Countdown from "react-countdown";
@@ -27,7 +27,7 @@ function Lot(props) {
       case 'OnSale':
         if (!isNotSeller && !lot.last_bidder_id) {
           return (<div className="button_wrapper">
-            <button name="withdraw" className="outlined" disabled={props.loader} onClick={(e) => props.withdraw(lot, e)}>{props.loader ? 'Loading...' : 'Withdraw'}</button>
+            <button name="withdraw" className="outlined" onClick={(e) => props.withdraw(lot, e)}>Withdraw</button>
           </div>);
         }
         return (
@@ -42,7 +42,7 @@ function Lot(props) {
         </div>)
       case 'SaleFailure':
         return (!isNotSeller && <div className="button_wrapper">
-          <button name="withdraw" className="outlined" disabled={props.loader} onClick={(e) => props.withdraw(lot, e)}>{props.loader ? 'Loading...' : 'Withdraw'}</button>
+          <button name="withdraw" className="outlined" onClick={(e) => props.withdraw(lot, e)}>Withdraw</button>
         </div>)
       case 'Withdrawn':
         return (!isNotSeller && <div className="button_wrapper">
@@ -69,7 +69,7 @@ function Lot(props) {
       </div>
       <div className="lot_action">
         {renderButton(lot)}
-        {getCountdownTime(lot) > Date.now() && <span className="countdown"><AccessTimeFilledIcon className="icon"/><Countdown date={getCountdownTime(lot)}/></span>}
+        {lot.status === 'OnSale' && getCountdownTime(lot) > Date.now() && <span className="countdown"><AccessTimeFilledIcon className="icon"/><Countdown date={getCountdownTime(lot)}/></span>}
       </div>
     </li>
   );

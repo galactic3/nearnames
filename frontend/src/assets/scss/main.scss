@@ -88,7 +88,7 @@
     height: 70px;
     border-right: 1px solid var(--fg);
     border-left: 1px solid var(--fg);
-    padding: 0 36px;
+    width: 155px;
     text-align: center;
     .current_price {
       display: block;
@@ -419,7 +419,6 @@ footer {
     .legal-notice {
         width: 100%;
         text-align: center;
-
         color: var(--light-gray);
         font-size: 10px;
     }
