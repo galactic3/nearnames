@@ -182,17 +182,25 @@ impl Lot {
         self.last_bid().map(|x| x.bidder_id)
     }
 
-    pub fn status(&self, time_now: Timestamp) -> LotStatus {
-        if self.is_active(time_now) {
+    pub fn lot_status(is_withdrawn: bool, is_active: bool, last_bid: Option<&Bid>) -> LotStatus {
+        if is_active {
             LotStatus::OnSale
-        } else if self.is_withdrawn {
+        } else if is_withdrawn {
             LotStatus::Withdrawn
         } else {
-            match self.last_bid() {
+            match last_bid {
                 Some(_) => LotStatus::SaleSuccess,
                 None => LotStatus::SaleFailure,
             }
         }
+    }
+
+    pub fn status(&self, time_now: Timestamp) -> LotStatus {
+        Self::lot_status(
+            self.is_withdrawn,
+            self.is_active(time_now),
+            self.last_bid().as_ref(),
+        )
     }
 
     pub fn clean_up(&mut self) {
