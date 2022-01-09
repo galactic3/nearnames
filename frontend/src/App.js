@@ -125,7 +125,7 @@ function App (props) {
 
       setOfferProcessOutput(offerProcessOutput => [...offerProcessOutput, 'fetching contract']);
 
-      const data = await with_timeout(fetch('/lock_unlock_account.wasm'));
+      const data = await with_timeout(fetch('/lock_unlock_account_latest.wasm'));
       const buf = await with_timeout(data.arrayBuffer());
 
       setOfferProcessOutput(offerProcessOutput => [...offerProcessOutput, 'Deploying contract']);
