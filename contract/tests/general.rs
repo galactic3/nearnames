@@ -13,7 +13,7 @@ use marketplace::{
 // not using lazy static because it breaks my language server
 pub const CONTRACT_BYTES: &[u8] = include_bytes!("../res/marketplace.wasm");
 pub const LOCK_CONTRACT_BYTES: &[u8] =
-    include_bytes!("../../lock_unlock_account_contract/res/lock_unlock_account.wasm");
+    include_bytes!("../../lock_unlock_account_contract/res/lock_unlock_account_latest.wasm");
 const DEFAULT_PUBLIC_KEY: &str = "ed25519:Ga6C8S7jVG2inG88cos8UsdtGVWRFQasSdTdtHL7kBqL";
 
 fn from_yocto(amount: Balance) -> String {
