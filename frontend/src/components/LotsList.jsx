@@ -70,19 +70,9 @@ function LotsList(props) {
   }
 
   const bid = async (e, lot, value) => {
-    const isBuyNowButton = e.target.name === 'buy_now';
-    let nValue = toNear(value);
-    if (nValue < lot.reserve_price) {
-      alert ("enter value more than: " + lot.reserve_price);
-      return;
-    } else if (lot.next_bid_amount && nValue < lot.next_bid_amount) {
-      alert ("enter value more than: " + lot.next_bid_amount);
-      return;
-    }
     e.target.disabled = true;
-    const bid_price = isBuyNowButton ? lot.buy_now_price : nValue;
+    const bid_price = toNear(value);
     const { codeHash, accessKeysLen, lockerOwner } = await fetchBidSafety(lot.lot_id, props.near);
-
     const isSafe = LOCK_CONTRACT_HASHES.includes(codeHash) &&
       accessKeysLen === 0 &&
       lockerOwner === props.nearConfig.contractName;
