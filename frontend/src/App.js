@@ -12,12 +12,15 @@ import {nearTo, renderName} from "./utils";
 import AboutPage from "./components/About";
 import ConfirmContextProvider from "./Providers/ConfirmContextProvider";
 import ModalConfirm from "./components/Confirm";
+import {MenuItem, Select} from "@mui/material";
+import KeyboardArrowDownRoundedIcon from "@mui/icons-material/KeyboardArrowDownRounded";
 
 function App (props) {
 
   const lsPrevKeys = props.nearConfig.contractName + ':v01:' + 'prevKeys';
   const lsLotAccountId = props.nearConfig.contractName + ':v01:' + 'lotAccountId';
 
+  const [network, setNetwork] = useState('testnet');
   const [connected, setConnected] = useState(false);
   const [signedAccount, setSignedAccount] = useState(props.currentUser && props.currentUser.accountId);
   const [signedAccountBalance, setSignedAccountBalance] = useState(props.currentUser && props.currentUser.balance);
@@ -47,6 +50,11 @@ function App (props) {
     } catch (e) {
       return null;
     }
+  }
+
+  const onNetworkChange = (e) => {
+    const value = e.target.value;
+    setNetwork(value);
   }
 
   const signIn = () => {
@@ -210,11 +218,23 @@ function App (props) {
     <main>
       <Router basename='/'>
         <div className='beta-warning'>
-          Beta software. Test in prod. Not audited. Use at your own risk!
+          Beta software. Testnet version. Not audited. Use at your own risk!
         </div>
         <header>
           <div className="container">
             <h1><NavLink aria-current='page' to='/'>Near names</NavLink></h1>
+            <div className="network-select">
+              <Select
+                labelId="network-select-label"
+                id="network-select"
+                value={network}
+                onChange={onNetworkChange}
+                IconComponent={KeyboardArrowDownRoundedIcon}
+              >
+                <MenuItem value='testnet'>Testnet</MenuItem>
+                <MenuItem value='mainnet' disabled={true}>Mainnet</MenuItem>
+              </Select>
+            </div>
 
               <ul className='nav'>
                 <li className='nav-item'>

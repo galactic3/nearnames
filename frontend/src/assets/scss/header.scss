@@ -10,7 +10,7 @@ header {
         font-weight: 500;
         text-transform: uppercase;
         color: var(--primary);
-        margin: 17px 65px 0 0;
+        margin: 17px 15px 0 0;
         a {
             text-decoration: inherit;
             color: inherit;
@@ -43,6 +43,10 @@ header {
     }
     .container {
         display: flex;
+    }
+    .network-select {
+        margin: 14px 15px;
+        width: 100px;
     }
     .nav {
         display: flex;
