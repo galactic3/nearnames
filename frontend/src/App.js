@@ -269,7 +269,7 @@ function App (props) {
             <Redirect to='/lots'/>
           </Route>
           <Route exact path='/lots'>
-            <Lots {...passProps}/>
+            <Lots {...{...passProps, signIn}}/>
           </Route>
           <Route exact path='/offerProcess'>
             <OfferProcessPage {...{...offerProcessState, offerProcessOutput}} />

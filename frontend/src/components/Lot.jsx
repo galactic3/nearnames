@@ -31,6 +31,13 @@ function Lot(props) {
             <button name="withdraw" className="outlined" onClick={(e) => props.withdraw(lot, e)}>Withdraw</button>
           </div>);
         }
+        if (!accountId) {
+          return (
+            <div className="button_wrapper">
+              <button name="login" className="outlined" onClick={(e) => props.signIn()}>Log in to buy</button>
+            </div>
+          )
+        }
         return (
           <div className="button_wrapper">
             <button name="bid" className="outlined" onClick={(e) => props.openBid(lot, bids, e)}>{isNotSeller && accountId ? 'Buy or bid' : 'Show details'}</button>
@@ -57,7 +64,7 @@ function Lot(props) {
       <div className="lot_info">
         <span className="lot_name">{renderName(lot.lot_id)}</span>
         <span className="seller_name"><AccountCircleIcon className="icon"/>{renderName(lot.seller_id)}</span>
-        {<span className="countdown"><AccessTimeFilledIcon className="icon"/><Countdown date={getCountdownTime(lot)}/></span>}
+        {lot.status === 'OnSale' && getCountdownTime(lot) > Date.now() && isMobile && <span className="countdown"><AccessTimeFilledIcon className="icon"/><Countdown date={getCountdownTime(lot)}/></span>}
       </div>
       {props.showStatus && <div className="lot_status">
         <span className={'badge ' + lot.status}>{lot.status}</span>

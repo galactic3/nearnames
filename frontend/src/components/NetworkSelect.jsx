@@ -21,7 +21,7 @@ function NetworkSelect () {
         IconComponent={KeyboardArrowDownRoundedIcon}
       >
         <MenuItem value='testnet'>Testnet</MenuItem>
-        <MenuItem value='mainnet' disabled={true}>Mainnet</MenuItem>
+        <MenuItem value='mainnet' disabled={true}>Mainnet (coming soon)</MenuItem>
       </Select>
     </div>
   )

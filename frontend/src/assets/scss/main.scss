@@ -149,6 +149,9 @@
       flex-wrap: wrap;
       justify-content: space-between;
       padding: 18px;
+      &:last-child {
+        margin-bottom: inherit;
+      }
     }
 
     .lot_info {

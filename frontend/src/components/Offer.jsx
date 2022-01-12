@@ -196,6 +196,7 @@ function Offer (props) {
                 <input
                   className="name"
                   autoComplete="off"
+                  autoCapitalize="off"
                   onChange={checkAccounts}
                   onBlur={(e) => onBlur(e)}
                   type="text"
@@ -213,6 +214,7 @@ function Offer (props) {
                 <input
                   className="name"
                   autoComplete="off"
+                  autoCapitalize="off"
                   onChange={checkAccounts}
                   type="text"
                   ref={sellerRef}

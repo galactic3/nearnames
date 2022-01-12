@@ -106,7 +106,7 @@ function LotsList(props) {
         </div> :
         <ul className="lot_list">
           {props.lots.map((lot, i) =>
-            <Lot lot={lot} key={i} openBid={openBid} withdraw={withdraw} claim={claimOpen}
+            <Lot lot={lot} key={i} openBid={openBid} signIn={props.signIn} withdraw={withdraw} claim={claimOpen}
                  contract={contract} showStatus={props.showStatus} signedAccount={signedAccount}/>
           )}
           {props.lots.length === 0 ? <li>No lots available</li> : ''}

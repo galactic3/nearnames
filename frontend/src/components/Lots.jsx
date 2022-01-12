@@ -55,7 +55,7 @@ function Lots(props) {
         <input type="text" className="search" placeholder="Search lots for sale" onChange={(e) => filterList(e)} value={filter}/>
         {filter && <span className="search-result">{lots.length} results <strong>"{filter}"</strong> found</span>}
       </div>
-      <LotsList lots={lots} getLots={getLots} showStatus={false} loader={loader} {...props} />
+      <LotsList lots={lots} getLots={getLots} signIn={props.signIn} showStatus={false} loader={loader} {...props} />
     </div>
   );
 }
