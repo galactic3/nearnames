@@ -276,6 +276,7 @@ function Offer (props) {
                   <MenuItem value={5 * 24}>5 days</MenuItem>
                   <MenuItem value={7 * 24}>7 days</MenuItem>
                   <MenuItem value={10 * 24}>10 days</MenuItem>
+                  <MenuItem value={30 * 24}>30 days</MenuItem>
                 </Select>
               </div>
             </div>
