@@ -64,6 +64,7 @@ button {
     line-height: 10px;
     padding: 4px 10px;
     border-radius: 36px;
+    white-space: nowrap;
     background: var(--red);
     color: var(--primary);
     &.OnSale {

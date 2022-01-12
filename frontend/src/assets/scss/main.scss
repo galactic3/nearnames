@@ -11,6 +11,10 @@
     padding-left: 16px;
     max-width: 736px;
   }
+  @media (max-width: 350px) {
+    padding-right: 5px;
+    padding-left: 5px;
+  }
 }
 
 .about {
@@ -137,10 +141,10 @@
   }
 
   @media (max-width: 768px) {
-    padding: 16px;
+    padding: 10px;
     .lot_list {
       flex-direction: row;
-      justify-content: space-between;
+      justify-content: space-around;
       flex-wrap: wrap;
     }
 
@@ -149,8 +153,9 @@
       flex-wrap: wrap;
       justify-content: space-between;
       padding: 18px;
+      margin: 6px 6px 12px;
       &:last-child {
-        margin-bottom: 20px;
+        margin-bottom: 12px;
       }
     }
 
@@ -198,10 +203,12 @@
       order: 2;
     }
   }
-  @media (max-width: 320px) {
+  @media (max-width: 368px) {
     .lot_status {
-      order: 3;
-      margin: 5px 0 0;
+      margin-right: 4px;
+      span {
+        padding: 4px 5px;
+      }
     }
   }
 }
@@ -295,8 +302,9 @@
   background: var(--fg);
   border-radius: 10px;
   width: 320px;
-  @media (max-width: 320px) {
+  @media (max-width: 350px) {
     width: 100%;
+    padding: 20px;
   }
 }
 
@@ -455,6 +463,9 @@
 
 .bid_modal {
   width: 360px;
+  @media (max-width: 360px) {
+    width: 100%;
+  }
   .bid_info {
     padding: 20px 0 24px;
     border-bottom: 1px solid var(--gray);

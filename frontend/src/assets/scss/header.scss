@@ -108,6 +108,9 @@ header {
         }
         .auth {
             margin: 20px 0;
+            .account-name {
+                margin: 0 10px;
+            }
         }
         .login {
             width: 280px;
