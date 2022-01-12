@@ -12,16 +12,19 @@ import {nearTo, renderName} from "./utils";
 import AboutPage from "./components/About";
 import ConfirmContextProvider from "./Providers/ConfirmContextProvider";
 import ModalConfirm from "./components/Confirm";
-import {MenuItem, Select} from "@mui/material";
-import KeyboardArrowDownRoundedIcon from "@mui/icons-material/KeyboardArrowDownRounded";
+import {IconButton, MenuItem, Select} from "@mui/material";
+import { BrowserView, MobileView, isBrowser, isMobile } from 'react-device-detect';
+import MobileNav from "./components/MobileNav";
+import MenuRoundedIcon from '@mui/icons-material/MenuRounded';
+import NetworkSelect from "./components/NetworkSelect";
 
 function App (props) {
 
   const lsPrevKeys = props.nearConfig.contractName + ':v01:' + 'prevKeys';
   const lsLotAccountId = props.nearConfig.contractName + ':v01:' + 'lotAccountId';
 
-  const [network, setNetwork] = useState('testnet');
   const [connected, setConnected] = useState(false);
+  const [showMobileNav, setShowMobileNav] = useState(false);
   const [signedAccount, setSignedAccount] = useState(props.currentUser && props.currentUser.accountId);
   const [signedAccountBalance, setSignedAccountBalance] = useState(props.currentUser && props.currentUser.balance);
 
@@ -50,11 +53,6 @@ function App (props) {
     } catch (e) {
       return null;
     }
-  }
-
-  const onNetworkChange = (e) => {
-    const value = e.target.value;
-    setNetwork(value);
   }
 
   const signIn = () => {
@@ -205,6 +203,7 @@ function App (props) {
   const passProps = {
     connected,
     signedAccount,
+    signedAccountBalance,
     ...props
   };
 
@@ -223,19 +222,8 @@ function App (props) {
         <header>
           <div className="container">
             <h1><NavLink aria-current='page' to='/'>Near names</NavLink></h1>
-            <div className="network-select">
-              <Select
-                labelId="network-select-label"
-                id="network-select"
-                value={network}
-                onChange={onNetworkChange}
-                IconComponent={KeyboardArrowDownRoundedIcon}
-              >
-                <MenuItem value='testnet'>Testnet</MenuItem>
-                <MenuItem value='mainnet' disabled={true}>Mainnet</MenuItem>
-              </Select>
-            </div>
-
+            { isBrowser && <NetworkSelect/> }
+            <BrowserView>
               <ul className='nav'>
                 <li className='nav-item'>
                   <NavLink activeClassName='active' className='nav-link' aria-current='page' to='/lots'>Lots</NavLink>
@@ -248,7 +236,9 @@ function App (props) {
                   <NavLink activeClassName='active' className='nav-link' aria-current='page' to='/about'>About</NavLink>
                 </li>
               </ul>
-                <CreateOffer {...{...passProps, ...offerProps}}/>
+            </BrowserView>
+            <CreateOffer {...{...passProps, ...offerProps}}/>
+            <BrowserView>
               { !connected ? (
                   <div className="auth">
                     <span className='spinner' role='status' aria-hidden='true'>Connecting...</span>
@@ -261,6 +251,17 @@ function App (props) {
                   </div>
                 : <div className="auth"><button className="login" onClick={signIn}>Log in</button></div>
               }
+            </BrowserView>
+            <MobileView>
+              <IconButton
+                aria-label="open"
+                onClick={() => setShowMobileNav(true)}
+                className="button-icon"
+              >
+                <MenuRoundedIcon />
+              </IconButton>
+              {showMobileNav && <MobileNav onClose={() => setShowMobileNav(false)} signIn={signIn} signOut={(e) => signOut(e)} {...passProps}/>}
+            </MobileView>
           </div>
         </header>
         <Switch>

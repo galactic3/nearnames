@@ -58,7 +58,7 @@ function Profile (props) {
           <h5 className="profile-name"><strong>{renderName(profileId)}</strong></h5>
           <div className="profile-block"><strong>Available:</strong> <span className="rewards near-icon">{nearTo(profile.rewards_available)}</span></div>
           <div className="profile-block"><strong>Claimed:</strong> <span className="rewards near-icon">{nearTo(profile.rewards_claimed)}</span></div>
-          <div className="profile-block"><button name="claim_rewards" className="mb-5" disabled={!parseFloat(profile.rewards_available) || claimLoader} onClick={(e) => claim(e)}>{claimLoader ? 'Claiming...' : 'Claim rewards'}</button></div>
+          <button className="claim-rewards" disabled={!parseFloat(profile.rewards_available) || claimLoader} onClick={(e) => claim(e)}>{claimLoader ? 'Claiming...' : 'Claim rewards'}</button>
         </div>
         <LotsList lots={lotsOffering} getLots={getLotsOffering} showStatus={true} name={' you are selling'} {...props}/>
         <LotsList lots={lotsBidding} getLots={getLotsBidding} showStatus={true} name={' you are bidding on'} {...props}/>

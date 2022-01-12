@@ -43,12 +43,17 @@ function ModalBid (props) {
     setShowBidList(!showBidList);
   };
 
+  const clearState = () => {
+    setShowBidList(false);
+    props.onClose();
+  }
+
   return (
-    <Modal onClose={props.onClose} open={props.open}>
+    <Modal open={props.open} onClose={() => clearState()}>
       <Box className="modal-container bid_modal">
       <IconButton
         aria-label="close"
-        onClick={props.onClose}
+        onClick={() => clearState()}
         className="button-icon"
         sx={{
           position: 'absolute',
@@ -64,7 +69,7 @@ function ModalBid (props) {
         <span className="seller_name"><AccountCircle className="icon"/>{renderName(lot.seller_id)}</span>
         {lot.status === 'OnSale' && <span className="countdown"><AccessTimeFilledIcon className="icon"/><Countdown date={getCountdownTime(lot)}/></span>}
       </div>
-      {(isNotSeller && accountId && !lot.notSafe) && <div className="bid_price">
+      {(isNotSeller && accountId && !lot.notSafe && lot.status === 'OnSale') && <div className="bid_price">
         <span className="buy-now_price">Buy now: <strong className="near-icon">{getBuyNowPrice(lot)}</strong></span>
         <button name="buy_now" onClick={(e) => bid(e, lot, getBuyNowPrice(lot))}>Buy now</button>
         <input type="number" name="bid_input" className="large" onChange={checkBid} ref={bidPrice}

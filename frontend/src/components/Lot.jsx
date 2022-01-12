@@ -3,6 +3,7 @@ import {getBuyNowPrice, getCountdownTime, getCurrentPrice, nearTo, renderName, t
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import Countdown from "react-countdown";
 import AccessTimeFilledIcon from '@mui/icons-material/AccessTimeFilled';
+import { BrowserView, MobileView, isBrowser, isMobile } from 'react-device-detect';
 
 function getLastBidder(bids) {
   return bids.length ? bids[bids.length-1].bidder_id : '';
@@ -56,6 +57,7 @@ function Lot(props) {
       <div className="lot_info">
         <span className="lot_name">{renderName(lot.lot_id)}</span>
         <span className="seller_name"><AccountCircleIcon className="icon"/>{renderName(lot.seller_id)}</span>
+        {<span className="countdown"><AccessTimeFilledIcon className="icon"/><Countdown date={getCountdownTime(lot)}/></span>}
       </div>
       {props.showStatus && <div className="lot_status">
         <span className={'badge ' + lot.status}>{lot.status}</span>
@@ -69,7 +71,7 @@ function Lot(props) {
       </div>
       <div className="lot_action">
         {renderButton(lot)}
-        {lot.status === 'OnSale' && getCountdownTime(lot) > Date.now() && <span className="countdown"><AccessTimeFilledIcon className="icon"/><Countdown date={getCountdownTime(lot)}/></span>}
+        {lot.status === 'OnSale' && getCountdownTime(lot) > Date.now() && isBrowser && <span className="countdown"><AccessTimeFilledIcon className="icon"/><Countdown date={getCountdownTime(lot)}/></span>}
       </div>
     </li>
   );

@@ -48,6 +48,7 @@
     "near-seed-phrase": "^0.2.0",
     "react": "^17.0.2",
     "react-countdown": "^2.3.2",
+    "react-device-detect": "^2.1.2",
     "react-dom": ">=16.8",
     "react-hook-form": "^7.22.5",
     "react-is": "^17.0.2",
