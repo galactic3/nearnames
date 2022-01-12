@@ -150,7 +150,7 @@
       justify-content: space-between;
       padding: 18px;
       &:last-child {
-        margin-bottom: inherit;
+        margin-bottom: 20px;
       }
     }
 
@@ -491,6 +491,9 @@
         vertical-align: top;
       }
     }
+  }
+  .lot_status {
+    margin: 20px 0;
   }
   .bid_price {
     display: flex;

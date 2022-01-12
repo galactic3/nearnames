@@ -77,6 +77,9 @@ function ModalBid (props) {
         <button name="bid" onClick={(e) => bid(e, lot, bidPrice.current.value)} disabled={bidButtonDisabled}>Bid</button>
         {bidPriceError && <span className="error-input">bid value should more than: {getNextBidAmount(lot)}</span>}
       </div>}
+      {lot.notSafe && <div className="lot_status">
+        <span className='badge'>Not safe</span>
+      </div>}
       <div className="bid_list">
         {bids.length ? <a className="button-link" onClick={(e) => openBidList(e)}>{showBidList ? 'Hide' : 'Show'} bid list</a> : ''}
         {showBidList ? (<ul className="bids_list">
