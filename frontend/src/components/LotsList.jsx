@@ -54,7 +54,7 @@ function LotsList(props) {
     props.getLots();
   };
 
-  const openBid = (lot, bids) => {
+  const openBid = async (lot, bids) => {
     setModalBidShow(true);
     setSelectedLot(lot);
     setSelectedLotBids(bids);
@@ -62,7 +62,6 @@ function LotsList(props) {
 
   const closeBid = async () => {
     setModalBidShow(false);
-    // props.getLots();
   }
 
   const setLotNotSafe = (lot) => {
@@ -110,6 +109,7 @@ function LotsList(props) {
             <Lot lot={lot} key={i} openBid={openBid} withdraw={withdraw} claim={claimOpen}
                  contract={contract} showStatus={props.showStatus} signedAccount={signedAccount}/>
           )}
+          {props.lots.length === 0 ? <li>No lots available</li> : ''}
         </ul>
       }
       <ModalClaim

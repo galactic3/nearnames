@@ -47,12 +47,19 @@ function ModalClaim(props) {
     setShowSuccess(true)
   }
 
+  const clearState = () => {
+    setPublicKey('');
+    setSeedPhrase(generateSeedPhrase().seedPhrase);
+    setShowSuccess(false);
+    props.onClose();
+  }
+
   return (
-    <Modal {...props}>
+    <Modal {...props} onClose={() => clearState()}>
       <Box className="modal-container claim_modal">
         <IconButton
           aria-label="close"
-          onClick={props.onClose}
+          onClick={() => clearState()}
           className="button-icon"
           sx={{
             position: 'absolute',

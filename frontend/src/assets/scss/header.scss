@@ -1,4 +1,5 @@
 header {
+    position: relative;
     display: flex;
     height: 70px;
     background: #25272E;
@@ -10,17 +11,18 @@ header {
         font-weight: 500;
         text-transform: uppercase;
         color: var(--primary);
-        margin: 17px 15px 0 0;
+        white-space: nowrap;
+        margin: 0 15px 0 0;
         a {
             text-decoration: inherit;
             color: inherit;
         }
     }
     .create_offer {
-        margin: 15px 0 auto;
+        margin: 0 15px 0 auto;
     }
     .auth {
-        margin: 15px 0 0 10px;
+        margin: 0 0 0 10px;
         line-height: 40px;
         .login {
             border-color: var(--primary);
@@ -43,10 +45,14 @@ header {
     }
     .container {
         display: flex;
+        align-items: center;
     }
     .network-select {
-        margin: 14px 15px;
+        margin: 0 15px;
         width: 100px;
+    }
+    .button-icon {
+        color: var(--primary);
     }
     .nav {
         display: flex;
@@ -65,6 +71,46 @@ header {
                 color: var(--link);
                 border-bottom: 3px solid var(--link);
             }
+        }
+    }
+    .mobile-header {
+        position: absolute;
+        top: 0;
+        left: 0; right: 0;
+        background: var(--fg);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px 40px;
+        z-index: 999;
+        h1 {
+            margin: 20px 0;
+        }
+        .network-select {
+            margin-bottom: 20px;
+        }
+        .nav {
+            width: 100%;
+            margin: auto;
+            padding: 12px 0;
+            align-items: center;
+            flex-direction: column;
+            border-top: 1px solid var(--gray);
+            border-bottom: 1px solid var(--gray);
+            .nav-link {
+                height: auto;
+                line-height: 24px;
+                margin: 12px 0;
+                &.active {
+                    border-bottom: 0 none;
+                }
+            }
+        }
+        .auth {
+            margin: 20px 0;
+        }
+        .login {
+            width: 280px;
         }
     }
 }

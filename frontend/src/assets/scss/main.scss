@@ -6,6 +6,11 @@
   margin-right: auto;
   margin-left: auto;
   max-width: 1440px;
+  @media (max-width: 768px) {
+    padding-right: 16px;
+    padding-left: 16px;
+    max-width: 736px;
+  }
 }
 
 .about {
@@ -113,24 +118,94 @@
   .lot_action {
     padding: 0 36px;
     text-align: center;
-    .countdown {
-      display: block;
-      margin: 5px auto 0;
-      line-height: 1;
-      max-width: 80px;
+  }
+
+  .countdown {
+    display: block;
+    margin: 5px auto 0;
+    line-height: 1;
+    span {
+      max-width: 65px;
       white-space: nowrap;
-      .icon {
-        font-size: 1rem;
-        margin-right: 5px;
-        margin-top: -1px;
-        vertical-align: top;
+    }
+    .icon {
+      font-size: 1rem;
+      margin-right: 5px;
+      margin-top: -1px;
+      vertical-align: top;
+    }
+  }
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    .lot_list {
+      flex-direction: row;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+
+    .lot_item {
+      width: 320px;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      padding: 18px;
+    }
+
+    .lot_info {
+      flex-basis: 100%;
+      overflow: hidden;
+      border: 0 none;
+      padding: 0;
+      margin-bottom: 12px;
+      .lot_name {
+        text-overflow: ellipsis;
+        overflow: hidden;
       }
+      .seller_name {
+        display: block;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--fg);
+      }
+      .countdown {
+        margin: 0;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--fg);
+      }
+    }
+
+    .lot_price {
+      border: 0 none;
+      text-align: left;
+      width: auto;
+      height: auto;
+      .current_price {
+        line-height: 1;
+      }
+    }
+
+    .lot_status {
+      padding: 0;
+      order: 1;
+      margin-left: auto;
+      margin-right: 10px;
+    }
+
+    .lot_action {
+      padding: 0;
+      order: 2;
+    }
+  }
+  @media (max-width: 320px) {
+    .lot_status {
+      order: 3;
+      margin: 5px 0 0;
     }
   }
 }
 
 .profile-container {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   background: var(--fg);
   margin: 24px 0 20px;
@@ -140,9 +215,12 @@
   .profile-name {
     font-size: 32px;
     padding: 0 34px;
+    margin: 0;
+    line-height: 70px;
+    border-right: 1px solid var(--gray);
   }
   .profile-block {
-    border-left: 1px solid var(--gray);
+    border-right: 1px solid var(--gray);
     padding: 10px 50px;
     max-height: 70px;
     strong {
@@ -154,6 +232,32 @@
       font-size: 22px;
       color: var(--link);
       font-weight: 700;
+      white-space: nowrap;
+    }
+  }
+  .claim-rewards {
+    margin: 0 auto 0 50px;
+  }
+  @media (max-width: 768px) {
+    height: auto;
+    padding: 12px;
+    .profile-name {
+      font-size: 22px;
+      flex-basis: 100%;
+      padding: 8px;
+      border: 0 none;
+      line-height: inherit;
+    }
+    .profile-block {
+      padding: 4px 15px 0 8px;
+      margin-right: 5px;
+      &:last-of-type {
+        border: 0;
+        padding-right: 5px;
+      }
+    }
+    .claim-rewards {
+      margin: 8px;
     }
   }
 }
@@ -173,7 +277,7 @@
     top: 100%;
     left: 20px;
     margin-top: 24px;
-    b {
+    strong {
       color: var(--link);
     }
   }
@@ -188,6 +292,9 @@
   background: var(--fg);
   border-radius: 10px;
   width: 320px;
+  @media (max-width: 320px) {
+    width: 100%;
+  }
 }
 
 .modal-container {
@@ -217,6 +324,7 @@
     font-size: 12px;
     .css-1ytlwq5-MuiAlert-icon {
       font-size: 18px;
+      margin-right: 8px;
     }
   }
 }
@@ -246,6 +354,23 @@
   }
 }
 
+@media (max-width: 768px) {
+  .offer_modal {
+    width: 360px;
+    height: 100%;
+    overflow: auto;
+    .form-group {
+      width: 280px;
+    }
+  }
+}
+
+@media (max-width: 320px) {
+  .offer_modal {
+    width: 100%;
+  }
+}
+
 .claim_modal {
   width: 410px;
   .account-name {
@@ -255,12 +380,17 @@
     margin: 20px 0;
     width: 100%;
   }
+  h3 {
+    padding: 20px 0;
+    border-bottom: 1px solid var(--gray);
+  }
   .claim-success {
     .textarea {
       display: block;
       min-height: 60px;
       padding: 8px 13px;
       line-height: 24px;
+      word-break: break-word;
       border-radius: 6px;
       &.green {
         background-color: #384B4D;
@@ -270,11 +400,24 @@
       }
     }
     p {
+      text-align: center;
       margin: 20px 0;
       padding: 24px 0;
       border-top: 1px solid var(--gray);
       border-bottom: 1px solid var(--gray);
     }
+  }
+}
+
+@media (max-width: 768px) {
+  .claim_modal {
+    width: 360px;
+  }
+}
+
+@media (max-width: 320px) {
+  .claim_modal {
+    width: 100%;
   }
 }
 
@@ -334,8 +477,10 @@
       display: block;
       margin: 5px 0 0;
       line-height: 1;
-      max-width: 65px;
-      white-space: nowrap;
+      span {
+        max-width: 65px;
+        white-space: nowrap;
+      }
       .icon {
         font-size: 1rem;
         margin-right: 5px;
@@ -405,16 +550,20 @@
 }
 
 main {
-  padding-bottom: 110px;
+  @media (min-width: 768px) {
+    padding-bottom: 110px;
+  }
 }
 
 footer {
     padding: 10px 0;
     background-color: var(--bg);
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
+    @media (min-width: 768px) {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+    }
 
     .legal-notice {
         width: 100%;
@@ -426,10 +575,11 @@ footer {
 
 .beta-warning {
     width: 100%;
-    height: 30px;
     line-height: 30px;
     text-align: center;
-
+    @media (min-width: 768px) {
+      height: 30px;
+    }
     background-color: var(--light-red);
     color: var(--red);
     font-size: 16px;
