@@ -21,7 +21,6 @@ function LotsList(props) {
   const [modalAlertShow, setModalAlertShow] = useState(false);
   const [alertContent, setAlertContent] = useState('');
   const [selectedLot, setSelectedLot] = useState(false);
-  const [selectedLotBids, setSelectedLotBids] = useState([]);
 
   const withdraw = async (lot, e) => {
     try {
@@ -56,11 +55,10 @@ function LotsList(props) {
     props.getLots();
   };
 
-  const openBid = async (lot, bids) => {
+  const openBid = async (lot) => {
     await checkLotSafety(lot);
     setModalBidShow(true);
     setSelectedLot(lot);
-    setSelectedLotBids(bids);
   }
 
   const closeBid = async () => {
@@ -96,6 +94,7 @@ function LotsList(props) {
         return;
       }
     }
+
     console.log(lot.lot_id, bid_price);
     contract.lot_bid({
       args: { lot_id: lot.lot_id },
@@ -136,7 +135,7 @@ function LotsList(props) {
         open={modalBidShow}
         lot={selectedLot}
         bid={bid}
-        bids={selectedLotBids}
+        contract={contract}
         signedAccount={signedAccount}
         onClose={() => closeBid()}
       />

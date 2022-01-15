@@ -1,27 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import {getBuyNowPrice, getCountdownTime, getCurrentPrice, nearTo, renderName, tsNear2JS} from "../utils";
+import React from 'react';
+import {getBuyNowPrice, getCountdownTime, getCurrentPrice, renderName} from "../utils";
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import Countdown from "react-countdown";
 import AccessTimeFilledIcon from '@mui/icons-material/AccessTimeFilled';
 import { BrowserView, MobileView, isBrowser, isMobile } from 'react-device-detect';
 
-function getLastBidder(bids) {
-  return bids.length ? bids[bids.length-1].bidder_id : '';
-}
-
 function Lot(props) {
 
-  const [bids, setBids] = useState([]);
-
   const lot = props.lot;
-  const contract = props.contract;
   const accountId = props.signedAccount;
   const isNotSeller = accountId !== lot.seller_id;
-  const isLastBidder = accountId === getLastBidder(bids);
-
-  useEffect(() => {
-    contract.lot_bid_list({'lot_id': lot.lot_id}).then(setBids);
-  }, []);
+  const isLastBidder = accountId === lot.last_bidder_id;
 
   const renderButton = (lot) => {
     switch(lot.status) {
@@ -40,13 +29,13 @@ function Lot(props) {
         }
         return (
           <div className="button_wrapper">
-            <button name="bid" className="outlined" onClick={(e) => props.openBid(lot, bids, e)}>{isNotSeller && accountId ? 'Buy or bid' : 'Show details'}</button>
+            <button name="bid" className="outlined" onClick={(e) => props.openBid(lot, e)}>{isNotSeller && accountId ? 'Buy or bid' : 'Show details'}</button>
           </div>)
       case 'SaleSuccess':
         return (isLastBidder ? <div className="button_wrapper">
           <button name="claim" className="outlined" onClick={(e) => props.claim(lot, e)}>Claim</button>
         </div> : <div className="button_wrapper">
-          <button name="bid" className="outlined" onClick={(e) => props.openBid(lot, bids, e)}>Show details</button>
+          <button name="bid" className="outlined" onClick={(e) => props.openBid(lot, e)}>Show details</button>
         </div>)
       case 'SaleFailure':
         return (!isNotSeller && <div className="button_wrapper">
