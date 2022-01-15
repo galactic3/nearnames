@@ -110,6 +110,12 @@ impl Contract {
             .collect()
     }
 
+    pub fn lot_get(&self, lot_id: LotId) -> Option<LotView> {
+        let now = env::block_timestamp();
+        let lot: Option<Lot> = self.lots.get(&lot_id);
+        lot.map(|x| (&x, now, self).into())
+    }
+
     pub fn lot_list_offering_by(
         &self,
         profile_id: ProfileId,
@@ -820,6 +826,32 @@ pub mod tests {
             let result = contract.lot_list_bidding_by("bob".parse().unwrap(), None, None);
             assert_eq!(result.len(), 0, "wrong lots_offering list for craol");
         }
+    }
+
+    #[test]
+    pub fn test_api_lot_get_present() {
+        let mut contract = build_contract();
+        let (lot, time_now) = create_lot_alice();
+        contract.internal_lot_save(&lot);
+
+        testing_env!(get_context_view(time_now));
+        let alice: LotId = "alice".parse().unwrap();
+        let result = contract.lot_get(alice.clone());
+        assert!(result.is_some(), "expected: lot present");
+        let result = result.unwrap();
+        assert_eq!(result.lot_id, alice.clone());
+    }
+
+    #[test]
+    pub fn test_api_lot_get_not_present() {
+        let mut contract = build_contract();
+        let (lot, time_now) = create_lot_alice();
+        contract.internal_lot_save(&lot);
+
+        testing_env!(get_context_view(time_now));
+        let bob: LotId = "bob".parse().unwrap();
+        let result = contract.lot_get(bob.clone());
+        assert!(result.is_none(), "expected: lot not present");
     }
 
     #[test]
