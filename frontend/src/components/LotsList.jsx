@@ -56,6 +56,7 @@ function LotsList(props) {
   };
 
   const openBid = async (lot) => {
+    await checkLotSafety(lot);
     setModalBidShow(true);
     setSelectedLot(lot);
   }
@@ -66,6 +67,18 @@ function LotsList(props) {
 
   const setLotNotSafe = (lot) => {
     ls.set('NotSafeLots', notSafeLots + ', ' + lot.lot_id);
+  }
+
+  const checkLotSafety = async (lot) => {
+    const { codeHash, accessKeysLen, lockerOwner } = await fetchBidSafety(lot.lot_id, props.near);
+    const isSafe = LOCK_CONTRACT_HASHES.includes(codeHash) &&
+      accessKeysLen === 0 &&
+      lockerOwner === props.nearConfig.contractName;
+    console.log(codeHash, accessKeysLen, lockerOwner);
+    if (!isSafe) {
+      setLotNotSafe(lot);
+      lot.notSafe = true;
+    }
   }
 
   const bid = async (e, lot, value) => {
@@ -81,18 +94,7 @@ function LotsList(props) {
         return;
       }
     }
-    const { codeHash, accessKeysLen, lockerOwner } = await fetchBidSafety(lot.lot_id, props.near);
-    const isSafe = LOCK_CONTRACT_HASHES.includes(codeHash) &&
-      accessKeysLen === 0 &&
-      lockerOwner === props.nearConfig.contractName;
-    console.log(codeHash, accessKeysLen, lockerOwner);
-    if (!isSafe) {
-      alertOpen('account is not safe');
-      setLotNotSafe(lot);
-      lot.notSafe = true;
-      e.target.disabled = false;
-      return;
-    }
+
     console.log(lot.lot_id, bid_price);
     contract.lot_bid({
       args: { lot_id: lot.lot_id },
