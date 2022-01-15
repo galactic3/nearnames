@@ -22,10 +22,11 @@ function ModalBid (props) {
 
   const lot = props.lot;
   const bid = props.bid;
+  const contract = props.contract;
   const accountId = props.signedAccount;
   const isNotSeller = accountId !== lot.seller_id;
 
-  const bids = props.bids;
+  const [bids, setBids] = useState([]);
 
   const defaultValue = getNextBidAmount(lot);
 
@@ -39,12 +40,20 @@ function ModalBid (props) {
     }
   }
 
-  const openBidList = (e) => {
+  const getBidList = async (lot) => {
+    contract.lot_bid_list({'lot_id': lot.lot_id}).then(setBids);
+  }
+
+  const openBidList = async (e) => {
+    if (!bids.length) {
+      await getBidList(lot);
+    }
     setShowBidList(!showBidList);
   };
 
   const clearState = () => {
     setShowBidList(false);
+    setBids([]);
     props.onClose();
   }
 
@@ -81,7 +90,7 @@ function ModalBid (props) {
         <span className='badge'>Not safe</span>
       </div>}
       <div className="bid_list">
-        {bids.length ? <a className="button-link" onClick={(e) => openBidList(e)}>{showBidList ? 'Hide' : 'Show'} bid list</a> : ''}
+        {lot.last_bidder_id ? <a className="button-link" onClick={(e) => openBidList(e)}>{showBidList ? 'Hide' : 'Show'} bid list</a> : ''}
         {showBidList ? (<ul className="bids_list">
           {bids.map((bid, i) =>
             <Bids key={i} bid={bid}/>
