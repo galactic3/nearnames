@@ -94,8 +94,8 @@ function Offer (props) {
       props.wallet.signOut()
     }
 
-    const lot_account_id = lot_id.value.endsWith(accountSuffix) ? lot_id.value : lot_id.value + accountSuffix;
-    const seller_account_id = seller_id.value.endsWith(accountSuffix) ? seller_id.value : seller_id.value  + accountSuffix;
+    const lot_account_id = lot_id.value.endsWith(accountSuffix) ? lot_id.value.trim() : lot_id.value.trim() + accountSuffix;
+    const seller_account_id = seller_id.value.endsWith(accountSuffix) ? seller_id.value.trim() : seller_id.value.trim()  + accountSuffix;
 
     fieldset.disabled = true;
 

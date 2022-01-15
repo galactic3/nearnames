@@ -9,7 +9,7 @@ export const MAX_UINT8 = '340282366920938463463374607431768211455';
 export const BOATLOAD_OF_GAS = Big(3).times(10 ** 14).toFixed();
 
 export const toNear = (value = '0') => Big(value).times(10 ** 24).toFixed();
-export const nearTo = (value = '0', to = 2) => Big(value).div(10 ** 24).toFixed(to === 0 ? undefined : to);
+export const nearTo = (value = '0', to = 2, mode) => Big(value).div(10 ** 24).toFixed(to === 0 ? undefined : to, mode);
 export const big = (value = '0') => Big(value);
 export const tsNear2JS = (time) => Math.floor(time/1000000);
 
@@ -65,7 +65,7 @@ export function getCountdownTime(lot) {
 }
 
 export function getNextBidAmount(lot) {
-  return lot.next_bid_amount ? nearTo(lot.next_bid_amount, 2) : getReservePrice(lot);
+  return lot.next_bid_amount ? nearTo(lot.next_bid_amount, 2, 3) : getReservePrice(lot);
 }
 
 export function getReservePrice(lot) {
@@ -77,7 +77,7 @@ export function getCurrentPrice(lot) {
 }
 
 export function getBuyNowPrice(lot) {
-  return lot.buy_now_price ? nearTo(lot.buy_now_price, 2) : getReservePrice(lot);
+  return lot.buy_now_price ? nearTo(lot.buy_now_price, 2) : '';
 }
 
 export const fetchBidSafety = async (lot_id, near) => {

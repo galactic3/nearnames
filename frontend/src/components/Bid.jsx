@@ -27,10 +27,10 @@ function ModalBid (props) {
 
   const bids = props.bids;
 
-  const defaultValue = Math.round(parseFloat(getNextBidAmount(lot))*100 + 1)/100;
+  const defaultValue = getNextBidAmount(lot);
 
   const checkBid = () => {
-    if (bidPrice.current.value && getNextBidAmount(lot) >= bidPrice.current.value) {
+    if (bidPrice.current.value && getNextBidAmount(lot) > bidPrice.current.value) {
       setBidPriceError(true);
       setBidButtonDisabled(true);
     } else {
@@ -73,7 +73,7 @@ function ModalBid (props) {
         <span className="buy-now_price">Buy now: <strong className="near-icon">{getBuyNowPrice(lot)}</strong></span>
         <button name="buy_now" onClick={(e) => bid(e, lot, getBuyNowPrice(lot))}>Buy now</button>
         <input type="number" name="bid_input" className="large" onChange={checkBid} ref={bidPrice}
-               placeholder={'min: ' + defaultValue} step={0.01} min={defaultValue} defaultValue={defaultValue}/>
+               placeholder={'min: ' + defaultValue} step="0.01" min={defaultValue} defaultValue={defaultValue}/>
         <button name="bid" onClick={(e) => bid(e, lot, bidPrice.current.value)} disabled={bidButtonDisabled}>Bid</button>
         {bidPriceError && <span className="error-input">bid value should more than: {getNextBidAmount(lot)}</span>}
       </div>}

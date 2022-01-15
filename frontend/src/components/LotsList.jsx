@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import Lot from "./Lot";
 import ModalClaim from "./Claim";
 import ModalBid from "./Bid";
-import { BOATLOAD_OF_GAS, fetchBidSafety, toNear, LOCK_CONTRACT_HASHES } from "../utils";
+import {BOATLOAD_OF_GAS, LOCK_CONTRACT_HASHES, fetchBidSafety, toNear, getBuyNowPrice} from "../utils";
 import ModalAlert from "./Alert";
 import ls from "local-storage";
 import { useHistory } from "react-router-dom";
+import useConfirm from "../Hooks/useConfirm";
 
 function LotsList(props) {
   const history = useHistory();
@@ -13,6 +14,7 @@ function LotsList(props) {
   const config = props.nearConfig;
   const signedAccount = props.signedAccount;
   const notSafeLots = ls.get('NotSafeLots') || '';
+  const { isConfirmed } = useConfirm();
 
   const [modalClaimShow, setModalClaimShow] = useState(false);
   const [modalBidShow, setModalBidShow] = useState(false);
@@ -71,6 +73,16 @@ function LotsList(props) {
   const bid = async (e, lot, value) => {
     e.target.disabled = true;
     const bid_price = toNear(value);
+    if (bid_price - lot.buy_now_price > 0) {
+      const isConfirm = await isConfirmed(
+        'Your bid price ' + value + ' NEAR is higher than buy now price ' + getBuyNowPrice(lot) + ' NEAR. ' +
+        'Are you sure you want to bid?'
+      );
+      if(!isConfirm) {
+        e.target.disabled = false;
+        return;
+      }
+    }
     const { codeHash, accessKeysLen, lockerOwner } = await fetchBidSafety(lot.lot_id, props.near);
     const isSafe = LOCK_CONTRACT_HASHES.includes(codeHash) &&
       accessKeysLen === 0 &&
