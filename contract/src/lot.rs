@@ -5,6 +5,7 @@ pub const ERR_LOT_DURATION_NEGATIVE: &str = "expected start_timestamp <= finish_
 pub const ERR_LOT_PRICE_RESERVE_LE_BUY_NOW: &str = "expected reserve_price <= buy_now_price";
 pub const ERR_LOT_BID_WRONG_STATUS: &str = "bid: expected status active";
 pub const ERR_LOT_BID_BID_TOO_SMALL: &str = "bid: expected bigger bid";
+pub const ERR_LOT_BID_BID_ABOVE_BUY_NOW: &str = "bid: expected bid <= buy_now_price";
 pub const ERR_LOT_BID_WRONG_BIDDER: &str = "bid: seller and lot cannot bid";
 pub const ERR_LOT_CLAIM_BY_BIDDER_WRONG_STATUS: &str =
     "claim by bidder: expected status sale success";
@@ -217,6 +218,11 @@ impl Lot {
             bid.amount >= min_next_bid_amount,
             "{}",
             ERR_LOT_BID_BID_TOO_SMALL
+        );
+        assert!(
+            bid.amount <= self.buy_now_price,
+            "{}",
+            ERR_LOT_BID_BID_ABOVE_BUY_NOW,
         );
         assert_ne!(
             self.seller_id, bid.bidder_id,
@@ -624,6 +630,18 @@ pub mod tests {
         let bid = Bid {
             bidder_id: "dan".parse().unwrap(),
             amount: to_yocto("3"),
+            timestamp: time_now,
+        };
+        lot.place_bid(&bid, Fraction::new(0, 1));
+    }
+
+    #[test]
+    #[should_panic(expected = "bid: expected bid <= buy_now_price")]
+    fn test_lot_place_bid_above_buy_now() {
+        let (mut lot, time_now) = create_lot_alice_with_bids();
+        let bid = Bid {
+            bidder_id: "dan".parse().unwrap(),
+            amount: to_yocto("11"),
             timestamp: time_now,
         };
         lot.place_bid(&bid, Fraction::new(0, 1));
