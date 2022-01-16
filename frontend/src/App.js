@@ -31,6 +31,7 @@ function App (props) {
   const [offerProcessState, setOfferProcessState] = useState({
     offerFinished: false,
     offerSuccess: false,
+    offerActive: true,
     offerFailureReason: '',
     offerSuccessMessage: '',
   })
@@ -72,11 +73,13 @@ function App (props) {
   const initOffer = async() => {
 
     if (!signedAccount) {
+      setOfferProcessState(offerProcessState => ({...offerProcessState, ...{offerActive: false}}));
       return;
     }
 
     const lotAccountId = localStorage.get(lsLotAccountId);
     if (!lotAccountId) {
+      setOfferProcessState(offerProcessState => ({...offerProcessState, ...{offerActive: false}}));
       return;
     }
 
@@ -85,6 +88,7 @@ function App (props) {
       const newState = {
         offerFinished: true,
         offerSuccess: false,
+        offerActive: true,
         offerFailureReason: `wrong account authenticated, expected ${lotAccountId}, please try lot offer again`,
       };
       setOfferProcessState(offerProcessState => ({...offerProcessState, ...newState}));
@@ -100,6 +104,7 @@ function App (props) {
       const newState = {
         offerFinished: true,
         offerSuccess: false,
+        offerActive: true,
         offerFailureReason: 'failed to parse lot offer data, please try lot offer again',
       };
       setOfferProcessState(offerProcessState => ({...offerProcessState, ...newState}));
@@ -154,9 +159,11 @@ function App (props) {
 
       setOfferProcessOutput(offerProcessOutput => [...offerProcessOutput, 'Create lot offer.']);
 
-      const offerResult = await with_timeout(props.contract.lot_offer(offerData));
+      const lot = await with_timeout(props.contract.lot_get({lot_id: lotAccountId}))
 
-      console.log(offerResult);
+      if (!lot) {
+        await with_timeout(props.contract.lot_offer(offerData));
+      }
 
       for (let index = 0; index < accessKeys.length; index++) {
         if (accessKeys[index].public_key !== lastKey) {
@@ -178,9 +185,11 @@ function App (props) {
       const newState = {
         offerFinished: true,
         offerSuccess: true,
+        offerActive: true,
         offerSuccessMessage: `Account ${signedAccount} is now on sale. Log in as ${offerData.seller_id} to see it on your profile and be able collect rewards as soon as the first bid is made.`
       };
       setOfferProcessState(offerProcessState => ({...offerProcessState, ...newState}));
+      signOut();
     } catch (e) {
       console.log('Error', e)
       let offerFailureReason = '';
@@ -191,11 +200,11 @@ function App (props) {
       const newState = {
         offerFinished: true,
         offerSuccess: false,
+        offerActive: true,
         offerFailureReason
       };
       setOfferProcessState(offerProcessState => ({...offerProcessState, ...newState}));
     } finally {
-      signOut();
       console.log('init offer finish');
     }
   }
@@ -223,7 +232,7 @@ function App (props) {
           <div className="container">
             <h1><NavLink aria-current='page' to='/'>Near names</NavLink></h1>
             { isBrowser && <NetworkSelect/> }
-            <BrowserView>
+            { !offerProcessState.offerActive && <BrowserView>
               <ul className='nav'>
                 <li className='nav-item'>
                   <NavLink activeClassName='active' className='nav-link' aria-current='page' to='/lots'>Lots</NavLink>
@@ -236,14 +245,14 @@ function App (props) {
                   <NavLink activeClassName='active' className='nav-link' aria-current='page' to='/about'>About</NavLink>
                 </li>
               </ul>
-            </BrowserView>
+            </BrowserView>}
             <CreateOffer {...{...passProps, ...offerProps}}/>
-            <BrowserView>
+            { <BrowserView>
               { !connected ? (
                   <div className="auth">
                     <span className='spinner' role='status' aria-hidden='true'>Connecting...</span>
                   </div>
-                ) : signedAccount
+                ) : signedAccount && !offerProcessState.offerActive
                 ? <div className="auth">
                     <strong className="balance near-icon">{nearTo(signedAccountBalance) || '-'}</strong>
                     {renderName(signedAccount)}
@@ -251,8 +260,8 @@ function App (props) {
                   </div>
                 : <div className="auth"><button className="login" onClick={signIn}>Log in</button></div>
               }
-            </BrowserView>
-            <MobileView>
+            </BrowserView>}
+            { !offerProcessState.offerActive && <MobileView>
               <IconButton
                 aria-label="open"
                 onClick={() => setShowMobileNav(true)}
@@ -261,7 +270,7 @@ function App (props) {
                 <MenuRoundedIcon />
               </IconButton>
               {showMobileNav && <MobileNav onClose={() => setShowMobileNav(false)} signIn={signIn} signOut={(e) => signOut(e)} {...passProps}/>}
-            </MobileView>
+            </MobileView> }
           </div>
         </header>
         <Switch>

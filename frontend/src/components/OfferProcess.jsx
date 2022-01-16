@@ -1,13 +1,19 @@
 import React from 'react'
 import Alert from "@mui/material/Alert";
 import {CircularProgress} from "@mui/material";
+import { Redirect } from "react-router-dom";
 
 function OfferProcessPage (props) {
 
   let finished = props.offerFinished;
   let success = props.offerSuccess;
+  let active = props.offerActive;
   let offerFailureReason = props.offerFailureReason;
   let offerSuccessMessage = props.offerSuccessMessage;
+
+  if (!active) {
+    return (<Redirect push to="/"/>)
+  }
 
   return (
     <div className='container offer-container'>

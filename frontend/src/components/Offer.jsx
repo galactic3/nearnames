@@ -107,7 +107,6 @@ function Offer (props) {
     }
 
     if (balance > 50 || balance > reserve_price.value) {
-      console.log(reserve_price.value);
       let msg = `You're about to sell account ${lot_account_id} with amount bigger than reserve price on it (${balance} NEAR)`;
       if (balance > 50) {
         msg = `You're about to sell account ${lot_account_id} with signification amount on it (${balance} NEAR)`;
