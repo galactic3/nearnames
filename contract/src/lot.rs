@@ -109,8 +109,8 @@ impl Lot {
         true
     }
 
-    pub fn last_bid(&self) -> Option<&Bid> {
-        self.last_bid.as_ref()
+    pub fn last_bid(&self) -> Option<Bid> {
+        self.last_bid.clone()
     }
 
     pub fn last_bid_amount(&self) -> Option<Balance> {
@@ -133,7 +133,7 @@ impl Lot {
     }
 
     pub fn potential_claimer_id(&self) -> Option<ProfileId> {
-        self.last_bid().map(|x| x.bidder_id.clone())
+        self.last_bid().map(|x| x.bidder_id)
     }
 
     pub fn status(&self, time_now: Timestamp) -> LotStatus {
@@ -399,11 +399,11 @@ pub mod tests {
     #[test]
     fn test_lot_last_bid() {
         let (lot, _) = create_lot_alice();
-        assert_eq!(lot.last_bid().map(|x| x.bidder_id.clone()), None);
+        assert_eq!(lot.last_bid().map(|x| x.bidder_id), None);
 
         let (lot, _) = create_lot_alice_with_bids();
         assert_eq!(
-            lot.last_bid().map(|x| x.bidder_id.clone()),
+            lot.last_bid().map(|x| x.bidder_id),
             Some("dan".parse().unwrap())
         );
     }

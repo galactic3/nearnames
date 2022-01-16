@@ -30,7 +30,7 @@ pub struct LotView {
 impl From<(&Lot, Timestamp, &Contract)> for LotView {
     fn from(args: (&Lot, Timestamp, &Contract)) -> Self {
         let (lot, now, contract) = args;
-        let last_bid: Option<&Bid> = lot.last_bid();
+        let last_bid = lot.last_bid();
 
         Self {
             lot_id: lot.lot_id.clone(),
@@ -215,7 +215,7 @@ impl Contract {
         };
 
         let mut lot = self.internal_lot_extract(&lot_id);
-        let prev_bid: Option<Bid> = lot.last_bid().map(|x| x.clone());
+        let prev_bid: Option<Bid> = lot.last_bid();
         lot.place_bid(&bid, self.bid_step);
         self.internal_lot_save(&lot);
 
