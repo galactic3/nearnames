@@ -43,7 +43,7 @@ async function initContract() {
     nearConfig.contractName,
     {
       // View methods are read-only – they don't modify the state, but usually return some value
-      viewMethods: ['lot_list', 'lot_list_offering_by', 'lot_list_bidding_by', 'profile_get', 'lot_bid_list'],
+      viewMethods: ['lot_list', 'lot_get', 'lot_list_offering_by', 'lot_list_bidding_by', 'profile_get', 'lot_bid_list'],
       // Change methods can modify the state, but you don't receive the returned value when called
       changeMethods: ['lot_offer', 'lot_bid', 'lot_claim', 'profile_rewards_claim', 'lot_withdraw'],
       // Sender is the account ID to initialize transactions.

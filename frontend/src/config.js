@@ -1,4 +1,4 @@
-const CONTRACT_NAME = process.env.CONTRACT_NAME || 'rc0_nearnames.testnet';
+const CONTRACT_NAME = process.env.CONTRACT_NAME || 'rc1_nearnames.testnet';
 
 function getConfig(env) {
   switch (env) {
