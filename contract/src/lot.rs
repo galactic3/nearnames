@@ -135,7 +135,7 @@ impl Lot {
         self.last_bid().map(|x| x.amount)
     }
 
-    pub fn calculate_next_bid_amount(
+    pub fn lot_next_bid_amount(
         is_active: bool,
         last_bid_amount: Option<Balance>,
         bid_step: Fraction,
@@ -169,7 +169,7 @@ impl Lot {
             self.is_withdrawn,
         );
 
-        Self::calculate_next_bid_amount(
+        Self::lot_next_bid_amount(
             is_active,
             last_bid_amount,
             bid_step,
@@ -182,13 +182,17 @@ impl Lot {
         self.last_bid().map(|x| x.bidder_id)
     }
 
-    pub fn lot_status(is_withdrawn: bool, is_active: bool, last_bid: Option<&Bid>) -> LotStatus {
+    pub fn lot_status(
+        is_withdrawn: bool,
+        is_active: bool,
+        last_bid_amount: Option<Balance>,
+    ) -> LotStatus {
         if is_active {
             LotStatus::OnSale
         } else if is_withdrawn {
             LotStatus::Withdrawn
         } else {
-            match last_bid {
+            match last_bid_amount {
                 Some(_) => LotStatus::SaleSuccess,
                 None => LotStatus::SaleFailure,
             }
@@ -199,7 +203,7 @@ impl Lot {
         Self::lot_status(
             self.is_withdrawn,
             self.is_active(time_now),
-            self.last_bid().as_ref(),
+            self.last_bid_amount(),
         )
     }
 
