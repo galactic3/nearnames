@@ -48,6 +48,9 @@ function ModalClaim(props) {
   }
 
   const clearState = () => {
+    if (showLoader) {
+      return;
+    }
     setPublicKey('');
     setSeedPhrase(generateSeedPhrase().seedPhrase);
     setShowSuccess(false);

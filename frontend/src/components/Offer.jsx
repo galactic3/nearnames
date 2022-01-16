@@ -1,4 +1,4 @@
-import React, {useRef, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import ls from 'local-storage';
 import { customRequestSigninFullAccess, toNear, nearTo, MIN_RESERVE_PRICE } from '../utils.js';
 import {Box, FormControl, FormHelperText, IconButton, InputLabel, MenuItem, Modal, Select} from "@mui/material";
@@ -16,7 +16,7 @@ function Offer (props) {
   const [alertShow, setAlertShow] = useState(false);
   const [alertContent, setAlertContent] = useState('');
   const [offerButtonDisabled, setOfferButtonDisabled] = useState(false);
-  const [sameAccountError, setSameAccountError] = useState('');
+  const [sameAccountError, setSameAccountError] = useState(false);
   const [priceError, setPriceError] = useState(false);
   const [buyPriceError, setBuyPriceError] = useState(false);
   const [lotId, setLotId] = useState('');
@@ -47,41 +47,28 @@ function Offer (props) {
     setLotId(e.target.value);
   }
 
-  const checkAccounts = async () => {
-    if (lotRef.current.value && sellerRef.current.value &&
-        lotRef.current.value === sellerRef.current.value) {
-      setSameAccountError(true);
-      setOfferButtonDisabled(true);
-    } else {
-      setSameAccountError(false);
+  const checkValidationOffer = () => {
+    if (!sameAccountError && !priceError && !buyPriceError && !priceCompareError) {
       setOfferButtonDisabled(false);
+    } else {
+      setOfferButtonDisabled(true);
+    }
+  }
+
+  useEffect(() => {
+    checkValidationOffer();
+  }, [sameAccountError, priceError, buyPriceError, priceCompareError]);
+
+  const checkAccounts = async () => {
+    if (lotRef.current.value && sellerRef.current.value) {
+      setSameAccountError(lotRef.current.value === sellerRef.current.value);
     }
   }
 
   const checkPrice = async () => {
-    if (priceRef.current.value && parseFloat(priceRef.current.value) < MIN_RESERVE_PRICE) {
-      setPriceError(true);
-      setOfferButtonDisabled(true);
-    } else {
-      setPriceError(false);
-      setOfferButtonDisabled(false);
-    }
-
-    if (buyPriceRef.current.value && parseFloat(buyPriceRef.current.value) < MIN_RESERVE_PRICE) {
-      setBuyPriceError(true);
-      setOfferButtonDisabled(true);
-    } else {
-      setBuyPriceError(false);
-      setOfferButtonDisabled(false);
-    }
-
-    if (buyPriceRef.current.value && (buyPriceRef.current.value - priceRef.current.value) < 0) {
-      setPriceCompareError(true);
-      setOfferButtonDisabled(true);
-    } else {
-      setPriceCompareError(false);
-      setOfferButtonDisabled(false);
-    }
+    priceRef.current.value && setPriceError(toNear(priceRef.current.value).cmp(toNear(MIN_RESERVE_PRICE)) < 0);
+    buyPriceRef.current.value && setBuyPriceError(toNear(buyPriceRef.current.value).cmp(toNear(MIN_RESERVE_PRICE)) < 0)
+    priceRef.current.value && buyPriceRef.current.value && setPriceCompareError(toNear(buyPriceRef.current.value).cmp(toNear(priceRef.current.value)) < 0)
   }
 
   const onSubmit = async (e) => {
@@ -138,7 +125,7 @@ function Offer (props) {
     const seller = await props.near.account(seller_account_id);
 
     try {
-      balance = nearTo((await seller.getAccountBalance()).total);
+      nearTo((await seller.getAccountBalance()).total);
     } catch (e) {
       alertOpen('Account: ' + seller_account_id + ' not exist - you have to create it first');
       setOfferButtonDisabled(false);
@@ -148,8 +135,8 @@ function Offer (props) {
 
     let offerData = {
       seller_id: seller_account_id,
-      reserve_price: toNear(reserve_price.value),
-      buy_now_price: toNear(buy_now_price.value),
+      reserve_price: toNear(reserve_price.value).toFixed(),
+      buy_now_price: toNear(buy_now_price.value).toFixed(),
       duration: (duration * 60 * 60 * 1_000_000_000).toFixed()
     };
 

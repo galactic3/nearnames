@@ -8,7 +8,7 @@ export const ACCESS_KEY_ALLOWANCE = Big(1000000000).times(10 ** 24).toFixed();
 export const MAX_UINT8 = '340282366920938463463374607431768211455';
 export const BOATLOAD_OF_GAS = Big(3).times(10 ** 14).toFixed();
 
-export const toNear = (value = '0') => Big(value).times(10 ** 24).toFixed();
+export const toNear = (value = '0') => Big(value).times(10 ** 24);
 export const nearTo = (value = '0', to = 2, mode) => Big(value).div(10 ** 24).toFixed(to === 0 ? undefined : to, mode);
 export const big = (value = '0') => Big(value);
 export const tsNear2JS = (time) => Math.floor(time/1000000);
@@ -65,11 +65,11 @@ export function getCountdownTime(lot) {
 }
 
 export function getNextBidAmount(lot) {
-  return lot.next_bid_amount ? nearTo(lot.next_bid_amount, 2, 3) : getReservePrice(lot);
+  return lot.next_bid_amount ? nearTo(lot.next_bid_amount, 2, 3) : '';
 }
 
 export function getReservePrice(lot) {
-  return nearTo(lot.reserve_price, 2);
+  return lot.reserve_price ? nearTo(lot.reserve_price, 2) : '';
 }
 
 export function getCurrentPrice(lot) {

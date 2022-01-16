@@ -1,9 +1,10 @@
-import React, {useRef, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
   getBuyNowPrice,
   getCountdownTime,
   getNextBidAmount,
   renderName,
+  toNear,
 } from "../utils";
 import {AccountCircle} from "@mui/icons-material";
 import Bids from "./Bids";
@@ -28,10 +29,17 @@ function ModalBid (props) {
 
   const [bids, setBids] = useState([]);
 
-  const defaultValue = getNextBidAmount(lot);
+  useEffect(() => {
+    setBids([]);
+    setShowBidList(false);
+    setBidPriceError(false);
+    setBidButtonDisabled(false);
+  }, [props]);
+
+  let defaultValue = getNextBidAmount(lot);
 
   const checkBid = () => {
-    if (bidPrice.current.value && getNextBidAmount(lot) > bidPrice.current.value) {
+    if (bidPrice.current.value && toNear(defaultValue).cmp(toNear(bidPrice.current.value)) > 0) {
       setBidPriceError(true);
       setBidButtonDisabled(true);
     } else {
@@ -52,8 +60,6 @@ function ModalBid (props) {
   };
 
   const clearState = () => {
-    setShowBidList(false);
-    setBids([]);
     props.onClose();
   }
 
@@ -84,7 +90,7 @@ function ModalBid (props) {
         <input type="number" name="bid_input" className="large" onChange={checkBid} ref={bidPrice}
                placeholder={'min: ' + defaultValue} step="0.01" min={defaultValue} defaultValue={defaultValue}/>
         <button name="bid" onClick={(e) => bid(e, lot, bidPrice.current.value)} disabled={bidButtonDisabled}>Bid</button>
-        {bidPriceError && <span className="error-input">bid value should more than: {getNextBidAmount(lot)}</span>}
+        {bidPriceError && <span className="error-input">bid value should more than: {defaultValue}</span>}
       </div>}
       {lot.notSafe && <div className="lot_status">
         <span className='badge'>Not safe</span>
