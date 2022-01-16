@@ -516,8 +516,10 @@
     .buy-now_price {
       font-size: 16px;
       margin: 12px 0;
+      width: 120px;
       strong {
         font-weight: 700;
+        white-space: nowrap;
       }
     }
     input {
