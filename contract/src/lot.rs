@@ -29,7 +29,7 @@ impl fmt::Display for LotStatus {
     }
 }
 
-#[derive(BorshDeserialize, BorshSerialize)]
+#[derive(BorshDeserialize, BorshSerialize, Clone)]
 pub struct Bid {
     pub bidder_id: ProfileId,
     pub amount: Balance,
@@ -47,6 +47,7 @@ pub struct Lot {
     pub is_withdrawn: bool,
 
     bids: Vector<Bid>,
+    last_bid: Option<Bid>,
 }
 
 impl Lot {
@@ -84,6 +85,7 @@ impl Lot {
             finish_timestamp,
             is_withdrawn: false,
             bids: Vector::new(prefix),
+            last_bid: None,
         }
     }
 
@@ -229,6 +231,7 @@ impl Lot {
     pub fn place_bid(&mut self, bid: &Bid, bid_step: Fraction) {
         self.validate_place_bid(bid, bid_step);
         self.bids.push(bid);
+        self.last_bid = Some(bid.clone());
     }
 }
 
