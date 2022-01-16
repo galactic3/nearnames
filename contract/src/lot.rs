@@ -29,7 +29,7 @@ impl fmt::Display for LotStatus {
     }
 }
 
-#[derive(BorshDeserialize, BorshSerialize)]
+#[derive(BorshDeserialize, BorshSerialize, Clone)]
 pub struct Bid {
     pub bidder_id: ProfileId,
     pub amount: Balance,
@@ -47,6 +47,7 @@ pub struct Lot {
     pub is_withdrawn: bool,
 
     bids: Vector<Bid>,
+    last_bid: Option<Bid>,
 }
 
 impl Lot {
@@ -84,6 +85,7 @@ impl Lot {
             finish_timestamp,
             is_withdrawn: false,
             bids: Vector::new(prefix),
+            last_bid: None,
         }
     }
 
@@ -108,11 +110,7 @@ impl Lot {
     }
 
     pub fn last_bid(&self) -> Option<Bid> {
-        if self.bids.is_empty() {
-            None
-        } else {
-            Some(self.bids.get(self.bids.len() - 1).unwrap())
-        }
+        self.last_bid.clone()
     }
 
     pub fn last_bid_amount(&self) -> Option<Balance> {
@@ -152,7 +150,8 @@ impl Lot {
     }
 
     pub fn clean_up(&mut self) {
-        self.bids.clear()
+        self.bids.clear();
+        self.last_bid = None;
     }
 
     fn validate_claim_by_buyer(&self, claimer_id: &ProfileId, time_now: Timestamp) {
@@ -229,6 +228,7 @@ impl Lot {
     pub fn place_bid(&mut self, bid: &Bid, bid_step: Fraction) {
         self.validate_place_bid(bid, bid_step);
         self.bids.push(bid);
+        self.last_bid = Some(bid.clone());
     }
 }
 
@@ -276,16 +276,22 @@ pub mod tests {
 
     pub fn create_lot_alice_with_bids() -> (Lot, Timestamp) {
         let (mut lot, time_now) = create_lot_alice();
-        lot.bids.push(&Bid {
-            bidder_id: "carol".parse().unwrap(),
-            amount: to_yocto("3"),
-            timestamp: to_ts(11),
-        });
-        lot.bids.push(&Bid {
-            bidder_id: "dan".parse().unwrap(),
-            amount: to_yocto("6"),
-            timestamp: to_ts(12),
-        });
+        lot.place_bid(
+            &Bid {
+                bidder_id: "carol".parse().unwrap(),
+                amount: to_yocto("3"),
+                timestamp: to_ts(11),
+            },
+            Fraction::new(0, 1),
+        );
+        lot.place_bid(
+            &Bid {
+                bidder_id: "dan".parse().unwrap(),
+                amount: to_yocto("6"),
+                timestamp: to_ts(12),
+            },
+            Fraction::new(0, 1),
+        );
 
         (lot, time_now)
     }
@@ -299,11 +305,14 @@ pub mod tests {
 
     pub fn create_lot_alice_buy_now_bid() -> (Lot, Timestamp) {
         let (mut lot, time_now) = create_lot_alice_with_bids();
-        lot.bids.push(&Bid {
-            bidder_id: "carol".parse().unwrap(),
-            amount: to_yocto("10"),
-            timestamp: to_ts(13),
-        });
+        lot.place_bid(
+            &Bid {
+                bidder_id: "carol".parse().unwrap(),
+                amount: to_yocto("10"),
+                timestamp: to_ts(13),
+            },
+            Fraction::new(0, 1),
+        );
 
         (lot, time_now)
     }
@@ -319,6 +328,7 @@ pub mod tests {
         assert_eq!(lot.finish_timestamp, to_ts(17), "wrong finish_timestamp");
         assert_eq!(lot.is_withdrawn, false, "expected withdrawn false");
         assert!(lot.bids.is_empty(), "expected bids list is empty");
+        assert!(lot.last_bid.is_none(), "expected last bid is none");
     }
 
     #[test]
@@ -493,6 +503,7 @@ pub mod tests {
         let (mut lot, _) = create_lot_alice_with_bids();
         lot.clean_up();
         assert!(lot.bids.is_empty(), "expected bids empty after clean up");
+        assert!(lot.last_bid.is_none(), "expected bids empty after clean up");
     }
 
     #[test]
