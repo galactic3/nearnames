@@ -15,13 +15,15 @@ import Countdown from "react-countdown";
 
 function ModalBid (props) {
 
+  const lot = props.lot;
+  const [value, setValue] = useState(getNextBidAmount(lot));
+  const [defaultValue, setDefaultValue] = useState(getNextBidAmount(lot));
   const [showBidList, setShowBidList] = useState(false);
   const [bidButtonDisabled, setBidButtonDisabled] = useState(false);
   const [bidPriceError, setBidPriceError] = useState(false);
 
   const bidPrice = useRef(null);
 
-  const lot = props.lot;
   const bid = props.bid;
   const contract = props.contract;
   const accountId = props.signedAccount;
@@ -30,13 +32,19 @@ function ModalBid (props) {
   const [bids, setBids] = useState([]);
 
   useEffect(() => {
-    setBids([]);
     setShowBidList(false);
     setBidPriceError(false);
     setBidButtonDisabled(false);
+    setDefaultValue(getNextBidAmount(props.lot));
+    setValue(getNextBidAmount(props.lot));
+    setBids([]);
   }, [props]);
 
-  let defaultValue = getNextBidAmount(lot);
+  const onChangeBid = (e) => {
+    const value = e.target.value;
+    checkBid();
+    setValue(value);
+  }
 
   const checkBid = () => {
     if (bidPrice.current.value && toNear(defaultValue).cmp(toNear(bidPrice.current.value)) > 0) {
@@ -86,10 +94,10 @@ function ModalBid (props) {
       </div>
       {(isNotSeller && accountId && !lot.notSafe && lot.status === 'OnSale') && <div className="bid_price">
         <span className="buy-now_price">Buy now: <strong className="near-icon">{getBuyNowPrice(lot)}</strong></span>
-        <button name="buy_now" onClick={(e) => bid(e, lot, getBuyNowPrice(lot))}>Buy now</button>
-        <input type="number" name="bid_input" className="large" onChange={checkBid} ref={bidPrice}
-               placeholder={'min: ' + defaultValue} step="0.01" min={defaultValue} defaultValue={defaultValue}/>
-        <button name="bid" onClick={(e) => bid(e, lot, bidPrice.current.value)} disabled={bidButtonDisabled}>Bid</button>
+        <button name="buy_now" onClick={(e) => bid(e, lot.lot_id, getBuyNowPrice(lot))}>Buy now</button>
+        <input type="number" name="bid_input" className="large" onChange={(e) => onChangeBid(e)} ref={bidPrice}
+               placeholder={'min: ' + defaultValue} step="0.01" min={defaultValue} value={value}/>
+        <button name="bid" onClick={(e) => bid(e, lot.lot_id, bidPrice.current.value)} disabled={bidButtonDisabled}>Bid</button>
         {bidPriceError && <span className="error-input">bid value should more than: {defaultValue}</span>}
       </div>}
       {lot.notSafe && <div className="lot_status">

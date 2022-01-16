@@ -2,7 +2,14 @@ import React, { useState } from 'react';
 import Lot from "./Lot";
 import ModalClaim from "./Claim";
 import ModalBid from "./Bid";
-import {BOATLOAD_OF_GAS, LOCK_CONTRACT_HASHES, fetchBidSafety, toNear, getBuyNowPrice} from "../utils";
+import {
+  BOATLOAD_OF_GAS,
+  LOCK_CONTRACT_HASHES,
+  fetchBidSafety,
+  toNear,
+  getBuyNowPrice,
+  getNextBidAmount
+} from "../utils";
 import ModalAlert from "./Alert";
 import ls from "local-storage";
 import { useHistory } from "react-router-dom";
@@ -28,11 +35,13 @@ function LotsList(props) {
       e.target.innerText = 'Loading...';
       await contract.lot_withdraw({'lot_id': lot.lot_id}, BOATLOAD_OF_GAS);
       history.push("/profile");
+    } catch (e) {
+      console.error(e);
     } finally {
       e.target.disabled = false;
       e.target.innerText = 'Withdraw';
+      await getLot(lot.lot_id);
     }
-    props.getLots();
   };
 
   const alertOpen = (text) => {
@@ -52,28 +61,55 @@ function LotsList(props) {
 
   const claimHide = async () => {
     setModalClaimShow(false);
-    props.getLots();
+    await getLot(selectedLot.lot_id);
   };
 
   const openBid = async (lot) => {
-    setModalBidShow(true);
     setSelectedLot(lot);
+    setModalBidShow(true);
   }
 
   const closeBid = async () => {
     setModalBidShow(false);
+    await getLot(selectedLot.lot_id);
   }
 
   const setLotNotSafe = (lot) => {
     ls.set('NotSafeLots', notSafeLots + ', ' + lot.lot_id);
   }
 
-  const bid = async (e, lot, value) => {
+  const getLot = async (lotId) => {
+    const lot = await contract.lot_get({lot_id: lotId});
+    updateLots(lot);
+    return lot;
+  }
+
+  const updateLots = (lot) => {
+    if (lot) {
+      props.putLot(lot);
+      setSelectedLot(lot);
+    } else {
+      props.getLots();
+    }
+  }
+
+  const bid = async (e, lotId, value) => {
     e.target.disabled = true;
+    const lot = await getLot(lotId);
+    if (lot.status !== 'OnSale') {
+      alertOpen('Sorry lot no longer on sale');
+      e.target.disabled = false;
+      return;
+    }
     const bid_price = toNear(value);
-    if (bid_price - lot.buy_now_price > 0) {
+    if (bid_price && toNear(getNextBidAmount(lot)).cmp(bid_price) > 0) {
+      alertOpen('Sorry lot next bid has changed');
+      e.target.disabled = false;
+      return;
+    }
+    if (bid_price.cmp(toNear(getBuyNowPrice(lot))) > 0) {
       const isConfirm = await isConfirmed(
-        'Your bid price ' + value + ' NEAR is higher than buy now price ' + getBuyNowPrice(lot) + ' NEAR. ' +
+        'Your bid price ' + value + ' NEAR is higher than the buy now price ' + getBuyNowPrice(lot) + ' NEAR. ' +
         'Are you sure you want to bid?'
       );
       if(!isConfirm) {
@@ -93,14 +129,11 @@ function LotsList(props) {
       e.target.disabled = false;
       return;
     }
-    console.log(lot.lot_id, bid_price);
-    contract.lot_bid({
+    await contract.lot_bid({
       args: { lot_id: lot.lot_id },
       gas: BOATLOAD_OF_GAS,
       amount: bid_price.toFixed(),
       callbackUrl: new URL('/#/profile', window.location.origin),
-    }).then(() => {
-      props.getLots();
     });
   };
 

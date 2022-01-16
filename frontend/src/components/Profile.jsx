@@ -8,6 +8,7 @@ function Profile (props) {
   const [profile, setProfile] = useState([]);
   const [lotsOffering, setLotsOffering] = useState([]);
   const [lotsBidding, setLotsBidding] = useState([]);
+  const [lotsWon, setLotsWon] = useState([]);
   const [loader, setLoader] = useState(false);
   const [claimLoader, setClaimLoader] = useState(false);
 
@@ -22,7 +23,45 @@ function Profile (props) {
   const getLotsBidding = async () => {
     await loadListPaginated(
       args => contract.lot_list_bidding_by({ profile_id: profileId, ...args }),
-    ).then(setLotsBidding);
+    ).then((lots) => {
+      setLotsWon([]);
+      setLotsBidding([]);
+      lots.forEach((lot) => {
+        if (lot.status === 'SaleSuccess' && profileId === lot.last_bidder_id) {
+          setLotsWon(lotsWon => [...lotsWon, lot]);
+        } else {
+          setLotsBidding(lotsBidding => [...lotsBidding, lot]);
+        }
+      })
+    });
+  }
+
+  const putLotOffering = (lot) => {
+    const updatedLots = lotsOffering.map((l) => {
+      if (lot && l.lot_id === lot.lot_id) {
+        return lot;
+      }
+      return l;
+    })
+    setLotsOffering(updatedLots);
+  }
+
+  const putLotBidding = (lot) => {
+    const updatedLots = [...lotsWon, ...lotsBidding].map((l) => {
+      if (l.lot_id === lot.lot_id) {
+        return lot;
+      }
+      return l;
+    });
+    setLotsWon([]);
+    setLotsBidding([]);
+    updatedLots.forEach((lot) => {
+      if (lot.status === 'SaleSuccess' && profileId === lot.last_bidder_id) {
+        setLotsWon(lotsWon => [...lotsWon, lot]);
+      } else {
+        setLotsBidding(lotsBidding => [...lotsBidding, lot]);
+      }
+    })
   }
 
   useEffect(async () => {
@@ -60,8 +99,9 @@ function Profile (props) {
           <div className="profile-block"><strong>Claimed:</strong> <span className="rewards near-icon">{nearTo(profile.rewards_claimed)}</span></div>
           <button className="claim-rewards" disabled={!parseFloat(profile.rewards_available) || claimLoader} onClick={(e) => claim(e)}>{claimLoader ? 'Claiming...' : 'Claim rewards'}</button>
         </div>
-        <LotsList lots={lotsOffering} getLots={getLotsOffering} showStatus={true} name={' you are selling'} {...props}/>
-        <LotsList lots={lotsBidding} getLots={getLotsBidding} showStatus={true} name={' you are bidding on'} {...props}/>
+        <LotsList lots={lotsOffering} getLots={getLotsOffering} putLot={putLotOffering} showStatus={true} name={' you are selling'} {...props}/>
+        <LotsList lots={lotsBidding} getLots={getLotsBidding} putLot={putLotBidding} showStatus={true} name={' you are bidding on'} {...props}/>
+        <LotsList lots={lotsWon} getLots={getLotsBidding} putLot={putLotBidding} showStatus={true} name={' you won'} {...props}/>
       </div> :
       <div>Profile not found</div>
     }

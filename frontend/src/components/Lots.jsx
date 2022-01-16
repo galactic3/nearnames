@@ -26,6 +26,19 @@ function Lots(props) {
     setLoader(false);
   }
 
+  const putLot = (lot) => {
+    const updatedLots = lots.map((l) => {
+      if (l.lot_id === lot.lot_id) {
+        return lot;
+      }
+      return l;
+    }).filter((l) => {
+      return l.status === 'OnSale';
+    })
+    setCashLots(updatedLots);
+    setLots(updatedLots);
+  }
+
   const filterList = async (e) => {
     const value = e.target.value.toLowerCase();
     if(value !== '') {
@@ -55,7 +68,7 @@ function Lots(props) {
         <input type="text" className="search" placeholder="Search lots for sale" onChange={(e) => filterList(e)} value={filter}/>
         {filter && <span className="search-result">{lots.length} results <strong>"{filter}"</strong> found</span>}
       </div>
-      <LotsList lots={lots} getLots={getLots} signIn={props.signIn} showStatus={false} loader={loader} {...props} />
+      <LotsList lots={lots} getLots={getLots} putLot={putLot} signIn={props.signIn} showStatus={false} loader={loader} {...props} />
     </div>
   );
 }

@@ -16,11 +16,12 @@ function ModalClaim(props) {
   const seedPhraseRef = useRef(null);
   const publicKeyRef = useRef(null);
 
+  const lot_id = props.lot.lot_id;
+
   const recoverLink = props.config.walletUrl + '/recover-seed-phrase'
 
   const claimLot = async (publicKey) => {
-    await props.contract.lot_claim({'lot_id': props.lot.lot_id, 'public_key': publicKey}, BOATLOAD_OF_GAS).then((lot) => {
-      console.log(lot);
+    await props.contract.lot_claim({'lot_id': lot_id, 'public_key': publicKey}, BOATLOAD_OF_GAS).then((lot) => {
       setShowLoader(false);
     });
   }
@@ -74,7 +75,7 @@ function ModalClaim(props) {
           <CloseIcon />
         </IconButton>
         <div>
-          <h3>Claim <strong>{renderName(props.lot.lot_id)}</strong></h3>
+          <h3>Claim <strong>{renderName(lot_id)}</strong></h3>
           { showLoader && <Loader/> }
           { !showSuccess && !showLoader ? <div>
               <form onSubmit={(e) => claimBySeedPhrase(e)}>
