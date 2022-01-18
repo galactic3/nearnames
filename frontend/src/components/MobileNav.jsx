@@ -2,7 +2,7 @@ import React from 'react';
 import {NavLink} from "react-router-dom";
 import {IconButton} from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
-import {nearTo, renderName} from "../utils";
+import {nearToFloor, renderName} from "../utils";
 import LogoutIcon from "@mui/icons-material/Logout";
 import NetworkSelect from "./NetworkSelect";
 
@@ -48,7 +48,7 @@ function MobileNav(props) {
         </div>
       ) : props.signedAccount
         ? <div className="auth">
-          <strong className="balance near-icon">{nearTo(props.signedAccountBalance) || '-'}</strong>
+          <strong className="balance near-icon">{nearToFloor(props.signedAccountBalance) || '-'}</strong>
           {renderName(props.signedAccount)}
           <a className="icon logout" onClick={() => props.signOut(true)}><LogoutIcon/></a>
         </div>

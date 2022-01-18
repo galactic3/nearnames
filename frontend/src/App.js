@@ -8,7 +8,7 @@ import Lots from './components/Lots';
 import ProfilePage from './components/Profile';
 import LogoutIcon from '@mui/icons-material/Logout';
 import CreateOffer from "./components/CreateOffer";
-import {nearTo, renderName} from "./utils";
+import {nearToFloor, renderName} from "./utils";
 import AboutPage from "./components/About";
 import ConfirmContextProvider from "./Providers/ConfirmContextProvider";
 import ModalConfirm from "./components/Confirm";
@@ -254,7 +254,7 @@ function App (props) {
                   </div>
                 ) : signedAccount && !offerProcessState.offerActive
                 ? <div className="auth">
-                    <strong className="balance near-icon">{nearTo(signedAccountBalance) || '-'}</strong>
+                    <strong className="balance near-icon">{nearToFloor(signedAccountBalance) || '-'}</strong>
                     {renderName(signedAccount)}
                     <a className="icon logout" onClick={() => signOut(true)}><LogoutIcon/></a>
                   </div>

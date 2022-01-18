@@ -1,6 +1,6 @@
 import React, {useEffect, useRef, useState} from 'react';
 import ls from 'local-storage';
-import { customRequestSigninFullAccess, toNear, nearTo, MIN_RESERVE_PRICE } from '../utils.js';
+import { customRequestSigninFullAccess, toNear, nearToFloor, MIN_RESERVE_PRICE } from '../utils.js';
 import {Box, FormControl, FormHelperText, IconButton, InputLabel, MenuItem, Modal, Select} from "@mui/material";
 import { useForm } from "react-hook-form";
 import CloseIcon from "@mui/icons-material/Close";
@@ -91,7 +91,7 @@ function Offer (props) {
     const account = await props.near.account(lot_account_id);
     let balance = null;
     try {
-      balance = nearTo((await account.getAccountBalance()).total);
+      balance = nearToFloor((await account.getAccountBalance()).total);
     } catch (e) {
       alertOpen('Account ' + lot_account_id + ' not exist - you have to create it first');
       setOfferButtonDisabled(false);
@@ -124,7 +124,7 @@ function Offer (props) {
     const seller = await props.near.account(seller_account_id);
 
     try {
-      nearTo((await seller.getAccountBalance()).total);
+      nearToFloor((await seller.getAccountBalance()).total);
     } catch (e) {
       alertOpen('Account: ' + seller_account_id + ' not exist - you have to create it first');
       setOfferButtonDisabled(false);

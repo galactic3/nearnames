@@ -8,8 +8,17 @@ export const ACCESS_KEY_ALLOWANCE = Big(1000000000).times(10 ** 24).toFixed();
 export const MAX_UINT8 = '340282366920938463463374607431768211455';
 export const BOATLOAD_OF_GAS = Big(3).times(10 ** 14).toFixed();
 
-export const toNear = (value = '0') => Big(value).times(10 ** 24);
-export const nearTo = (value = '0', to = 2, mode) => Big(value).div(10 ** 24).toFixed(to === 0 ? undefined : to, mode);
+Big.DP = 40;
+export const NEAR_ROUND_DIGITS = 2;
+
+export const toNear = (value) => Big(value).times(10 ** 24).round(0, Big.roundDown);
+export const nearTo = (value, digits, mode) => {
+  // default is 20, need at least 38 for proper rounding of any near balance
+  Big.DP = 40;
+  return Big(value || '0').div(10 ** 24).toFixed(digits === 0 ? undefined : digits, mode);
+};
+export const nearToCeil = (value, digits = NEAR_ROUND_DIGITS) => nearTo(value, digits, Big.roundUp);
+export const nearToFloor = (value, digits = NEAR_ROUND_DIGITS) => nearTo(value, digits, Big.roundDown);
 export const big = (value = '0') => Big(value);
 export const tsNear2JS = (time) => Math.floor(time/1000000);
 
@@ -65,19 +74,19 @@ export function getCountdownTime(lot) {
 }
 
 export function getNextBidAmount(lot) {
-  return lot.next_bid_amount ? nearTo(lot.next_bid_amount, 2, 3) : '';
+  return lot.next_bid_amount ? nearToCeil(lot.next_bid_amount) : '';
 }
 
 export function getReservePrice(lot) {
-  return lot.reserve_price ? nearTo(lot.reserve_price, 2) : '';
+  return lot.reserve_price ? nearToCeil(lot.reserve_price) : '';
 }
 
 export function getCurrentPrice(lot) {
-  return lot.last_bid_amount ? nearTo(lot.last_bid_amount, 2) : getReservePrice(lot);
+  return lot.last_bid_amount ? nearToCeil(lot.last_bid_amount) : getReservePrice(lot);
 }
 
 export function getBuyNowPrice(lot) {
-  return lot.buy_now_price ? nearTo(lot.buy_now_price, 2) : '';
+  return lot.buy_now_price ? nearToCeil(lot.buy_now_price) : '';
 }
 
 export const fetchBidSafety = async (lot_id, near) => {
