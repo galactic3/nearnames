@@ -1,8 +1,9 @@
 import Big from 'big.js'
 import * as nearAPI from 'near-api-js';
 import React from "react";
+import getConfig from "./config";
 
-export const NETWORK_ID = process.env.REACT_APP_NETWORK_ID || 'default';
+export const NETWORK_ID = getConfig(process.env.NODE_ENV || 'testnet').networkId;
 
 export const ACCESS_KEY_ALLOWANCE = Big(1000000000).times(10 ** 24).toFixed();
 export const MAX_UINT8 = '340282366920938463463374607431768211455';
@@ -52,7 +53,9 @@ export const customRequestSigninFullAccess = async (connection, contractIdOrOpti
   window.location.assign(newUrl.toString());
 };
 
-export const renderName = (accountId, suffix = 'testnet') => {
+export const renderName = (accountId) => {
+  console.log(NETWORK_ID);
+  const suffix = NETWORK_ID === 'mainnet' ? 'near' : 'testnet';
   const accountSuffix = '.' + suffix;
   const accountName = accountId && accountId.split(accountSuffix)[0];
   return (
