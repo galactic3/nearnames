@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Loader from './Loader';
-import { BOATLOAD_OF_GAS, nearTo, renderName, loadListPaginated } from "../utils";
+import { BOATLOAD_OF_GAS, nearToFloor, renderName, loadListPaginated } from "../utils";
 import LotsList from "./LotsList";
 
 function Profile (props) {
@@ -95,8 +95,8 @@ function Profile (props) {
       <div className="mt-3">
         <div className="profile-container">
           <h5 className="profile-name"><strong>{renderName(profileId)}</strong></h5>
-          <div className="profile-block"><strong>Available:</strong> <span className="rewards near-icon">{nearTo(profile.rewards_available)}</span></div>
-          <div className="profile-block"><strong>Claimed:</strong> <span className="rewards near-icon">{nearTo(profile.rewards_claimed)}</span></div>
+          <div className="profile-block"><strong>Available:</strong> <span className="rewards near-icon">{nearToFloor(profile.rewards_available)}</span></div>
+          <div className="profile-block"><strong>Claimed:</strong> <span className="rewards near-icon">{nearToFloor(profile.rewards_claimed)}</span></div>
           <button className="claim-rewards" disabled={!parseFloat(profile.rewards_available) || claimLoader} onClick={(e) => claim(e)}>{claimLoader ? 'Claiming...' : 'Claim rewards'}</button>
         </div>
         <LotsList lots={lotsOffering} getLots={getLotsOffering} putLot={putLotOffering} showStatus={true} name={' you are selling'} {...props}/>
