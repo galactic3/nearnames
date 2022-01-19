@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import LotsList from "./LotsList";
 import SearchIcon from '@mui/icons-material/Search';
 import {fetchBidSafety, loadListPaginated} from '../utils';
