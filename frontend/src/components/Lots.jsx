@@ -1,23 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import LotsList from "./LotsList";
 import SearchIcon from '@mui/icons-material/Search';
-import ls from 'local-storage';
-import { loadListPaginated } from '../utils';
+import {fetchBidSafety, loadListPaginated} from '../utils';
 
 function Lots(props) {
 
   const contract = props.contract;
 
-  const notSafeLots = ls.get('NotSafeLots') || '';
-
   const getLots = async () => {
     setLoader(true);
 
-    await loadListPaginated(args => contract.lot_list(args)).then((lots) => {
+    await loadListPaginated(args => contract.lot_list(args)).then(async (lots) => {
+      await Promise.all(lots.map(async (l) => {
+        const isSafe = await fetchBidSafety(l.lot_id, props.near, props.nearConfig);
+        l.notSafe = !isSafe;
+      }));
       const result = lots.filter((lot) => {
-        if (notSafeLots.includes(lot.lot_id)) {
-          lot.notSafe = true;
-        }
         return lot.status === 'OnSale';
       })
       setCashLots(result);
@@ -26,7 +24,9 @@ function Lots(props) {
     setLoader(false);
   }
 
-  const putLot = (lot) => {
+  const putLot = async (lot) => {
+    const isSafe = await fetchBidSafety(lot.lot_id, props.near, props.nearConfig);
+    lot.notSafe = !isSafe;
     const updatedLots = lots.map((l) => {
       if (l.lot_id === lot.lot_id) {
         return lot;
@@ -56,10 +56,6 @@ function Lots(props) {
   const [cashLots, setCashLots] = useState([]);
   const [filter, setFilter] = useState('');
   const [loader, setLoader] = useState(false);
-
-  useEffect(async () => {
-    await getLots();
-  }, []);
 
   return (
     <div className="container">

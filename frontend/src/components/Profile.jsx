@@ -10,17 +10,22 @@ function Profile (props) {
   const [lotsBidding, setLotsBidding] = useState([]);
   const [lotsWon, setLotsWon] = useState([]);
   const [loader, setLoader] = useState(false);
+  const [lotsOfferLoader, setLotsOfferLoader] = useState(false);
+  const [lotsBidLoader, setLotsBidLoader] = useState(false);
   const [claimLoader, setClaimLoader] = useState(false);
 
   const contract = props.contract;
 
   const getLotsOffering = async () => {
+    setLotsOfferLoader(true);
     await loadListPaginated(
       args => contract.lot_list_offering_by({ profile_id: profileId, ...args }),
     ).then(setLotsOffering);
+    setLotsOfferLoader(false);
   }
 
   const getLotsBidding = async () => {
+    setLotsBidLoader(true);
     await loadListPaginated(
       args => contract.lot_list_bidding_by({ profile_id: profileId, ...args }),
     ).then((lots) => {
@@ -34,6 +39,7 @@ function Profile (props) {
         }
       })
     });
+    setLotsBidLoader(false);
   }
 
   const putLotOffering = (lot) => {
@@ -67,8 +73,6 @@ function Profile (props) {
   useEffect(async () => {
     setLoader(true);
     await contract.profile_get({profile_id: profileId}).then(setProfile);
-    await getLotsOffering();
-    await getLotsBidding();
     setLoader(false);
   }, []);
 
@@ -99,9 +103,9 @@ function Profile (props) {
           <div className="profile-block"><strong>Claimed:</strong> <span className="rewards near-icon">{nearToFloor(profile.rewards_claimed)}</span></div>
           <button className="claim-rewards" disabled={!parseFloat(profile.rewards_available) || claimLoader} onClick={(e) => claim(e)}>{claimLoader ? 'Claiming...' : 'Claim rewards'}</button>
         </div>
-        <LotsList lots={lotsOffering} getLots={getLotsOffering} putLot={putLotOffering} showStatus={true} name={' you are selling'} {...props}/>
-        <LotsList lots={lotsBidding} getLots={getLotsBidding} putLot={putLotBidding} showStatus={true} name={' you are bidding on'} {...props}/>
-        <LotsList lots={lotsWon} getLots={getLotsBidding} putLot={putLotBidding} showStatus={true} name={' you won'} {...props}/>
+        <LotsList lots={lotsOffering} getLots={getLotsOffering} putLot={putLotOffering} showStatus={true} loader={lotsOfferLoader} name={' you are selling'} {...props}/>
+        <LotsList lots={lotsBidding} getLots={getLotsBidding} putLot={putLotBidding} showStatus={true} loader={lotsBidLoader} name={' you are bidding on'} {...props}/>
+        <LotsList lots={lotsWon} getLots={getLotsBidding} putLot={putLotBidding} showStatus={true} loader={lotsBidLoader} name={' you won'} {...props}/>
       </div> :
       <div>Profile not found</div>
     }

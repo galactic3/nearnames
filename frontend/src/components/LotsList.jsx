@@ -1,17 +1,14 @@
-import React, { useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import Lot from "./Lot";
 import ModalClaim from "./Claim";
 import ModalBid from "./Bid";
 import {
   BOATLOAD_OF_GAS,
-  LOCK_CONTRACT_HASHES,
-  fetchBidSafety,
   toNear,
   getBuyNowPrice,
   getNextBidAmount
 } from "../utils";
 import ModalAlert from "./Alert";
-import ls from "local-storage";
 import { useHistory } from "react-router-dom";
 import useConfirm from "../Hooks/useConfirm";
 
@@ -20,7 +17,6 @@ function LotsList(props) {
   const contract = props.contract;
   const config = props.nearConfig;
   const signedAccount = props.signedAccount;
-  const notSafeLots = ls.get('NotSafeLots') || '';
   const { isConfirmed } = useConfirm();
 
   const [modalClaimShow, setModalClaimShow] = useState(false);
@@ -74,22 +70,18 @@ function LotsList(props) {
     await getLot(selectedLot.lot_id);
   }
 
-  const setLotNotSafe = (lot) => {
-    ls.set('NotSafeLots', notSafeLots + ', ' + lot.lot_id);
-  }
-
   const getLot = async (lotId) => {
     const lot = await contract.lot_get({lot_id: lotId});
-    updateLots(lot);
+    await updateLots(lot);
     return lot;
   }
 
-  const updateLots = (lot) => {
+  const updateLots = async (lot) => {
     if (lot) {
-      props.putLot(lot);
+      await props.putLot(lot);
       setSelectedLot(lot);
     } else {
-      props.getLots();
+      await props.getLots();
     }
   }
 
@@ -117,18 +109,7 @@ function LotsList(props) {
         return;
       }
     }
-    const { codeHash, accessKeysLen, lockerOwner } = await fetchBidSafety(lot.lot_id, props.near);
-    const isSafe = LOCK_CONTRACT_HASHES.includes(codeHash) &&
-      accessKeysLen === 0 &&
-      lockerOwner === props.nearConfig.contractName;
-    console.log(codeHash, accessKeysLen, lockerOwner);
-    if (!isSafe) {
-      alertOpen('account is not safe');
-      setLotNotSafe(lot);
-      lot.notSafe = true;
-      e.target.disabled = false;
-      return;
-    }
+
     await contract.lot_bid({
       args: { lot_id: lot.lot_id },
       gas: BOATLOAD_OF_GAS,
@@ -137,6 +118,9 @@ function LotsList(props) {
     });
   };
 
+  useEffect( () => {
+    props.getLots();
+  }, []);
 
   return (
     <div className="lots-container">
