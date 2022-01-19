@@ -89,8 +89,9 @@ export function getBuyNowPrice(lot) {
   return lot.buy_now_price ? nearToCeil(lot.buy_now_price) : '';
 }
 
-export const fetchBidSafety = async (lot_id, near) => {
+export const fetchBidSafety = async (lot_id, near, nearConfig) => {
   const account = await near.account(lot_id);
+  let isSafe = false;
   try {
     const codeHash = (await account.state()).code_hash;
     const accessKeysLen = (await account.getAccessKeys()).length;
@@ -99,12 +100,18 @@ export const fetchBidSafety = async (lot_id, near) => {
       changeMethods: []
     });
     const lockerOwner = await lockerContract.get_owner({});
-    const balance = (await account.getAccountBalance()).total;
-    return { codeHash, accessKeysLen, lockerOwner, balance }
+    isSafe = LOCK_CONTRACT_HASHES.includes(codeHash) &&
+      accessKeysLen === 0 &&
+      lockerOwner === nearConfig.contractName;
+    console.log(codeHash, accessKeysLen, lockerOwner);
+    if (!isSafe) {
+      console.log(lot_id + ' account is not safe');
+    }
   } catch (e) {
     console.log('check safety error', e)
   }
-  return { codeHash: '(unknown)', accessKeysLen: '(unknown)', lockerOwner: '(not found)', balance: 0 }
+
+  return isSafe;
 };
 
 export const loadListPaginated = async (callback, limit = 200) => {
