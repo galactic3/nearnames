@@ -41,11 +41,6 @@ function App (props) {
   useEffect(async () => {
     await initOffer();
     setConnected(true);
-
-    console.log(process.env.NODE_ENV);
-    console.log(process.env.NETWORK_ID);
-    console.log(CONFIG);
-
   }, []);
 
   const updateBalance = async () => {
@@ -231,7 +226,7 @@ function App (props) {
     <main>
       <Router basename='/'>
         <div className='beta-warning'>
-          Beta software. Testnet version. Not audited. Use at your own risk!
+          Beta software. {process.env.NETWORK_ID.toUpperCase()} version. Not audited. Use at your own risk!
         </div>
         <header>
           <div className="container">

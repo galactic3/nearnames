@@ -40,7 +40,6 @@ export const customRequestSigninFullAccess = async (connection, contractIdOrOpti
   }
   const currentUrl = new URL(window.location.href);
   const LOGIN_WALLET_URL_SUFFIX = '/login/';
-  console.log(connection);
   const newUrl = new URL(connection._walletBaseUrl + LOGIN_WALLET_URL_SUFFIX);
   newUrl.searchParams.set('success_url', options.successUrl || currentUrl.href);
   newUrl.searchParams.set('failure_url', options.failureUrl || currentUrl.href);

@@ -31,7 +31,6 @@ function ModalClaim(props) {
     const seedPhrase = seedPhraseRef.current.value;
     setSeedPhrase(seedPhrase);
     const publicKey = parseSeedPhrase(seedPhrase, '').publicKey;
-    console.log(publicKey);
     setShowLoader(true);
     await claimLot(publicKey);
     setClaimedBySeedPhrase(true);

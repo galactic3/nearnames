@@ -1,8 +1,7 @@
 import React from 'react'
 import Alert from "@mui/material/Alert";
-import {CircularProgress} from "@mui/material";
-import { Redirect } from "react-router-dom";
-import Link from "react-router-dom/es/Link";
+import { Redirect, Link } from "react-router-dom";
+import Loader from "./Loader";
 
 function OfferProcessPage (props) {
 
@@ -42,12 +41,7 @@ function OfferProcessPage (props) {
               )}
             </ul>
 
-            <div className="spinner">
-              <CircularProgress sx={{
-                color: 'var(--link)',
-                margin: 'auto'
-              }}/>
-            </div>
+            <Loader/>
 
           </div>
         )}

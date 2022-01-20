@@ -100,10 +100,10 @@ function Offer (props) {
     }
 
     if (balance < MIN_RESERVE_PRICE) {
-      alertOpen(`Not enough balance - should be at least ${MIN_RESERVE_PRICE} NEAR available`);
+      alertOpen(`Not enough balance on ${lot_account_id} - should be at least ${MIN_RESERVE_PRICE} NEAR available`);
       setOfferButtonDisabled(false);
       fieldset.disabled = false;
-      throw console.error(`Not enough balance - should be at least ${MIN_RESERVE_PRICE} NEAR available`)
+      throw console.error(`Not enough balance on ${lot_account_id}  - should be at least ${MIN_RESERVE_PRICE} NEAR available`)
     }
 
     if (balance > 50 || balance > reserve_price.value) {

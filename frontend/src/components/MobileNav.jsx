@@ -8,9 +8,6 @@ import NetworkSelect from "./NetworkSelect";
 
 function MobileNav(props) {
 
-  console.log(props);
-
-
   return (
     <div className="mobile-header">
       <h1><NavLink aria-current='page' to='/' onClick={props.onClose}>Near names</NavLink></h1>

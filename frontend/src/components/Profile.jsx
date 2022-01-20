@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Loader from './Loader';
-import { BOATLOAD_OF_GAS, nearToFloor, renderName, loadListPaginated } from "../utils";
+import {BOATLOAD_OF_GAS, nearToFloor, renderName, loadListPaginated, fetchBidSafety} from "../utils";
 import LotsList from "./LotsList";
 
 function Profile (props) {
@@ -9,7 +9,7 @@ function Profile (props) {
   const [lotsOffering, setLotsOffering] = useState([]);
   const [lotsBidding, setLotsBidding] = useState([]);
   const [lotsWon, setLotsWon] = useState([]);
-  const [loader, setLoader] = useState(false);
+  const [loader, setLoader] = useState(true);
   const [lotsOfferLoader, setLotsOfferLoader] = useState(false);
   const [lotsBidLoader, setLotsBidLoader] = useState(false);
   const [claimLoader, setClaimLoader] = useState(false);
@@ -20,7 +20,13 @@ function Profile (props) {
     setLotsOfferLoader(true);
     await loadListPaginated(
       args => contract.lot_list_offering_by({ profile_id: profileId, ...args }),
-    ).then(setLotsOffering);
+    ).then(async (lots) => {
+      await Promise.all(lots.map(async (l) => {
+        const isSafe = await fetchBidSafety(l.lot_id, props.near, props.nearConfig);
+        l.notSafe = !isSafe;
+      }));
+      setLotsOffering(lots);
+    });
     setLotsOfferLoader(false);
   }
 
@@ -28,7 +34,11 @@ function Profile (props) {
     setLotsBidLoader(true);
     await loadListPaginated(
       args => contract.lot_list_bidding_by({ profile_id: profileId, ...args }),
-    ).then((lots) => {
+    ).then(async (lots) => {
+      await Promise.all(lots.map(async (l) => {
+        const isSafe = await fetchBidSafety(l.lot_id, props.near, props.nearConfig);
+        l.notSafe = !isSafe;
+      }));
       setLotsWon([]);
       setLotsBidding([]);
       lots.forEach((lot) => {
@@ -42,7 +52,9 @@ function Profile (props) {
     setLotsBidLoader(false);
   }
 
-  const putLotOffering = (lot) => {
+  const putLotOffering = async (lot) => {
+    const isSafe = await fetchBidSafety(lot.lot_id, props.near, props.nearConfig);
+    lot.notSafe = !isSafe;
     const updatedLots = lotsOffering.map((l) => {
       if (lot && l.lot_id === lot.lot_id) {
         return lot;
@@ -52,7 +64,9 @@ function Profile (props) {
     setLotsOffering(updatedLots);
   }
 
-  const putLotBidding = (lot) => {
+  const putLotBidding = async (lot) => {
+    const isSafe = await fetchBidSafety(lot.lot_id, props.near, props.nearConfig);
+    lot.notSafe = !isSafe;
     const updatedLots = [...lotsWon, ...lotsBidding].map((l) => {
       if (l.lot_id === lot.lot_id) {
         return lot;
@@ -71,7 +85,6 @@ function Profile (props) {
   }
 
   useEffect(async () => {
-    setLoader(true);
     await contract.profile_get({profile_id: profileId}).then(setProfile);
     setLoader(false);
   }, []);
@@ -96,7 +109,7 @@ function Profile (props) {
   return (
     <div className="container">
     { loader ? <Loader/> : profile ?
-      <div className="mt-3">
+      <div>
         <div className="profile-container">
           <h5 className="profile-name"><strong>{renderName(profileId)}</strong></h5>
           <div className="profile-block"><strong>Available:</strong> <span className="rewards near-icon">{nearToFloor(profile.rewards_available)}</span></div>
@@ -107,7 +120,9 @@ function Profile (props) {
         <LotsList lots={lotsBidding} getLots={getLotsBidding} putLot={putLotBidding} showStatus={true} loader={lotsBidLoader} name={' you are bidding on'} {...props}/>
         <LotsList lots={lotsWon} getLots={getLotsBidding} putLot={putLotBidding} showStatus={true} loader={lotsBidLoader} name={' you won'} {...props}/>
       </div> :
-      <div>Profile not found</div>
+      <div className="profile-container">
+        <h5 className="profile-name"><strong>Profile not found</strong></h5>
+      </div>
     }
     </div>
   );

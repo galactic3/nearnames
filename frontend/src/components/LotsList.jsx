@@ -11,6 +11,7 @@ import {
 import ModalAlert from "./Alert";
 import { useHistory } from "react-router-dom";
 import useConfirm from "../Hooks/useConfirm";
+import Loader from "./Loader";
 
 function LotsList(props) {
   const history = useHistory();
@@ -126,17 +127,13 @@ function LotsList(props) {
     <div className="lots-container">
       { props.name ? <h5 className="lots-title">Lots {props.name}</h5> : ''}
       { props.loader ?
-        <div className='d-flex m-5 justify-content-center' key='1'>
-          <div className='spinner-grow' role='status'>
-            <span className='visually-hidden'>Loading...</span>
-          </div>
-        </div> :
+        <Loader/> :
         <ul className="lot_list">
           {props.lots.map((lot, i) =>
             <Lot lot={lot} key={i} openBid={openBid} signIn={props.signIn} withdraw={withdraw} claim={claimOpen}
                  contract={contract} showStatus={props.showStatus} signedAccount={signedAccount}/>
           )}
-          {props.lots.length === 0 ? <li>No lots available</li> : ''}
+          {props.lots.length === 0 ? <li className='lot_item'><div className="lot_info">No lots available</div></li> : ''}
         </ul>
       }
       <ModalClaim
