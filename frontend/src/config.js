@@ -7,6 +7,7 @@ function getConfig(env) {
   case 'mainnet':
     return {
       networkId: 'mainnet',
+      suffix: 'near',
       nodeUrl: 'https://rpc.mainnet.near.org',
       contractName: CONTRACT_NAME,
       walletUrl: 'https://wallet.near.org',
@@ -17,6 +18,7 @@ function getConfig(env) {
   case 'testnet':
     return {
       networkId: 'testnet',
+      suffix: 'testnet',
       nodeUrl: 'https://rpc.testnet.near.org',
       contractName: CONTRACT_NAME,
       walletUrl: 'https://wallet.testnet.near.org',
@@ -26,6 +28,7 @@ function getConfig(env) {
   case 'betanet':
     return {
       networkId: 'betanet',
+      suffix: 'betanet',
       nodeUrl: 'https://rpc.betanet.near.org',
       contractName: CONTRACT_NAME,
       walletUrl: 'https://wallet.betanet.near.org',
