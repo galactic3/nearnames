@@ -2,6 +2,7 @@ import React from 'react'
 import Alert from "@mui/material/Alert";
 import {CircularProgress} from "@mui/material";
 import { Redirect } from "react-router-dom";
+import Link from "react-router-dom/es/Link";
 
 function OfferProcessPage (props) {
 
@@ -20,7 +21,7 @@ function OfferProcessPage (props) {
       {finished
         ? (success
           ? (
-            <Alert className="alert-container" severity="success">Success! {offerSuccessMessage}</Alert>
+            <Alert className="alert-container" severity="success">Success! {offerSuccessMessage} Back to <Link to='/'>Homepage</Link></Alert>
           ) : (
             <Alert className="alert-container" severity="error">
               Something went wrong, prease refresh the page.

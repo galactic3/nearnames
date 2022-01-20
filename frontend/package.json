@@ -11,11 +11,11 @@
     "build:testnet": "rm -rf dist && mkdir -p dist && cp testnet/CNAME dist/CNAME && yarn build:copy_lock_contract && NODE_ENV=development parcel build src/index.html --public-url ./",
     "deploy:contract:dev": "npm run build:contract:dev && near dev-deploy --wasmFile ../contract/res/marketplace.wasm --initFunction new --initArgs '{\"seller_rewards_commission\":{\"num\":1,\"denom\":10},\"bid_step\":{\"num\":1,\"denom\":5},\"prev_bidder_commission_share\":{\"num\":1,\"denom\":2}}'",
     "deploy:contract": "npm run build:contract && near deploy --wasmFile ../contract/res/marketplace.wasm --initFunction new --initArgs '{\"seller_rewards_commission\":{\"num\":1,\"denom\":10},\"bid_step\":{\"num\":1,\"denom\":5},\"prev_bidder_commission_share\":{\"num\":1,\"denom\":2}}'",
-    "deploy:pages": "npm run build && gh-pages -d dist/",
+    "deploy:pages": "npm run build && gh-pages -d dist/ -r https://github.com/galactic3/nearnames.git",
     "deploy:web": "npm run build:web && npm run deploy:pages",
     "deploy:testnet": "npm run build:testnet && gh-pages -d dist/ -r https://github.com/galactic3/nearnames-testnet.git",
     "deploy": "npm run deploy:pages",
-    "start": "echo The app is starting! It will automatically open in your browser when ready && yarn build:copy_lock_contract && env-cmd -f ./neardev/dev-account.env parcel src/index.html --open",
+    "start": "yarn build:copy_lock_contract && parcel serve src/index.html --no-cache",
     "dev": "nodemon --watch ../contract/src -e rs --exec \"npm run start\"",
     "test": "jest test --runInBand"
   },

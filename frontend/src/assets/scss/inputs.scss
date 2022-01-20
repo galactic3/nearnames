@@ -43,7 +43,10 @@ textarea {
     input {
         width: calc(100%);
         &.name {
-            padding-right: 53px;
+            padding-right: 35px;
+            &.testnet {
+                padding-right: 53px;
+            }
         }
         &.price {
             padding-right: 43px;

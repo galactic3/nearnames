@@ -180,7 +180,7 @@ function Offer (props) {
               <label htmlFor="lot_id">Lot account:</label>
               <div className="input-wrapper">
                 <input
-                  className="name"
+                  className={process.env.NETWORK_ID + ' name'}
                   autoComplete="off"
                   autoCapitalize="off"
                   onChange={checkAccounts}
