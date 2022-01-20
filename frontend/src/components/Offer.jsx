@@ -1,6 +1,13 @@
 import React, {useEffect, useRef, useState} from 'react';
 import ls from 'local-storage';
-import {customRequestSigninFullAccess, toNear, nearToFloor, MIN_RESERVE_PRICE, CONFIG} from '../utils.js';
+import {
+  customRequestSigninFullAccess,
+  toNear,
+  nearToFloor,
+  MIN_RESERVE_PRICE,
+  CONFIG,
+  getNextBidAmount
+} from '../utils.js';
 import {Box, FormControl, FormHelperText, IconButton, InputLabel, MenuItem, Modal, Select} from "@mui/material";
 import { useForm } from "react-hook-form";
 import CloseIcon from "@mui/icons-material/Close";
@@ -58,6 +65,14 @@ function Offer (props) {
   useEffect(() => {
     checkValidationOffer();
   }, [sameAccountError, priceError, buyPriceError, priceCompareError]);
+
+  useEffect(() => {
+    setLotId('');
+    setSameAccountError(false);
+    setPriceError(false);
+    setBuyPriceError(false);
+    setPriceCompareError(false);
+  }, [props]);
 
   const checkAccounts = async () => {
     if (lotRef.current.value && sellerRef.current.value) {
@@ -248,7 +263,6 @@ function Offer (props) {
               </div>
               {buyPriceError && <span className="error-input">Buy price should be more than {MIN_RESERVE_PRICE}</span>}
             </div>
-            <Alert className="alert-container" severity="warning">The app takes fee of 10% of all rewards paid to seller. <br/><a href="https://github.com/galactic3/nearnames/wiki/Money-flow" target="_blank">Read more</a></Alert>
             <div className='form-group'>
               <label htmlFor="duration-select">Duration:</label>
               <div className="input-wrapper">
@@ -271,6 +285,7 @@ function Offer (props) {
             </div>
             <div className='form-group confirmation'>
               <label>
+                <p>The app takes 10% fee of all rewards paid to the seller. <a href="https://github.com/galactic3/nearnames/wiki/Money-flow" target="_blank">Read more</a></p>
                 <p>To ensure that buyer will receive control over the account after the sale, we require lot account to give control over itself to the marketplace contract. After full access is given, UI:</p>
                 <ul className="default">
                   <li>deploys lock contract to lot account</li>
