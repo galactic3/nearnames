@@ -10,7 +10,7 @@ function NetworkSelect () {
   const onNetworkChange = (e) => {
     const value = e.target.value;
     const sub = value === 'testnet' ? 'testnet.' : '';
-    window.location.replace('http://' + sub + host);
+    window.location.replace('https://' + sub + host);
   }
 
   return (
@@ -22,8 +22,8 @@ function NetworkSelect () {
         onChange={onNetworkChange}
         IconComponent={KeyboardArrowDownRoundedIcon}
       >
-        <MenuItem value='testnet'>Testnet</MenuItem>
         <MenuItem value='mainnet'>Mainnet</MenuItem>
+        <MenuItem value='testnet'>Testnet</MenuItem>
       </Select>
     </div>
   )
