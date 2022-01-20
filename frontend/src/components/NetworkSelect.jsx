@@ -22,8 +22,8 @@ function NetworkSelect () {
         onChange={onNetworkChange}
         IconComponent={KeyboardArrowDownRoundedIcon}
       >
-        <MenuItem value='mainnet'>Mainnet</MenuItem>
-        <MenuItem value='testnet'>Testnet</MenuItem>
+        <MenuItem value='mainnet'>MAINNET</MenuItem>
+        <MenuItem value='testnet'>TESTNET</MenuItem>
       </Select>
     </div>
   )

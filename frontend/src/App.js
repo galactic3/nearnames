@@ -226,7 +226,7 @@ function App (props) {
     <main>
       <Router basename='/'>
         <div className='beta-warning'>
-          Beta software. {process.env.NETWORK_ID.toUpperCase()} version. Not audited. Use at your own risk!
+          Beta software. Not audited. Use at your own risk!
         </div>
         <header>
           <div className="container">
