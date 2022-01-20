@@ -3,7 +3,7 @@ import * as nearAPI from 'near-api-js';
 import React from "react";
 import getConfig from "./config";
 
-export const NETWORK_ID = getConfig(process.env.NODE_ENV || 'testnet').networkId;
+export const CONFIG = getConfig(process.env.NETWORK_ID || 'testnet');
 
 export const ACCESS_KEY_ALLOWANCE = Big(1000000000).times(10 ** 24).toFixed();
 export const MAX_UINT8 = '340282366920938463463374607431768211455';
@@ -63,8 +63,7 @@ export const customRequestSigninFullAccess = async (connection, contractIdOrOpti
 };
 
 export const renderName = (accountId) => {
-  console.log(NETWORK_ID);
-  const suffix = NETWORK_ID === 'mainnet' ? 'near' : 'testnet';
+  const suffix = CONFIG.suffix;
   const accountSuffix = '.' + suffix;
   const accountName = accountId && accountId.split(accountSuffix)[0];
   return (
