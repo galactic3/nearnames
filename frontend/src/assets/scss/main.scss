@@ -11,7 +11,7 @@
     padding-left: 16px;
     max-width: 736px;
   }
-  @media (max-width: 350px) {
+  @media (max-width: 368px) {
     padding-right: 5px;
     padding-left: 5px;
   }
@@ -199,7 +199,10 @@
       padding: 0;
       order: 1;
       margin-left: auto;
-      margin-right: 10px;
+      margin-right: 8px;
+      span {
+        padding: 4px 6px;
+      }
     }
 
     .lot_action {
@@ -210,9 +213,6 @@
   @media (max-width: 368px) {
     .lot_status {
       margin-right: 4px;
-      span {
-        padding: 4px 5px;
-      }
     }
   }
 }
@@ -306,7 +306,7 @@
   background: var(--fg);
   border-radius: 10px;
   width: 320px;
-  @media (max-width: 350px) {
+  @media (max-width: 368px) {
     width: 100%;
     padding: 20px;
   }
@@ -600,9 +600,6 @@ footer {
     width: 100%;
     line-height: 30px;
     text-align: center;
-    @media (min-width: 768px) {
-      height: 30px;
-    }
     background-color: var(--light-red);
     color: var(--red);
     font-size: 16px;

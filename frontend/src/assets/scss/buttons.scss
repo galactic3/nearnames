@@ -13,6 +13,10 @@ button {
     white-space: nowrap;
     color: var(--main);
 
+    @media (max-width: 345px) {
+        min-width: auto;
+    }
+
     &.outlined {
         color: var(--primary);
         background: transparent;
