@@ -1,6 +1,6 @@
 import React, {useEffect, useRef, useState} from 'react';
 import ls from 'local-storage';
-import { customRequestSigninFullAccess, toNear, nearToFloor, MIN_RESERVE_PRICE } from '../utils.js';
+import {customRequestSigninFullAccess, toNear, nearToFloor, MIN_RESERVE_PRICE, CONFIG} from '../utils.js';
 import {Box, FormControl, FormHelperText, IconButton, InputLabel, MenuItem, Modal, Select} from "@mui/material";
 import { useForm } from "react-hook-form";
 import CloseIcon from "@mui/icons-material/Close";
@@ -12,7 +12,7 @@ import Alert from "@mui/material/Alert";
 
 function Offer (props) {
 
-  const accountSuffix = '.' + 'testnet';
+  const accountSuffix = '.' + CONFIG.suffix;
   const [alertShow, setAlertShow] = useState(false);
   const [alertContent, setAlertContent] = useState('');
   const [offerButtonDisabled, setOfferButtonDisabled] = useState(false);
