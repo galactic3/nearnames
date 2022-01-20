@@ -4,11 +4,13 @@ import KeyboardArrowDownRoundedIcon from "@mui/icons-material/KeyboardArrowDownR
 
 function NetworkSelect () {
 
-  const [network, setNetwork] = useState('testnet');
+  const network = process.env.NETWORK_ID;
+  const host = process.env.PUBLIC_URL;
 
   const onNetworkChange = (e) => {
     const value = e.target.value;
-    setNetwork(value);
+    const sub = value === 'testnet' ? 'testnet.' : '';
+    window.location.replace('http://' + sub + host);
   }
 
   return (
@@ -21,7 +23,7 @@ function NetworkSelect () {
         IconComponent={KeyboardArrowDownRoundedIcon}
       >
         <MenuItem value='testnet'>Testnet</MenuItem>
-        <MenuItem value='mainnet' disabled={true}>Mainnet (coming soon)</MenuItem>
+        <MenuItem value='mainnet'>Mainnet</MenuItem>
       </Select>
     </div>
   )

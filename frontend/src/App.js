@@ -8,7 +8,7 @@ import Lots from './components/Lots';
 import ProfilePage from './components/Profile';
 import LogoutIcon from '@mui/icons-material/Logout';
 import CreateOffer from "./components/CreateOffer";
-import {nearToFloor, renderName} from "./utils";
+import {CONFIG, nearToFloor, renderName} from "./utils";
 import AboutPage from "./components/About";
 import ConfirmContextProvider from "./Providers/ConfirmContextProvider";
 import ModalConfirm from "./components/Confirm";
@@ -41,6 +41,11 @@ function App (props) {
   useEffect(async () => {
     await initOffer();
     setConnected(true);
+
+    console.log(process.env.NODE_ENV);
+    console.log(process.env.NETWORK_ID);
+    console.log(CONFIG);
+
   }, []);
 
   const updateBalance = async () => {
