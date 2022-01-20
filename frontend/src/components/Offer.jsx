@@ -248,6 +248,7 @@ function Offer (props) {
               </div>
               {buyPriceError && <span className="error-input">Buy price should be more than {MIN_RESERVE_PRICE}</span>}
             </div>
+            <Alert className="alert-container" severity="warning">The app takes fee of 10% of all rewards paid to seller. <br/><a href="https://github.com/galactic3/nearnames/wiki/Money-flow" target="_blank">Read more</a></Alert>
             <div className='form-group'>
               <label htmlFor="duration-select">Duration:</label>
               <div className="input-wrapper">
