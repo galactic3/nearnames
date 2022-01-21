@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import Loader from './Loader';
 import {BOATLOAD_OF_GAS, nearToFloor, renderName, loadListPaginated, fetchBidSafety} from "../utils";
 import LotsList from "./LotsList";
@@ -12,44 +12,115 @@ function Profile (props) {
   const [loader, setLoader] = useState(true);
   const [lotsOfferLoader, setLotsOfferLoader] = useState(false);
   const [lotsBidLoader, setLotsBidLoader] = useState(false);
+  const [lotsWonLoader, setLotsWonLoader] = useState(false);
   const [claimLoader, setClaimLoader] = useState(false);
 
   const contract = props.contract;
 
+  const lotsChecked = async (lotsMemo) => {
+
+    if (!lotsMemo.length) {
+      return [];
+    }
+
+    await Promise.all(lotsMemo.map(async (l) => {
+      const isSafe = await fetchBidSafety(l.lot_id, props.near, props.nearConfig);
+      l.notSafe = !isSafe;
+    }));
+
+    return lotsMemo;
+
+  }
+
   const getLotsOffering = async () => {
+
+    let lotsMemo = [];
+
+    console.time('lots offer fetch');
+
     setLotsOfferLoader(true);
+
     await loadListPaginated(
       args => contract.lot_list_offering_by({ profile_id: profileId, ...args }),
     ).then(async (lots) => {
-      await Promise.all(lots.map(async (l) => {
-        const isSafe = await fetchBidSafety(l.lot_id, props.near, props.nearConfig);
-        l.notSafe = !isSafe;
-      }));
-      setLotsOffering(lots);
+      lotsMemo = lots;
+      setLotsOffering(lotsMemo);
     });
+
     setLotsOfferLoader(false);
+
+    console.timeEnd('lots offer fetch');
+
+    console.time('lots offer check');
+
+    const checked = await lotsChecked(lotsMemo);
+
+    setLotsOffering([...checked]);
+
+    console.timeEnd('lots offer check');
+
   }
 
   const getLotsBidding = async () => {
+
+    let lotsMemo = [];
+
     setLotsBidLoader(true);
+
+    console.time('lots bid fetch');
+
     await loadListPaginated(
       args => contract.lot_list_bidding_by({ profile_id: profileId, ...args }),
     ).then(async (lots) => {
-      await Promise.all(lots.map(async (l) => {
-        const isSafe = await fetchBidSafety(l.lot_id, props.near, props.nearConfig);
-        l.notSafe = !isSafe;
-      }));
-      setLotsWon([]);
-      setLotsBidding([]);
-      lots.forEach((lot) => {
-        if (lot.status === 'SaleSuccess' && profileId === lot.last_bidder_id) {
-          setLotsWon(lotsWon => [...lotsWon, lot]);
-        } else {
-          setLotsBidding(lotsBidding => [...lotsBidding, lot]);
-        }
-      })
+      lotsMemo = lots.filter((lot) => {
+        return lot.status === 'OnSale';
+      });
+      setLotsBidding(lotsMemo);
     });
+
     setLotsBidLoader(false);
+
+    console.timeEnd('lots bid fetch');
+
+    console.time('lots bid check');
+
+    const checked = await lotsChecked(lotsMemo);
+
+    setLotsBidding([...checked]);
+
+    console.timeEnd('lots bid check');
+
+  }
+
+  const getLotsWon = async () => {
+
+    let lotsMemo = [];
+
+    console.time('lots won fetch');
+
+    setLotsWonLoader(true);
+
+    await loadListPaginated(
+      args => contract.lot_list_bidding_by({ profile_id: profileId, ...args }),
+    ).then(async (lots) => {
+      lotsMemo = lots.filter((lot) => {
+        return lot.status === 'SaleSuccess' && profileId === lot.last_bidder_id;
+      });
+      setLotsWon(lotsMemo);
+    });
+
+    setLotsWonLoader(false);
+
+    console.timeEnd('lots won fetch');
+
+    console.time('lots won check');
+
+    const checked = await lotsChecked(lotsMemo);
+
+    setLotsWon([...checked]);
+
+    console.timeEnd('lots won check');
+
   }
 
   const putLotOffering = async (lot) => {
@@ -118,7 +189,7 @@ function Profile (props) {
         </div>
         <LotsList lots={lotsOffering} getLots={getLotsOffering} putLot={putLotOffering} showStatus={true} loader={lotsOfferLoader} name={' you are selling'} {...props}/>
         <LotsList lots={lotsBidding} getLots={getLotsBidding} putLot={putLotBidding} showStatus={true} loader={lotsBidLoader} name={' you are bidding on'} {...props}/>
-        <LotsList lots={lotsWon} getLots={getLotsBidding} putLot={putLotBidding} showStatus={true} loader={lotsBidLoader} name={' you won'} {...props}/>
+        <LotsList lots={lotsWon} getLots={getLotsWon} putLot={putLotBidding} showStatus={true} loader={lotsWonLoader} name={' you won'} {...props}/>
       </div> :
       <div className="profile-container">
         <h5 className="profile-name"><strong>Profile not found</strong></h5>

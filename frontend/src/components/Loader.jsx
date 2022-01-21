@@ -1,7 +1,7 @@
 import React from 'react'
 import { CircularProgress } from "@mui/material";
 
-export default function Loader (props) {
+const Loader = (props) => {
   return (
     <div className="spinner">
       <CircularProgress sx={{
@@ -12,3 +12,5 @@ export default function Loader (props) {
     </div>
   )
 }
+
+export default React.memo(Loader);

@@ -8,20 +8,35 @@ function Lots(props) {
   const contract = props.contract;
 
   const getLots = async () => {
+
+    let result = [];
+
     setLoader(true);
 
+    console.time('lots fetch');
+
     await loadListPaginated(args => contract.lot_list(args)).then(async (lots) => {
-      await Promise.all(lots.map(async (l) => {
-        const isSafe = await fetchBidSafety(l.lot_id, props.near, props.nearConfig);
-        l.notSafe = !isSafe;
-      }));
-      const result = lots.filter((lot) => {
+      result = lots.filter((lot) => {
         return lot.status === 'OnSale';
-      })
+      });
       setCashLots(result);
       setLots(result);
     })
     setLoader(false);
+
+    console.timeEnd('lots fetch');
+
+    console.time('lots check');
+
+    await Promise.all(result.map(async (l) => {
+      const isSafe = await fetchBidSafety(l.lot_id, props.near, props.nearConfig);
+      l.notSafe = !isSafe;
+    }));
+
+    setLots([...result]);
+
+    console.timeEnd('lots check');
+
   }
 
   const putLot = async (lot) => {
