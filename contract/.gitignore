@@ -1,5 +1,5 @@
 # build dir
 /.idea
-/res
+/res/marketplace.wasm
 /target
 /tmp
