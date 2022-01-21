@@ -12,6 +12,7 @@ import {Box, IconButton, Modal} from "@mui/material";
 import CloseIcon from '@mui/icons-material/Close';
 import AccessTimeFilledIcon from "@mui/icons-material/AccessTimeFilled";
 import Countdown from "react-countdown";
+import Alert from "@mui/material/Alert";
 
 function ModalBid (props) {
 
@@ -100,9 +101,8 @@ function ModalBid (props) {
         <button name="bid" onClick={(e) => bid(e, lot.lot_id, bidPrice.current.value)} disabled={bidButtonDisabled}>Bid</button>
         {bidPriceError && <span className="error-input">bid value should more than: {defaultValue}</span>}
       </div>}
-      {lot.notSafe && <div className="lot_status">
-        <span className='badge'>Not safe</span>
-      </div>}
+      {(!isNotSeller && accountId && !lot.notSafe) && <Alert className="alert-container" severity="info">you cannot bid on your own lot</Alert>}
+      {lot.notSafe && <Alert className="alert-container" severity="error">This lot has not passed the safety check</Alert>}
       <div className="bid_list">
         {lot.last_bidder_id ? <a className="button-link" onClick={(e) => openBidList(e)}>{showBidList ? 'Hide' : 'Show'} bid list</a> : ''}
         {showBidList ? (<ul className="bids_list">
