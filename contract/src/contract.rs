@@ -3,6 +3,9 @@ use crate::*;
 pub const ERR_PROFILE_INTERNAL_SAVE_ALREADY_EXISTS: &str =
     "internal_profile_save: profile already exists";
 
+pub const LOT_OFFER_MIN_RESERVE_PRICE: Balance = 500 * 10u128.pow(21);
+pub const LOT_OFFER_MAX_DURATION: Duration = 90 * 24 * 60 * 60 * 10u64.pow(9);
+
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
 pub struct Contract {
@@ -35,6 +38,8 @@ pub struct ContractConfigView {
     pub seller_rewards_commission: FractionView,
     pub bid_step: FractionView,
     pub prev_bidder_commission_share: FractionView,
+    pub lot_offer_min_reserve_price: WrappedBalance,
+    pub lot_offer_max_duration: WrappedDuration,
 }
 
 impl From<&Contract> for ContractConfigView {
@@ -43,6 +48,8 @@ impl From<&Contract> for ContractConfigView {
             seller_rewards_commission: (&contract.seller_rewards_commission).into(),
             bid_step: (&contract.bid_step).into(),
             prev_bidder_commission_share: (&contract.prev_bidder_commission_share).into(),
+            lot_offer_min_reserve_price: LOT_OFFER_MIN_RESERVE_PRICE.into(),
+            lot_offer_max_duration: LOT_OFFER_MAX_DURATION.into(),
         }
     }
 }
