@@ -2,7 +2,9 @@ use crate::*;
 
 pub const ERR_LOT_SELLS_SELF: &str = "expected lot_id != seller_id";
 pub const ERR_LOT_DURATION_NEGATIVE: &str = "expected start_timestamp <= finish_timestamp";
+pub const ERR_LOT_DURATION_TOO_LONG: &str = "expected shorter duration";
 pub const ERR_LOT_PRICE_RESERVE_LE_BUY_NOW: &str = "expected reserve_price <= buy_now_price";
+pub const ERR_LOT_RESERVE_PRICE_TOO_SMALL: &str = "expected greater reserve price";
 pub const ERR_LOT_BID_WRONG_STATUS: &str = "bid: expected status active";
 pub const ERR_LOT_BID_BID_TOO_SMALL: &str = "bid: expected bigger bid";
 pub const ERR_LOT_BID_WRONG_BIDDER: &str = "bid: seller and lot cannot bid";
@@ -66,9 +68,19 @@ impl Lot {
             ERR_LOT_PRICE_RESERVE_LE_BUY_NOW,
         );
         assert!(
+            reserve_price >= LOT_OFFER_MIN_RESERVE_PRICE,
+            "{}",
+            ERR_LOT_RESERVE_PRICE_TOO_SMALL,
+        );
+        assert!(
             start_timestamp <= finish_timestamp,
             "{}",
             ERR_LOT_DURATION_NEGATIVE,
+        );
+        assert!(
+            start_timestamp + LOT_OFFER_MAX_DURATION >= finish_timestamp,
+            "{}",
+            ERR_LOT_DURATION_TOO_LONG,
         );
 
         // TODO: do we still need to hash the key
@@ -340,7 +352,7 @@ pub mod tests {
             to_yocto("0"),
             to_yocto("0"),
             to_ts(0),
-            to_nanos(0),
+            to_ts(0),
         );
     }
 
@@ -350,23 +362,49 @@ pub mod tests {
         Lot::new(
             "alice".parse().unwrap(),
             "bob".parse().unwrap(),
-            to_yocto("0"),
-            to_yocto("0"),
+            to_yocto("1"),
+            to_yocto("2"),
             to_ts(10),
-            to_nanos(9),
+            to_ts(9),
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "expected shorter duration")]
+    fn test_lot_new_duration_too_long() {
+        Lot::new(
+            "alice".parse().unwrap(),
+            "bob".parse().unwrap(),
+            to_yocto("1"),
+            to_yocto("2"),
+            to_ts(10),
+            to_ts(10) + LOT_OFFER_MAX_DURATION + 1,
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "expected greater reserve price")]
+    fn test_lot_new_fail_reserve_price_too_small() {
+        Lot::new(
+            "alice".parse().unwrap(),
+            "bob".parse().unwrap(),
+            LOT_OFFER_MIN_RESERVE_PRICE - 1,
+            to_yocto("1"),
+            to_ts(10),
+            to_ts(17),
         );
     }
 
     #[test]
     #[should_panic(expected = "expected reserve_price <= buy_now_price")]
-    fn test_lot_new_fail_reserve_grater_than_buy_now() {
+    fn test_lot_new_fail_reserve_greater_than_buy_now() {
         Lot::new(
             "alice".parse().unwrap(),
             "bob".parse().unwrap(),
             to_yocto("1"),
             to_yocto("0"),
             to_ts(0),
-            to_nanos(0),
+            to_ts(0),
         );
     }
 
