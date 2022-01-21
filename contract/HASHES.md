@@ -1,3 +1,8 @@
+# v1
+- commit: 1f10baeba21a4843f621469e6d1c63f3613f3403
+- sha256 checksum 196813c97e0156fe4fb6516d2e93804dd823956434f6de4cae4971bae68517e3
+- sha256 base58 checksum 2iBErm5GiPMS3Mbu43LYC8AMwxDpFM5tH9z1KgyJgVcW
+
 # v0
 - commit: 10173f80a9b8e6d690b4cb0ced95f16d318cf5db
 - sha256 checksum 1cc26c9a06907508cd05822f3c76c41f82dd3feb7f757076258b9f5040292d94
