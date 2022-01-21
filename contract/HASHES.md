@@ -1,0 +1,4 @@
+# v0
+- commit: 10173f80a9b8e6d690b4cb0ced95f16d318cf5db
+- sha256 checksum 1cc26c9a06907508cd05822f3c76c41f82dd3feb7f757076258b9f5040292d94
+- sha256 base58 checksum 2wGNBtvV6XTWTHDmuJJB6GqPECKb1TM3yRxrxEr1Zbwq
