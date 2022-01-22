@@ -2,12 +2,13 @@ use near_sdk::serde_json::json;
 use near_sdk::{Balance, Timestamp};
 use near_sdk_sim::runtime::init_runtime;
 use near_sdk_sim::{
-    call, deploy, init_simulator, to_nanos, to_yocto, view, ContractAccount, UserAccount,
+    call, deploy, init_simulator, to_nanos, to_ts, to_yocto, view, ContractAccount, UserAccount,
     DEFAULT_GAS, STORAGE_AMOUNT,
 };
 
 use marketplace::{
     ContractConfigView, ContractContract, Fraction, FractionView, LotView, ProfileView,
+    LOT_REMOVE_UNSAFE_GRACE_DURATION
 };
 
 // not using lazy static because it breaks my language server
@@ -280,6 +281,45 @@ fn simulate_lot_offer_withdraw() {
     println!("{}", from_yocto(bob.account().unwrap().amount));
 }
 
+fn set_timestamp(root: &UserAccount, timestamp: Timestamp) {
+    root.borrow_runtime_mut().cur_block.block_timestamp = timestamp;
+}
+
+#[test]
+fn simulate_lot_remove_unsafe_success() {
+    let (root, contract) = init();
+    let alice: UserAccount = create_user(&root, "alice");
+    let bob: UserAccount = create_user(&root, "bob");
+    let carol: UserAccount = create_user(&root, "carol");
+
+    let start_timestamp: Timestamp = to_ts(10);
+    set_timestamp(&root, start_timestamp);
+    let finish_timestamp = start_timestamp + to_nanos(7);
+
+    let result = call!(
+        alice,
+        contract.lot_offer(
+            bob.account_id.clone(),
+            to_yocto("3").into(),
+            to_yocto("10").into(),
+            Some(finish_timestamp.into()),
+            None
+        )
+    );
+    assert!(result.is_ok());
+
+    set_timestamp(&root, start_timestamp + LOT_REMOVE_UNSAFE_GRACE_DURATION);
+
+    let result = call!(carol, contract.lot_remove_unsafe(alice.account_id.clone()));
+    assert!(result.is_ok());
+
+    let result = view!(contract.lot_list(None, None));
+    assert!(result.is_ok());
+
+    let result: Vec<LotView> = result.unwrap_json();
+    assert!(result.is_empty(), "expected lot list to be empty");
+}
+
 #[test]
 fn simulate_lock_unlock() {
     let (root, contract, alice) = init_locked();
@@ -318,6 +358,4 @@ fn simulate_lock_unlock() {
         0,
     );
     assert!(result.is_ok());
-
-    println!("{:?}", contract.account());
 }

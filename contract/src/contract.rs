@@ -5,6 +5,7 @@ pub const ERR_PROFILE_INTERNAL_SAVE_ALREADY_EXISTS: &str =
 
 pub const LOT_OFFER_MIN_RESERVE_PRICE: Balance = 500 * 10u128.pow(21);
 pub const LOT_OFFER_MAX_DURATION: Duration = 90 * 24 * 60 * 60 * 10u64.pow(9);
+pub const LOT_REMOVE_UNSAFE_GRACE_DURATION: Duration = 2 * 60 * 60 * 10u64.pow(9);
 
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]

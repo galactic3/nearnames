@@ -15,8 +15,9 @@ use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{UnorderedMap, UnorderedSet, Vector};
 use near_sdk::json_types::{U128, U64};
 use near_sdk::serde::{Deserialize, Serialize};
+use near_sdk::serde_json;
 use near_sdk::{
-    env, ext_contract, near_bindgen, AccountId, Balance, Duration, PanicOnDefault, Promise,
+    log, env, ext_contract, near_bindgen, AccountId, Balance, Duration, PanicOnDefault, Promise,
     PromiseResult, PublicKey, Timestamp,
 };
 use uint::construct_uint;
@@ -50,11 +51,13 @@ pub const PREFIX_PROFILE_LOTS_OFFERING: &str = "f";
 #[ext_contract]
 pub trait ExtLockContract {
     fn unlock(&mut self, public_key: PublicKey);
+    fn get_owner(&self) -> AccountId;
 }
 
 #[ext_contract]
 pub trait ExtSelfContract {
     fn lot_after_claim_clean_up(&mut self, lot_id: LotId);
+    fn lot_after_remove_unsafe_remove(&mut self, lot_id: LotId);
     fn profile_after_rewards_claim(&mut self, profile_id: ProfileId, rewards: Balance);
 }
 

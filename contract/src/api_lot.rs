@@ -3,11 +3,17 @@ use crate::*;
 pub const NO_DEPOSIT: Balance = 0;
 pub const GAS_EXT_CALL_UNLOCK: u64 = 40_000_000_000_000;
 pub const GAS_EXT_CALL_CLEAN_UP: u64 = 200_000_000_000_000;
+pub const GAS_EXT_CALL_GET_OWNER: u64 = 40_000_000_000_000;
+pub const GAS_EXT_CALL_AFTER_REMOVE_UNSAFE: u64 = 100_000_000_000_000;
 
 pub const ERR_LOT_CLEAN_UP_STILL_ACTIVE: &str = "UNREACHABLE: cannot clean up still active lot";
 pub const ERR_LOT_CLEAN_UP_UNLOCK_FAILED: &str = "Expected unlock promise to be successful";
 pub const ERR_INTERNAL_LOT_SAVE_ALREADY_EXISTS: &str = "internal_lot_save: lot already exists";
 pub const ERR_INTERNAL_LOT_EXTRACT_NOT_EXIST: &str = "internal_lot_extract: lot does not exist";
+pub const ERR_LOT_REMOVE_UNSAFE_LOT_HAS_BIDS: &str = "lot_remove_unsafe: lot has bids";
+pub const ERR_LOT_REMOVE_UNSAFE_LOT_SEEMS_SAFE: &str = "lot_remove_unsafe: lot seems safe";
+pub const ERR_LOT_REMOVE_UNSAFE_LOT_ON_GRACE_PERIOD: &str =
+    "lot_remove_unsafe: lot on grace period, wait";
 
 #[derive(Deserialize, Serialize, Debug)]
 #[serde(crate = "near_sdk::serde")]
@@ -306,6 +312,72 @@ impl Contract {
         lot.withdraw(&withdrawer_id);
         self.internal_lot_save(&lot);
 
+        true
+    }
+
+    // Removes incorrectly configured lot from the auction to clean up used state
+    pub fn lot_remove_unsafe(&mut self, lot_id: LotId) -> Promise {
+        let lot: Lot = self.lots.get(&lot_id).unwrap();
+        let time_now = env::block_timestamp();
+        assert!(
+            time_now >= lot.start_timestamp + LOT_REMOVE_UNSAFE_GRACE_DURATION,
+            "{}",
+            ERR_LOT_REMOVE_UNSAFE_LOT_ON_GRACE_PERIOD,
+        );
+
+        assert!(
+            lot.last_bid().is_none(),
+            "{}",
+            ERR_LOT_REMOVE_UNSAFE_LOT_HAS_BIDS,
+        );
+
+        ext_lock_contract::get_owner(
+            lot_id.clone(),
+            NO_DEPOSIT,
+            GAS_EXT_CALL_GET_OWNER.into(),
+        ).then(ext_self_contract::lot_after_remove_unsafe_remove(
+            lot_id.clone(),
+            env::current_account_id(),
+            NO_DEPOSIT,
+            GAS_EXT_CALL_AFTER_REMOVE_UNSAFE.into(),
+        ))
+    }
+
+    #[private]
+    pub fn lot_after_remove_unsafe_remove(&mut self, lot_id: LotId) -> bool {
+        let is_safe: bool = match env::promise_result(0) {
+            PromiseResult::Successful(x) => {
+                let parse_result: Result<AccountId, _> = serde_json::from_slice(&x);
+                match parse_result {
+                    Ok(owner_id) => {
+                        log!("lot_after_remove_unsafe_remove: owner_id = {}", owner_id.to_string());
+                        owner_id == env::current_account_id()
+                    }
+                    _ => {
+                        log!("lot_after_remove_unsafe_remove: owner_parse_failed");
+                        false
+                    }
+                }
+            },
+            _ => {
+                log!("lot_after_remove_unsafe_remove: promise_unsuccessful");
+                false
+            }
+        };
+        assert!(!is_safe, "{}", ERR_LOT_REMOVE_UNSAFE_LOT_SEEMS_SAFE);
+
+        let mut lot: Lot = self.internal_lot_extract(&lot_id);
+        assert!(lot.last_bid().is_none());
+
+        {
+            let mut seller = self.internal_profile_extract(&lot.seller_id);
+            seller.lots_offering.remove(&lot_id);
+            self.internal_profile_save(&seller);
+        }
+
+        lot.clean_up();
+
+        // intentionally not inserting the lot back
         true
     }
 }
@@ -957,5 +1029,38 @@ pub mod tests {
 
         testing_env!(get_context_call(time_now, &"bob".parse().unwrap()));
         contract.lot_withdraw("alice".parse().unwrap());
+    }
+
+    #[test]
+    pub fn test_api_lot_remove_unsafe_success() {
+        let mut contract = build_contract();
+        let (lot, time_now) = create_lot_alice();
+        contract.internal_lot_save(&lot);
+
+        testing_env!(get_context_call(time_now, &"carol".parse().unwrap()));
+        contract.lot_remove_unsafe("alice".parse().unwrap());
+    }
+
+    #[test]
+    #[should_panic(expected="lot_remove_unsafe: lot on grace period, wait")]
+    pub fn test_api_lot_remove_unsafe_fail_grace_period() {
+        let mut contract = build_contract();
+        let (lot, _) = create_lot_alice();
+        let time_now = lot.start_timestamp + LOT_REMOVE_UNSAFE_GRACE_DURATION - 1;
+        contract.internal_lot_save(&lot);
+
+        testing_env!(get_context_call(time_now, &"carol".parse().unwrap()));
+        contract.lot_remove_unsafe("alice".parse().unwrap());
+    }
+
+    #[test]
+    #[should_panic(expected="lot_remove_unsafe: lot has bids")]
+    pub fn test_api_lot_remove_unsafe_fail_lot_has_bids() {
+        let mut contract = build_contract();
+        let (lot, time_now) = create_lot_alice_with_bids();
+        contract.internal_lot_save(&lot);
+
+        testing_env!(get_context_call(time_now, &"carol".parse().unwrap()));
+        contract.lot_remove_unsafe("alice".parse().unwrap());
     }
 }
