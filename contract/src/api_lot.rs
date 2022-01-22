@@ -350,11 +350,16 @@ impl Contract {
                 let parse_result: Result<AccountId, _> = serde_json::from_slice(&x);
                 match parse_result {
                     Ok(owner_id) => {
-                        log!("lot_after_remove_unsafe_remove: owner_id = {}", owner_id.to_string());
-                        owner_id == env::current_account_id()
+                        if owner_id == env::current_account_id() {
+                            log!("lot_after_remove_unsafe_remove: seems safe");
+                            true
+                        } else {
+                            log!("lot_after_remove_unsafe_remove: wrong owner_id");
+                            false
+                        }
                     }
                     _ => {
-                        log!("lot_after_remove_unsafe_remove: owner_parse_failed");
+                        log!("lot_after_remove_unsafe_remove: owner parse failed");
                         false
                     }
                 }

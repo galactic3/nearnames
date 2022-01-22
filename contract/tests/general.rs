@@ -70,7 +70,7 @@ fn create_user(root: &UserAccount, name: &str) -> UserAccount {
     root.create_user(name.parse().unwrap(), to_yocto("100"))
 }
 
-fn create_user_locked(root: &UserAccount, name: &str) -> UserAccount {
+fn create_user_locked_with_owner(root: &UserAccount, name: &str, owner_id: &str) -> UserAccount {
     let alice = root.deploy(
         &LOCK_CONTRACT_BYTES,
         name.parse().unwrap(),
@@ -79,7 +79,7 @@ fn create_user_locked(root: &UserAccount, name: &str) -> UserAccount {
     let result = alice.call(
         alice.account_id(),
         "lock",
-        &json!({ "owner_id": "marketplace".to_string() })
+        &json!({ "owner_id": owner_id.to_string() })
             .to_string()
             .into_bytes(),
         DEFAULT_GAS,
@@ -88,6 +88,10 @@ fn create_user_locked(root: &UserAccount, name: &str) -> UserAccount {
     assert!(result.is_ok());
 
     alice
+}
+
+fn create_user_locked(root: &UserAccount, name: &str) -> UserAccount {
+    create_user_locked_with_owner(root, name, "marketplace")
 }
 
 fn subtract_seller_reward_commission(reward: Balance, commission: Fraction) -> Balance {
@@ -286,7 +290,7 @@ fn set_timestamp(root: &UserAccount, timestamp: Timestamp) {
 }
 
 #[test]
-fn simulate_lot_remove_unsafe_success() {
+fn simulate_lot_remove_unsafe_success_no_lock() {
     let (root, contract) = init();
     let alice: UserAccount = create_user(&root, "alice");
     let bob: UserAccount = create_user(&root, "bob");
@@ -311,6 +315,8 @@ fn simulate_lot_remove_unsafe_success() {
     set_timestamp(&root, start_timestamp + LOT_REMOVE_UNSAFE_GRACE_DURATION);
 
     let result = call!(carol, contract.lot_remove_unsafe(alice.account_id.clone()));
+    let expected_message = "lot_after_remove_unsafe_remove: promise_unsuccessful";
+    assert!(result.logs().contains(&expected_message.to_string()));
     assert!(result.is_ok());
 
     let result = view!(contract.lot_list(None, None));
@@ -318,6 +324,74 @@ fn simulate_lot_remove_unsafe_success() {
 
     let result: Vec<LotView> = result.unwrap_json();
     assert!(result.is_empty(), "expected lot list to be empty");
+}
+
+#[test]
+fn simulate_lot_remove_unsafe_success_wrong_owner() {
+    let (root, contract) = init();
+    let alice: UserAccount = create_user_locked_with_owner(&root, "alice", "wrong_marketplace");
+    let bob: UserAccount = create_user(&root, "bob");
+    let carol: UserAccount = create_user(&root, "carol");
+
+    let start_timestamp: Timestamp = to_ts(10);
+    set_timestamp(&root, start_timestamp);
+    let finish_timestamp = start_timestamp + to_nanos(7);
+
+    let result = call!(
+        alice,
+        contract.lot_offer(
+            bob.account_id.clone(),
+            to_yocto("3").into(),
+            to_yocto("10").into(),
+            Some(finish_timestamp.into()),
+            None
+        )
+    );
+    assert!(result.is_ok());
+
+    set_timestamp(&root, start_timestamp + LOT_REMOVE_UNSAFE_GRACE_DURATION);
+
+    let result = call!(carol, contract.lot_remove_unsafe(alice.account_id.clone()));
+    let expected_message = "lot_after_remove_unsafe_remove: wrong owner_id";
+    assert!(result.logs().contains(&expected_message.to_string()));
+    assert!(result.is_ok());
+
+    let result = view!(contract.lot_list(None, None));
+    assert!(result.is_ok());
+
+    let result: Vec<LotView> = result.unwrap_json();
+    assert!(result.is_empty(), "expected lot list to be empty");
+}
+
+#[test]
+fn simulate_lot_remove_unsafe_fail_seems_safe() {
+    let (root, contract) = init();
+    let alice: UserAccount = create_user_locked(&root, "alice");
+    let bob: UserAccount = create_user(&root, "bob");
+    let carol: UserAccount = create_user(&root, "carol");
+
+    let start_timestamp: Timestamp = to_ts(10);
+    set_timestamp(&root, start_timestamp);
+    let finish_timestamp = start_timestamp + to_nanos(7);
+
+    let result = call!(
+        alice,
+        contract.lot_offer(
+            bob.account_id.clone(),
+            to_yocto("3").into(),
+            to_yocto("10").into(),
+            Some(finish_timestamp.into()),
+            None
+        )
+    );
+    assert!(result.is_ok());
+
+    set_timestamp(&root, start_timestamp + LOT_REMOVE_UNSAFE_GRACE_DURATION);
+
+    let result = call!(carol, contract.lot_remove_unsafe(alice.account_id.clone()));
+    let expected_message = "lot_after_remove_unsafe_remove: seems safe";
+    assert!(result.logs().contains(&expected_message.to_string()));
+    assert!(!result.is_ok());
 }
 
 #[test]
