@@ -324,6 +324,12 @@ fn simulate_lot_remove_unsafe_success_no_lock() {
 
     let result: Vec<LotView> = result.unwrap_json();
     assert!(result.is_empty(), "expected lot list to be empty");
+
+    let result = view!(contract.lot_list_offering_by(bob.account_id, None, None));
+    assert!(result.is_ok());
+
+    let result: Vec<LotView> = result.unwrap_json();
+    assert!(result.is_empty(), "expected lot list to be empty");
 }
 
 #[test]
