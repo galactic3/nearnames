@@ -41,6 +41,7 @@ pub struct ContractConfigView {
     pub prev_bidder_commission_share: FractionView,
     pub lot_offer_min_reserve_price: WrappedBalance,
     pub lot_offer_max_duration: WrappedDuration,
+    pub lot_remove_unsafe_grace_duration: WrappedDuration,
 }
 
 impl From<&Contract> for ContractConfigView {
@@ -51,6 +52,7 @@ impl From<&Contract> for ContractConfigView {
             prev_bidder_commission_share: (&contract.prev_bidder_commission_share).into(),
             lot_offer_min_reserve_price: LOT_OFFER_MIN_RESERVE_PRICE.into(),
             lot_offer_max_duration: LOT_OFFER_MAX_DURATION.into(),
+            lot_remove_unsafe_grace_duration: LOT_REMOVE_UNSAFE_GRACE_DURATION.into(),
         }
     }
 }
@@ -133,6 +135,21 @@ mod tests {
             config.prev_bidder_commission_share,
             FractionView { num: 4, denom: 5 },
             "wrong seller rewards commission",
+        );
+        assert_eq!(
+            config.lot_offer_min_reserve_price,
+            LOT_OFFER_MIN_RESERVE_PRICE.into(),
+            "wrong min reserve price",
+        );
+        assert_eq!(
+            config.lot_offer_max_duration,
+            LOT_OFFER_MAX_DURATION.into(),
+            "wrong max duration",
+        );
+        assert_eq!(
+            config.lot_remove_unsafe_grace_duration,
+            LOT_REMOVE_UNSAFE_GRACE_DURATION.into(),
+            "wrong grace_duration",
         );
     }
 }
