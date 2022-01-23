@@ -1,6 +1,5 @@
 use near_sdk::serde_json::json;
 use near_sdk::{Balance, Timestamp};
-use near_sdk_sim::runtime::init_runtime;
 use near_sdk_sim::{
     call, deploy, init_simulator, to_nanos, to_ts, to_yocto, view, ContractAccount, UserAccount,
     DEFAULT_GAS, STORAGE_AMOUNT,
@@ -98,6 +97,38 @@ fn subtract_seller_reward_commission(reward: Balance, commission: Fraction) -> B
     reward - commission * reward
 }
 
+fn get_timestamp(root: &UserAccount) -> Timestamp {
+    root.borrow_runtime().cur_block.block_timestamp
+}
+
+fn set_timestamp(root: &UserAccount, timestamp: Timestamp) {
+    root.borrow_runtime_mut().cur_block.block_timestamp = timestamp;
+}
+
+fn m_lot_offer(
+    contract: &ContractAccount<ContractContract>,
+    lot: &UserAccount,
+    seller: &UserAccount,
+) {
+    let reserve_price = to_yocto("3");
+    let buy_now_price = to_yocto("10");
+    let start_timestamp = to_ts(10);
+    set_timestamp(&lot, start_timestamp);
+    let finish_timestamp = start_timestamp + to_nanos(7);
+
+    let result = call!(
+        lot,
+        contract.lot_offer(
+            seller.account_id.clone(),
+            reserve_price.into(),
+            buy_now_price.into(),
+            Some(finish_timestamp.into()),
+            None
+        )
+    );
+    assert!(result.is_ok());
+}
+
 #[test]
 fn simulate_lot_offer_buy_now() {
     let (root, contract) = init();
@@ -113,21 +144,7 @@ fn simulate_lot_offer_buy_now() {
     root.transfer(bob.account_id(), balance_to_reserve); // storage and future gas
     bob.transfer(root.account_id(), to_yocto("100")); // storage and future gas
 
-    let (runtime, _, _) = init_runtime(None);
-    let time_now: Timestamp = runtime.current_block().block_timestamp;
-    let finish_timestamp = time_now + to_nanos(7);
-
-    let result = call!(
-        alice,
-        contract.lot_offer(
-            bob.account_id.clone(),
-            to_yocto("3").into(),
-            to_yocto("10").into(),
-            Some(finish_timestamp.into()),
-            None
-        )
-    );
-    assert!(result.is_ok());
+    m_lot_offer(&contract, &alice, &bob);
 
     let result = call!(
         carol,
@@ -212,21 +229,7 @@ fn simulate_lot_offer_withdraw() {
     root.transfer(bob.account_id(), balance_to_reserve); // storage and future gas
     bob.transfer(root.account_id(), to_yocto("100")); // storage and future gas
 
-    let (runtime, _, _) = init_runtime(None);
-    let time_now: Timestamp = runtime.current_block().block_timestamp;
-    let finish_timestamp = time_now + to_nanos(7);
-
-    let result = call!(
-        alice,
-        contract.lot_offer(
-            bob.account_id.clone(),
-            to_yocto("3").into(),
-            to_yocto("10").into(),
-            Some(finish_timestamp.into()),
-            None
-        )
-    );
-    assert!(result.is_ok());
+    m_lot_offer(&contract, &alice, &bob);
 
     let balance_to_reserve = to_yocto("0.2");
     root.transfer(bob.account_id(), balance_to_reserve); // storage and future gas
@@ -285,10 +288,6 @@ fn simulate_lot_offer_withdraw() {
     println!("{}", from_yocto(bob.account().unwrap().amount));
 }
 
-fn set_timestamp(root: &UserAccount, timestamp: Timestamp) {
-    root.borrow_runtime_mut().cur_block.block_timestamp = timestamp;
-}
-
 #[test]
 fn simulate_lot_remove_unsafe_success_no_lock() {
     let (root, contract) = init();
@@ -296,23 +295,8 @@ fn simulate_lot_remove_unsafe_success_no_lock() {
     let bob: UserAccount = create_user(&root, "bob");
     let carol: UserAccount = create_user(&root, "carol");
 
-    let start_timestamp: Timestamp = to_ts(10);
-    set_timestamp(&root, start_timestamp);
-    let finish_timestamp = start_timestamp + to_nanos(7);
-
-    let result = call!(
-        alice,
-        contract.lot_offer(
-            bob.account_id.clone(),
-            to_yocto("3").into(),
-            to_yocto("10").into(),
-            Some(finish_timestamp.into()),
-            None
-        )
-    );
-    assert!(result.is_ok());
-
-    set_timestamp(&root, start_timestamp + LOT_REMOVE_UNSAFE_GRACE_DURATION);
+    m_lot_offer(&contract, &alice, &bob);
+    set_timestamp(&root, get_timestamp(&root) + LOT_REMOVE_UNSAFE_GRACE_DURATION);
 
     let result = call!(carol, contract.lot_remove_unsafe(alice.account_id.clone()));
     let expected_message = "lot_after_remove_unsafe_remove: promise_unsuccessful";
@@ -339,23 +323,8 @@ fn simulate_lot_remove_unsafe_success_wrong_owner() {
     let bob: UserAccount = create_user(&root, "bob");
     let carol: UserAccount = create_user(&root, "carol");
 
-    let start_timestamp: Timestamp = to_ts(10);
-    set_timestamp(&root, start_timestamp);
-    let finish_timestamp = start_timestamp + to_nanos(7);
-
-    let result = call!(
-        alice,
-        contract.lot_offer(
-            bob.account_id.clone(),
-            to_yocto("3").into(),
-            to_yocto("10").into(),
-            Some(finish_timestamp.into()),
-            None
-        )
-    );
-    assert!(result.is_ok());
-
-    set_timestamp(&root, start_timestamp + LOT_REMOVE_UNSAFE_GRACE_DURATION);
+    m_lot_offer(&contract, &alice, &bob);
+    set_timestamp(&root, get_timestamp(&root)+ LOT_REMOVE_UNSAFE_GRACE_DURATION);
 
     let result = call!(carol, contract.lot_remove_unsafe(alice.account_id.clone()));
     let expected_message = "lot_after_remove_unsafe_remove: wrong owner_id";
@@ -376,23 +345,8 @@ fn simulate_lot_remove_unsafe_fail_seems_safe() {
     let bob: UserAccount = create_user(&root, "bob");
     let carol: UserAccount = create_user(&root, "carol");
 
-    let start_timestamp: Timestamp = to_ts(10);
-    set_timestamp(&root, start_timestamp);
-    let finish_timestamp = start_timestamp + to_nanos(7);
-
-    let result = call!(
-        alice,
-        contract.lot_offer(
-            bob.account_id.clone(),
-            to_yocto("3").into(),
-            to_yocto("10").into(),
-            Some(finish_timestamp.into()),
-            None
-        )
-    );
-    assert!(result.is_ok());
-
-    set_timestamp(&root, start_timestamp + LOT_REMOVE_UNSAFE_GRACE_DURATION);
+    m_lot_offer(&contract, &alice, &bob);
+    set_timestamp(&root, get_timestamp(&root)+ LOT_REMOVE_UNSAFE_GRACE_DURATION);
 
     let result = call!(carol, contract.lot_remove_unsafe(alice.account_id.clone()));
     let expected_message = "lot_after_remove_unsafe_remove: seems safe";
