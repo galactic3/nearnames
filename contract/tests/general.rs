@@ -7,7 +7,7 @@ use near_sdk_sim::{
 
 use marketplace::{
     ContractConfigView, ContractContract, Fraction, FractionView, LotView, ProfileView,
-    LOT_REMOVE_UNSAFE_GRACE_DURATION
+    LOT_REMOVE_UNSAFE_GRACE_DURATION,
 };
 
 // not using lazy static because it breaks my language server
@@ -16,6 +16,10 @@ pub const LOCK_CONTRACT_BYTES: &[u8] =
     include_bytes!("../../lock_unlock_account_contract/res/lock_unlock_account_latest.wasm");
 
 const NEW_PUBLIC_KEY: &str = "ed25519:KEYKEYKEYKEYKEYKEYKEYKEYKEYKEYKEYKEYKEYKEYK";
+
+fn timestamp_after_grace() -> Timestamp {
+    to_ts(10) + LOT_REMOVE_UNSAFE_GRACE_DURATION
+}
 
 fn from_yocto(amount: Balance) -> String {
     let yocto_in_near: Balance = 10u128.pow(24);
@@ -96,10 +100,6 @@ fn create_user_locked(root: &UserAccount, name: &str) -> UserAccount {
 
 fn subtract_seller_reward_commission(reward: Balance, commission: Fraction) -> Balance {
     reward - commission * reward
-}
-
-fn get_timestamp(root: &UserAccount) -> Timestamp {
-    root.borrow_runtime().cur_block.block_timestamp
 }
 
 fn set_timestamp(root: &UserAccount, timestamp: Timestamp) {
@@ -297,7 +297,7 @@ fn simulate_lot_remove_unsafe_success_no_lock() {
     let carol: UserAccount = create_user(&root, "carol");
 
     m_lot_offer(&contract, &alice, &bob);
-    set_timestamp(&root, get_timestamp(&root) + LOT_REMOVE_UNSAFE_GRACE_DURATION);
+    set_timestamp(&root, timestamp_after_grace());
 
     let result = call!(carol, contract.lot_remove_unsafe(alice.account_id.clone()));
     let expected_message = "lot_after_remove_unsafe_remove: promise_unsuccessful";
@@ -325,7 +325,7 @@ fn simulate_lot_remove_unsafe_success_wrong_owner() {
     let carol: UserAccount = create_user(&root, "carol");
 
     m_lot_offer(&contract, &alice, &bob);
-    set_timestamp(&root, get_timestamp(&root)+ LOT_REMOVE_UNSAFE_GRACE_DURATION);
+    set_timestamp(&root, timestamp_after_grace());
 
     let result = call!(carol, contract.lot_remove_unsafe(alice.account_id.clone()));
     let expected_message = "lot_after_remove_unsafe_remove: wrong owner_id";
@@ -347,7 +347,7 @@ fn simulate_lot_remove_unsafe_fail_seems_safe() {
     let carol: UserAccount = create_user(&root, "carol");
 
     m_lot_offer(&contract, &alice, &bob);
-    set_timestamp(&root, get_timestamp(&root)+ LOT_REMOVE_UNSAFE_GRACE_DURATION);
+    set_timestamp(&root, timestamp_after_grace());
 
     let result = call!(carol, contract.lot_remove_unsafe(alice.account_id.clone()));
     let expected_message = "lot_after_remove_unsafe_remove: seems safe";

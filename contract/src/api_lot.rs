@@ -331,16 +331,13 @@ impl Contract {
             ERR_LOT_REMOVE_UNSAFE_LOT_HAS_BIDS,
         );
 
-        ext_lock_contract::get_owner(
-            lot_id.clone(),
-            NO_DEPOSIT,
-            GAS_EXT_CALL_GET_OWNER.into(),
-        ).then(ext_self_contract::lot_after_remove_unsafe_remove(
-            lot_id.clone(),
-            env::current_account_id(),
-            NO_DEPOSIT,
-            GAS_EXT_CALL_AFTER_REMOVE_UNSAFE.into(),
-        ))
+        ext_lock_contract::get_owner(lot_id.clone(), NO_DEPOSIT, GAS_EXT_CALL_GET_OWNER.into())
+            .then(ext_self_contract::lot_after_remove_unsafe_remove(
+                lot_id.clone(),
+                env::current_account_id(),
+                NO_DEPOSIT,
+                GAS_EXT_CALL_AFTER_REMOVE_UNSAFE.into(),
+            ))
     }
 
     #[private]
@@ -363,7 +360,7 @@ impl Contract {
                         false
                     }
                 }
-            },
+            }
             _ => {
                 log!("lot_after_remove_unsafe_remove: promise_unsuccessful");
                 false
@@ -1047,7 +1044,7 @@ pub mod tests {
     }
 
     #[test]
-    #[should_panic(expected="lot_remove_unsafe: lot on grace period, wait")]
+    #[should_panic(expected = "lot_remove_unsafe: lot on grace period, wait")]
     pub fn test_api_lot_remove_unsafe_fail_grace_period() {
         let mut contract = build_contract();
         let (lot, _) = create_lot_alice();
@@ -1059,7 +1056,7 @@ pub mod tests {
     }
 
     #[test]
-    #[should_panic(expected="lot_remove_unsafe: lot has bids")]
+    #[should_panic(expected = "lot_remove_unsafe: lot has bids")]
     pub fn test_api_lot_remove_unsafe_fail_lot_has_bids() {
         let mut contract = build_contract();
         let (lot, time_now) = create_lot_alice_with_bids();

@@ -17,7 +17,7 @@ use near_sdk::json_types::{U128, U64};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::serde_json;
 use near_sdk::{
-    log, env, ext_contract, near_bindgen, AccountId, Balance, Duration, PanicOnDefault, Promise,
+    env, ext_contract, log, near_bindgen, AccountId, Balance, Duration, PanicOnDefault, Promise,
     PromiseResult, PublicKey, Timestamp,
 };
 use uint::construct_uint;
