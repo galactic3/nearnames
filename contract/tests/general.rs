@@ -14,7 +14,8 @@ use marketplace::{
 pub const CONTRACT_BYTES: &[u8] = include_bytes!("../res/marketplace.wasm");
 pub const LOCK_CONTRACT_BYTES: &[u8] =
     include_bytes!("../../lock_unlock_account_contract/res/lock_unlock_account_latest.wasm");
-const DEFAULT_PUBLIC_KEY: &str = "ed25519:Ga6C8S7jVG2inG88cos8UsdtGVWRFQasSdTdtHL7kBqL";
+
+const NEW_PUBLIC_KEY: &str = "ed25519:KEYKEYKEYKEYKEYKEYKEYKEYKEYKEYKEYKEYKEYKEYK";
 
 fn from_yocto(amount: Balance) -> String {
     let yocto_in_near: Balance = 10u128.pow(24);
@@ -172,7 +173,7 @@ fn simulate_lot_offer_buy_now() {
 
     let result = call!(
         carol,
-        contract.lot_claim(alice.account_id(), DEFAULT_PUBLIC_KEY.parse().unwrap())
+        contract.lot_claim(alice.account_id(), NEW_PUBLIC_KEY.parse().unwrap())
     );
     assert!(result.is_ok());
 
@@ -250,7 +251,7 @@ fn simulate_lot_offer_withdraw() {
 
     let result = call!(
         bob,
-        contract.lot_claim(alice.account_id(), DEFAULT_PUBLIC_KEY.parse().unwrap())
+        contract.lot_claim(alice.account_id(), NEW_PUBLIC_KEY.parse().unwrap())
     );
     assert!(result.is_ok());
 
@@ -384,7 +385,7 @@ fn simulate_lock_unlock() {
         contract.account_id(),
         "unlock",
         &json!({
-            "public_key": DEFAULT_PUBLIC_KEY.to_string(),
+            "public_key": NEW_PUBLIC_KEY.to_string(),
         })
         .to_string()
         .into_bytes(),
