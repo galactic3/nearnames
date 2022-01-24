@@ -23,11 +23,10 @@ async function initContract() {
   // Load in user's account data
   let currentUser;
   if (walletConnection.getAccountId()) {
+    const balance = await walletConnection.account().getAccountBalance();
     currentUser = {
-      // Gets the accountId as a string
       accountId: walletConnection.getAccountId(),
-      // Gets the user's token balance
-      balance: (await walletConnection.account().state()).amount,
+      balance: balance.available
     };
   }
 
