@@ -36,7 +36,10 @@ function LotsList(props) {
     } catch (e) {
       let errorMessage = e.message;
       if (e.message.includes('expected no bids')) {
-        errorMessage = "Sorry, you can't withdraw because the lot had already bids";
+        errorMessage = "You can't withdraw because the lot had already bids";
+      }
+      if (e.message.includes('already withdrawn')) {
+        errorMessage = "The lot has already been withdrawn";
       }
       alertOpen(errorMessage);
       console.error(e);
