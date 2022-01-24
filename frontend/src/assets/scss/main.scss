@@ -125,8 +125,8 @@
     .button_wrapper {
       display: flex;
       flex-direction: column;
-      button {
-        margin: 5px 0;
+      button:first-of-type {
+        margin: 0 0 5px;
       }
     }
   }
@@ -178,6 +178,7 @@
       .lot_name {
         text-overflow: ellipsis;
         overflow: hidden;
+        color: var(--gray);
       }
       .seller_name {
         display: block;

@@ -45,6 +45,7 @@ function LotsList(props) {
         errorMessage = "The lot has already been withdrawn";
       }
       alertOpen(errorMessage);
+      e.target.innerText = 'Withdraw';
       console.error(e);
     } finally {
       await getLot(lot.lot_id);
