@@ -21,6 +21,8 @@ function ModalClaim(props) {
   const claimLot = async (publicKey) => {
     await props.contract.lot_claim({'lot_id': lot_id, 'public_key': publicKey}, BOATLOAD_OF_GAS).then((lot) => {
       setShowLoader(false);
+      setShowSuccess(true);
+      setPublicKey(publicKey);
     });
   }
 
@@ -32,8 +34,6 @@ function ModalClaim(props) {
     setShowLoader(true);
     await claimLot(publicKey);
     setClaimedBySeedPhrase(true);
-    setPublicKey(publicKey);
-    setShowSuccess(true);
   }
 
   const claimByPublicKey = async (e) => {
@@ -41,8 +41,6 @@ function ModalClaim(props) {
     const publicKey = publicKeyRef.current.value;
     console.log(publicKey);
     await claimLot(publicKey);
-    setPublicKey(publicKey);
-    setShowSuccess(true)
   }
 
   const clearState = () => {

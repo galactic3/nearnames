@@ -7,22 +7,24 @@ import {
   toNear,
   getBuyNowPrice,
   getNextBidAmount,
-  with_timeout
 } from "../utils";
 import ModalAlert from "./Alert";
 import { useHistory } from "react-router-dom";
 import useConfirm from "../Hooks/useConfirm";
 import Loader from "./Loader";
+import ModalOffer from "./ReOffer";
 
 function LotsList(props) {
   const history = useHistory();
   const contract = props.contract;
+  const near = props.near;
   const config = props.nearConfig;
   const signedAccount = props.signedAccount;
   const { isConfirmed } = useConfirm();
 
   const [modalClaimShow, setModalClaimShow] = useState(false);
   const [modalBidShow, setModalBidShow] = useState(false);
+  const [modalOfferShow, setModalOfferShow] = useState(false);
   const [modalAlertShow, setModalAlertShow] = useState(false);
   const [alertContent, setAlertContent] = useState('');
   const [selectedLot, setSelectedLot] = useState('');
@@ -34,6 +36,7 @@ function LotsList(props) {
       await contract.lot_withdraw({'lot_id': lot.lot_id}, BOATLOAD_OF_GAS);
       history.push("/profile");
     } catch (e) {
+      e.target.innerText = 'Withdraw';
       let errorMessage = e.message;
       if (e.message.includes('expected no bids')) {
         errorMessage = "You can't withdraw because the lot had already bids";
@@ -44,9 +47,8 @@ function LotsList(props) {
       alertOpen(errorMessage);
       console.error(e);
     } finally {
-      e.target.disabled = false;
-      e.target.innerText = 'Withdraw';
       await getLot(lot.lot_id);
+      e.target.disabled = false;
     }
   };
 
@@ -58,7 +60,6 @@ function LotsList(props) {
   const alertHide = () => {
     setModalAlertShow(false);
   };
-
 
   const claimOpen = (lot) => {
     setModalClaimShow(true);
@@ -81,6 +82,19 @@ function LotsList(props) {
 
   const closeBid = async () => {
     setModalBidShow(false);
+    setSelectedLot('');
+  }
+
+  const openOffer = async (lot) => {
+    setModalOfferShow(true);
+    setSelectedLot(lot);
+  }
+
+  const closeOffer = async (offerSuccess) => {
+    setModalOfferShow(false);
+    if (offerSuccess) {
+      await getLot(selectedLot.lot_id);
+    }
     setSelectedLot('');
   }
 
@@ -143,8 +157,8 @@ function LotsList(props) {
         <Loader/> :
         <ul className="lot_list">
           {props.lots.map((lot, i) =>
-            <Lot lot={lot} key={i} openBid={openBid} signIn={props.signIn} withdraw={withdraw} claim={claimOpen}
-                 contract={contract} showStatus={props.showStatus} signedAccount={signedAccount}/>
+            <Lot lot={lot} key={i} contract={contract} showStatus={props.showStatus} signedAccount={signedAccount}
+                 openBid={openBid} signIn={props.signIn} withdraw={withdraw} claim={claimOpen} offer={openOffer}/>
           )}
           {props.lots.length === 0 ? <li className='lot_item'><div className="lot_info">No lots available</div></li> : ''}
         </ul>
@@ -163,6 +177,13 @@ function LotsList(props) {
         contract={contract}
         signedAccount={signedAccount}
         onClose={() => closeBid()}
+      />
+      <ModalOffer
+        lot={selectedLot}
+        open={modalOfferShow}
+        near={near}
+        contract={contract}
+        onClose={(offerSuccess) => closeOffer(offerSuccess)}
       />
       <ModalAlert
         open={modalAlertShow}
