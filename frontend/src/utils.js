@@ -115,6 +115,14 @@ export const fetchBidSafety = async (lot_id, near, nearConfig) => {
   return isSafe;
 };
 
+export const wrapWithTimeout = (promise, timeout_ms) => {
+  const timer_promise =
+    new Promise((resolve, reject) => setTimeout(() => reject("timeout_reached"), timeout_ms));
+  return Promise.race([promise, timer_promise]);
+};
+
+export const withTimeout = (promise) => wrapWithTimeout(promise, 60_000);
+
 export const loadListPaginated = async (callback, limit = 200) => {
   let result = [];
   let offset = 0;
