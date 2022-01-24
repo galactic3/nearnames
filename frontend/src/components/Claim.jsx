@@ -15,9 +15,7 @@ function ModalClaim(props) {
 
   const seedPhraseRef = useRef(null);
   const publicKeyRef = useRef(null);
-
-  const lot_id = props.lot.lot_id;
-
+  const lot_id = props.lot && props.lot.lot_id;
   const recoverLink = props.config.walletUrl + '/recover-seed-phrase'
 
   const claimLot = async (publicKey) => {
@@ -54,7 +52,7 @@ function ModalClaim(props) {
     setPublicKey('');
     setSeedPhrase(generateSeedPhrase().seedPhrase);
     setShowSuccess(false);
-    props.onClose();
+    props.onClose(showSuccess);
   }
 
   return (

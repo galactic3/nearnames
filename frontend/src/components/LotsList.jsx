@@ -6,7 +6,8 @@ import {
   BOATLOAD_OF_GAS,
   toNear,
   getBuyNowPrice,
-  getNextBidAmount
+  getNextBidAmount,
+  with_timeout
 } from "../utils";
 import ModalAlert from "./Alert";
 import { useHistory } from "react-router-dom";
@@ -24,7 +25,7 @@ function LotsList(props) {
   const [modalBidShow, setModalBidShow] = useState(false);
   const [modalAlertShow, setModalAlertShow] = useState(false);
   const [alertContent, setAlertContent] = useState('');
-  const [selectedLot, setSelectedLot] = useState(false);
+  const [selectedLot, setSelectedLot] = useState('');
 
   const withdraw = async (lot, e) => {
     try {
@@ -33,6 +34,11 @@ function LotsList(props) {
       await contract.lot_withdraw({'lot_id': lot.lot_id}, BOATLOAD_OF_GAS);
       history.push("/profile");
     } catch (e) {
+      let errorMessage = e.message;
+      if (e.message.includes('expected no bids')) {
+        errorMessage = "Sorry, you can't withdraw because the lot had already bids";
+      }
+      alertOpen(errorMessage);
       console.error(e);
     } finally {
       e.target.disabled = false;
@@ -56,19 +62,23 @@ function LotsList(props) {
     setSelectedLot(lot);
   };
 
-  const claimHide = async () => {
+  const claimHide = async (claimSuccess) => {
     setModalClaimShow(false);
-    await getLot(selectedLot.lot_id);
+    if (claimSuccess) {
+      await getLot(selectedLot.lot_id);
+    }
+    setSelectedLot('');
   };
 
   const openBid = async (lot) => {
-    setSelectedLot(lot);
     setModalBidShow(true);
+    const selLot = await getLot(lot.lot_id);
+    setSelectedLot(selLot);
   }
 
   const closeBid = async () => {
     setModalBidShow(false);
-    await getLot(selectedLot.lot_id);
+    setSelectedLot('');
   }
 
   const getLot = async (lotId) => {
@@ -141,7 +151,7 @@ function LotsList(props) {
         lot={selectedLot}
         config={config}
         contract={contract}
-        onClose={() => claimHide()}
+        onClose={(claimSuccess) => claimHide(claimSuccess)}
       />
       <ModalBid
         open={modalBidShow}
