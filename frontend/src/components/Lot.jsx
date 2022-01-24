@@ -44,6 +44,7 @@ function Lot(props) {
       case 'Withdrawn':
         return (!isNotSeller && <div className="button_wrapper">
           <button name="claim_back" className="outlined" onClick={(e) => props.claim(lot, e)}>Claim</button>
+          <button name="re_offer" className="outlined" onClick={(e) => props.offer(lot, e)}>Re-offer</button>
         </div>)
     }
   }

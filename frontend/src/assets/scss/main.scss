@@ -122,11 +122,17 @@
   .lot_action {
     padding: 0 36px;
     text-align: center;
+    .button_wrapper {
+      display: flex;
+      flex-direction: column;
+      button {
+        margin: 5px 0;
+      }
+    }
   }
 
   .countdown {
     display: block;
-    margin: 5px auto 0;
     line-height: 1;
     span {
       max-width: 65px;
@@ -346,6 +352,9 @@
 
 .offer_modal {
   width: 420px;
+  .account-name {
+    color: var(--link);
+  }
   .form-group {
     margin: 10px 0;
     width: 155px;
