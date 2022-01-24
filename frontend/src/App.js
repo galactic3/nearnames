@@ -50,7 +50,8 @@ function App (props) {
   const getBalance = async (accountId) => {
     try {
       const account = await props.near.account(accountId);
-      return (await account.getAccountBalance()).total;
+      const balance = await account.getAccountBalance();
+      return balance.available;
     } catch (e) {
       return null;
     }
