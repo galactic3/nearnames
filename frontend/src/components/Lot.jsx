@@ -4,6 +4,7 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import Countdown from "react-countdown";
 import AccessTimeFilledIcon from '@mui/icons-material/AccessTimeFilled';
 import { isBrowser, isMobile } from 'react-device-detect';
+import { LOT_STATUS } from "../statusMap";
 
 function Lot(props) {
 
@@ -59,7 +60,7 @@ function Lot(props) {
         {lot.status === 'OnSale' && getCountdownTime(lot) > Date.now() && isMobile && <span className="countdown"><AccessTimeFilledIcon className="icon"/><Countdown date={getCountdownTime(lot)}/></span>}
       </div>
       {props.showStatus && <div className="lot_status">
-        <span className={'badge ' + lot.status}>{lot.status}</span>
+        <span className={'badge ' + lot.status}>{LOT_STATUS[lot.status]}</span>
       </div>}
       {lot.notSafe && <div className="lot_status">
         <span className='badge'>Not safe</span>
