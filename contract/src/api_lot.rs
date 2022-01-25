@@ -89,6 +89,41 @@ impl Contract {
             ERR_INTERNAL_LOT_SAVE_ALREADY_EXISTS,
         );
     }
+
+    fn internal_lot_offer(
+        &mut self,
+        lot_id: &LotId,
+        seller_id: &ProfileId,
+        reserve_price: Balance,
+        buy_now_price: Balance,
+        start_timestamp: Timestamp,
+        finish_timestamp: Option<Timestamp>,
+        duration: Option<Duration>,
+    ) {
+        let finish_timestamp: Timestamp = if let Some(finish_timestamp) = finish_timestamp {
+            finish_timestamp.into()
+        } else {
+            let duration: Duration = duration.unwrap().into();
+            start_timestamp + duration
+        };
+
+        let lot = Lot::new(
+            lot_id.clone(),
+            seller_id.clone(),
+            reserve_price,
+            buy_now_price,
+            start_timestamp,
+            finish_timestamp,
+        );
+        self.internal_lot_save(&lot);
+
+        // update associations
+        {
+            let mut profile = self.internal_profile_extract(&seller_id);
+            profile.lots_offering.insert(&lot_id);
+            self.internal_profile_save(&profile);
+        }
+    }
 }
 
 #[near_bindgen]
@@ -180,31 +215,20 @@ impl Contract {
         let seller_id: ProfileId = seller_id.into();
         let reserve_price: Balance = reserve_price.into();
         let buy_now_price: Balance = buy_now_price.into();
-
         let start_timestamp: Timestamp = env::block_timestamp();
-        let finish_timestamp: Timestamp = if let Some(finish_timestamp) = finish_timestamp {
-            finish_timestamp.into()
-        } else {
-            let duration: Duration = duration.unwrap().into();
-            start_timestamp + duration
-        };
 
-        let lot = Lot::new(
-            lot_id.clone(),
-            seller_id.clone(),
+        let duration: Option<Duration> = duration.map(|x| x.0);
+        let finish_timestamp: Option<Timestamp> = finish_timestamp.map(|x| x.0);
+
+        self.internal_lot_offer(
+            &lot_id,
+            &seller_id,
             reserve_price,
             buy_now_price,
             start_timestamp,
             finish_timestamp,
+            duration,
         );
-        self.internal_lot_save(&lot);
-
-        // update associations
-        {
-            let mut profile = self.internal_profile_extract(&seller_id);
-            profile.lots_offering.insert(&lot_id);
-            self.internal_profile_save(&profile);
-        }
 
         true
     }
@@ -311,6 +335,40 @@ impl Contract {
         let mut lot = self.internal_lot_extract(&lot_id);
         lot.withdraw(&withdrawer_id);
         self.internal_lot_save(&lot);
+
+        true
+    }
+
+    pub fn lot_reoffer(
+        &mut self,
+        lot_id: LotId,
+        reserve_price: WrappedBalance,
+        buy_now_price: WrappedBalance,
+        finish_timestamp: Option<WrappedTimestamp>,
+        duration: Option<WrappedDuration>,
+    ) -> bool {
+        let lot = self.internal_lot_extract(&lot_id);
+        let caller_id: ProfileId = env::predecessor_account_id();
+        let time_now: Timestamp = env::block_timestamp();
+        lot.validate_reoffer(&caller_id);
+
+        let reserve_price: Balance = reserve_price.into();
+        let buy_now_price: Balance = buy_now_price.into();
+        let duration: Option<Duration> = duration.map(|x| x.0);
+        let finish_timestamp: Option<Timestamp> = finish_timestamp.map(|x| x.0);
+
+        // lot removed, internal_lot_offer will insert updated lot back
+        // skipping seller.lots_offering update
+
+        self.internal_lot_offer(
+            &lot.lot_id,
+            &lot.seller_id,
+            reserve_price,
+            buy_now_price,
+            time_now,
+            finish_timestamp,
+            duration,
+        );
 
         true
     }
@@ -725,7 +783,7 @@ pub mod tests {
     }
 
     #[test]
-    fn test_api_lot_offer() {
+    fn test_api_lot_offer_success() {
         let mut contract = build_contract();
 
         let lot_id: ProfileId = "alice".parse().unwrap();
@@ -1031,6 +1089,57 @@ pub mod tests {
 
         testing_env!(get_context_call(time_now, &"bob".parse().unwrap()));
         contract.lot_withdraw("alice".parse().unwrap());
+    }
+
+    #[test]
+    fn test_api_lot_reoffer_success() {
+        let mut contract = build_contract();
+        let (lot, time_now) = create_lot_alice();
+        contract.internal_lot_save(&lot);
+
+        let new_reserve_price: Balance = to_yocto("1");
+        let new_buy_now_price: Balance = to_yocto("100");
+
+        testing_env!(get_context_call(time_now, &"bob".parse().unwrap()));
+        contract.lot_reoffer(
+            "alice".parse().unwrap(),
+            new_reserve_price.into(),
+            new_buy_now_price.into(),
+            Some(to_ts(30).into()),
+            None,
+        );
+
+        testing_env!(get_context_view(time_now));
+        let response: Vec<LotView> = contract.lot_list(None, None);
+        assert_eq!(response.len(), 1, "expected empty lot list");
+        let lot_updated = response.into_iter().next().unwrap();
+
+        assert_eq!(lot_updated.lot_id, lot.lot_id.clone());
+        assert_eq!(lot_updated.seller_id, lot.seller_id.clone());
+        assert_eq!(lot_updated.reserve_price, new_reserve_price.into());
+        assert_eq!(lot_updated.buy_now_price, new_buy_now_price.into());
+        assert_eq!(lot_updated.start_timestamp, time_now.into());
+        assert_eq!(lot_updated.finish_timestamp, to_ts(30).into());
+    }
+
+    #[test]
+    #[should_panic(expected = "reoffer: bids exist")]
+    fn test_api_lot_reoffer_fail_has_bids() {
+        let mut contract = build_contract();
+        let (lot, time_now) = create_lot_alice_with_bids();
+        contract.internal_lot_save(&lot);
+
+        let new_reserve_price: Balance = to_yocto("1");
+        let new_buy_now_price: Balance = to_yocto("100");
+
+        testing_env!(get_context_call(time_now, &"bob".parse().unwrap()));
+        contract.lot_reoffer(
+            "alice".parse().unwrap(),
+            new_reserve_price.into(),
+            new_buy_now_price.into(),
+            Some(to_ts(30).into()),
+            None,
+        );
     }
 
     #[test]

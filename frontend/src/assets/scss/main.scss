@@ -122,12 +122,19 @@
   .lot_action {
     padding: 0 36px;
     text-align: center;
+    .button_wrapper {
+      display: flex;
+      flex-direction: column;
+      button ~ button {
+        margin-top: 5px;
+      }
+    }
   }
 
   .countdown {
     display: block;
-    margin: 5px auto 0;
     line-height: 1;
+    margin-top: 5px;
     span {
       max-width: 65px;
       white-space: nowrap;
@@ -153,7 +160,8 @@
     }
 
     .lot_item {
-      width: 320px;
+      max-width: 320px;
+      width: 100%;
       flex-wrap: wrap;
       justify-content: space-between;
       padding: 18px;
@@ -172,6 +180,10 @@
       .lot_name {
         text-overflow: ellipsis;
         overflow: hidden;
+        color: var(--gray);
+        &.expand {
+          word-break: break-word;
+        }
       }
       .seller_name {
         display: block;
@@ -346,6 +358,9 @@
 
 .offer_modal {
   width: 420px;
+  .account-name {
+    color: var(--link);
+  }
   .form-group {
     margin: 10px 0;
     width: 155px;
@@ -477,6 +492,12 @@
       display: block;
       font-size: 32px;
       line-height: 40px;
+      text-overflow: ellipsis;
+      color: var(--gray);
+      overflow: hidden;
+      &.expand {
+        word-break: break-word;
+      }
     }
     .seller_name {
       display: block;

@@ -15,7 +15,7 @@
     "deploy:web": "npm run build:web && npm run deploy:pages",
     "deploy:testnet": "npm run build:testnet && gh-pages -d dist/ -r https://github.com/galactic3/nearnames-testnet.git",
     "deploy": "npm run deploy:pages",
-    "start": "yarn build:copy_lock_contract && parcel serve src/index.html --no-cache",
+    "start": "yarn build:copy_lock_contract && parcel serve src/index.html",
     "dev": "nodemon --watch ../contract/src -e rs --exec \"npm run start\"",
     "test": "jest test --runInBand"
   },

@@ -8,11 +8,11 @@ import Lots from './components/Lots';
 import ProfilePage from './components/Profile';
 import LogoutIcon from '@mui/icons-material/Logout';
 import CreateOffer from "./components/CreateOffer";
-import {CONFIG, nearToFloor, renderName} from "./utils";
+import {nearToFloor, renderName, withTimeout} from "./utils";
 import AboutPage from "./components/About";
 import ConfirmContextProvider from "./Providers/ConfirmContextProvider";
 import ModalConfirm from "./components/Confirm";
-import {IconButton, MenuItem, Select} from "@mui/material";
+import {IconButton} from "@mui/material";
 import { BrowserView, MobileView, isBrowser, isMobile } from 'react-device-detect';
 import MobileNav from "./components/MobileNav";
 import MenuRoundedIcon from '@mui/icons-material/MenuRounded';
@@ -50,7 +50,8 @@ function App (props) {
   const getBalance = async (accountId) => {
     try {
       const account = await props.near.account(accountId);
-      return (await account.getAccountBalance()).total;
+      const balance = await account.getAccountBalance();
+      return balance.available;
     } catch (e) {
       return null;
     }
@@ -112,22 +113,15 @@ function App (props) {
       return;
     }
 
-    const wrap_with_timeout = (promise, timeout_ms) => {
-      const timer_promise =
-        new Promise((resolve, reject) => setTimeout(() => reject("timeout_reached"), timeout_ms));
-      return Promise.race([promise, timer_promise]);
-    };
-    const with_timeout = (promise) => wrap_with_timeout(promise, 60_000);
-
     try {
 
-      const account = await with_timeout(props.near.account(signedAccount));
+      const account = await withTimeout(props.near.account(signedAccount));
 
       setOfferProcessOutput(offerProcessOutput => [...offerProcessOutput, 'geting access keys']);
 
-      const lastKey = (await with_timeout(props.wallet._keyStore.getKey(props.nearConfig.networkId, signedAccount))).getPublicKey().toString();
+      const lastKey = (await withTimeout(props.wallet._keyStore.getKey(props.nearConfig.networkId, signedAccount))).getPublicKey().toString();
 
-      const accessKeys = await with_timeout(props.wallet.account().getAccessKeys());
+      const accessKeys = await withTimeout(props.wallet.account().getAccessKeys());
 
       console.log('all keys', accessKeys);
       console.log('all local keys', props.wallet._authData.allKeys);
@@ -135,14 +129,14 @@ function App (props) {
 
       setOfferProcessOutput(offerProcessOutput => [...offerProcessOutput, 'fetching contract']);
 
-      const data = await with_timeout(fetch('/lock_unlock_account_latest.wasm'));
-      const buf = await with_timeout(data.arrayBuffer());
+      const data = await withTimeout(fetch('/lock_unlock_account_latest.wasm'));
+      const buf = await withTimeout(data.arrayBuffer());
 
       setOfferProcessOutput(offerProcessOutput => [...offerProcessOutput, 'Deploying contract']);
 
-      await with_timeout(account.deployContract(new Uint8Array(buf)));
+      await withTimeout(account.deployContract(new Uint8Array(buf)));
 
-      const contractLock = await with_timeout(new nearAPI.Contract(account, signedAccount, {
+      const contractLock = await withTimeout(new nearAPI.Contract(account, signedAccount, {
         viewMethods: [],
         changeMethods: ['lock'],
         sender: signedAccount
@@ -150,33 +144,33 @@ function App (props) {
 
       setOfferProcessOutput(offerProcessOutput => [...offerProcessOutput, 'Deploying done. Initializing contract...']);
       console.log('Deploying done. Initializing contract...');
-      console.log(await with_timeout(contractLock.lock(Buffer.from('{"owner_id":"' + props.nearConfig.contractName + '"}'))));
+      console.log(await withTimeout(contractLock.lock(Buffer.from('{"owner_id":"' + props.nearConfig.contractName + '"}'))));
 
       setOfferProcessOutput(offerProcessOutput => [...offerProcessOutput, 'Init is done.']);
       console.log('Init is done.');
 
-      console.log('code hash', (await with_timeout(account.state())).code_hash);
+      console.log('code hash', (await withTimeout(account.state())).code_hash);
 
       setOfferProcessOutput(offerProcessOutput => [...offerProcessOutput, 'Create lot offer.']);
 
-      const lot = await with_timeout(props.contract.lot_get({lot_id: lotAccountId}))
+      const lot = await withTimeout(props.contract.lot_get({lot_id: lotAccountId}))
 
       if (!lot) {
-        await with_timeout(props.contract.lot_offer(offerData));
+        await withTimeout(props.contract.lot_offer(offerData));
       }
 
       for (let index = 0; index < accessKeys.length; index++) {
         if (accessKeys[index].public_key !== lastKey) {
           setOfferProcessOutput(offerProcessOutput => [...offerProcessOutput, 'deleting ' + accessKeys[index].public_key]);
           console.log('deleting ', accessKeys[index]);
-          await with_timeout(account.deleteKey(accessKeys[index].public_key));
+          await withTimeout(account.deleteKey(accessKeys[index].public_key));
           console.log('deleting ', accessKeys[index], 'done');
         }
       }
 
       setOfferProcessOutput(offerProcessOutput => [...offerProcessOutput, 'deleting last key ' + lastKey]);
       console.log('deleting last key', lastKey);
-      await with_timeout(account.deleteKey(lastKey));
+      await withTimeout(account.deleteKey(lastKey));
       setOfferProcessOutput(offerProcessOutput => [...offerProcessOutput, 'deleting done']);
       console.log('deleting ', lastKey, 'done');
 
