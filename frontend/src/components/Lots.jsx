@@ -48,11 +48,15 @@ function Lots(props) {
         return lot;
       }
       return l;
-    }).filter((lot) => {
-      return status.includes(lot.status) && lot.lot_id.toLowerCase().includes(filter);
-    })
-    setCashLots(updatedLots);
+    });
     setLots(updatedLots);
+    const updatedCashLots = cashLots.map((l) => {
+      if (l.lot_id === lot.lot_id) {
+        return lot;
+      }
+      return l;
+    });
+    setCashLots(updatedCashLots);
   }
 
   const filterList = async (e) => {
