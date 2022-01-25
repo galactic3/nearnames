@@ -16,6 +16,8 @@ pub const ERR_LOT_CLAIM_BY_SELLER_WRONG_CLAIMER: &str = "claim by seller: wrong 
 pub const ERR_LOT_WITHDRAW_HAS_BID: &str = "withdraw: expected no bids";
 pub const ERR_LOT_WITHDRAW_WRONG_STATUS: &str = "withdraw: already withdrawn";
 pub const ERR_LOT_WITHDRAW_WRONG_WITHDRAWER: &str = "withdraw: wrong withdrawer";
+pub const ERR_LOT_REOFFER_WRONG_CALLER: &str = "reoffer: wrong caller";
+pub const ERR_LOT_REOFFER_BIDS_EXIST: &str = "reoffer: bids exist";
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum LotStatus {
@@ -241,6 +243,20 @@ impl Lot {
         self.validate_place_bid(bid, bid_step);
         self.bids.push(bid);
         self.last_bid = Some(bid.clone());
+    }
+
+    pub fn validate_reoffer(&self, caller_id: &ProfileId) {
+        assert_eq!(
+            caller_id,
+            &self.seller_id,
+            "{}",
+            ERR_LOT_REOFFER_WRONG_CALLER,
+        );
+        assert!(
+            self.last_bid.is_none(),
+            "{}",
+            ERR_LOT_REOFFER_BIDS_EXIST,
+        );
     }
 }
 
@@ -700,5 +716,46 @@ pub mod tests {
             timestamp: time_now,
         };
         lot.place_bid(&bid, Fraction::new(0, 1));
+    }
+
+    #[test]
+    fn test_lot_validate_reoffer_success() {
+        let caller_id: ProfileId = "bob".parse().unwrap();
+
+        let (lot, _) = create_lot_alice();
+        lot.validate_reoffer(&caller_id);
+
+        let (lot, _) = create_lot_alice_withdrawn();
+        lot.validate_reoffer(&caller_id);
+
+        let (lot, _) = create_lot_alice_sale_failure();
+        lot.validate_reoffer(&caller_id);
+    }
+
+    #[test]
+    #[should_panic(expected = "reoffer: wrong caller")]
+    fn test_lot_validate_reoffer_fail_wrong_seller() {
+        let caller_id: ProfileId = "carol".parse().unwrap();
+
+        let (lot, _) = create_lot_alice();
+        lot.validate_reoffer(&caller_id);
+    }
+
+    #[test]
+    #[should_panic(expected = "reoffer: bids exist")]
+    fn test_lot_validate_reoffer_fail_has_bids_active() {
+        let caller_id: ProfileId = "bob".parse().unwrap();
+
+        let (lot, _) = create_lot_alice_with_bids();
+        lot.validate_reoffer(&caller_id);
+    }
+
+    #[test]
+    #[should_panic(expected = "reoffer: bids exist")]
+    fn test_lot_validate_reoffer_fail_has_bids_sale_success() {
+        let caller_id: ProfileId = "bob".parse().unwrap();
+
+        let (lot, _) = create_lot_alice_with_bids_sale_success();
+        lot.validate_reoffer(&caller_id);
     }
 }
