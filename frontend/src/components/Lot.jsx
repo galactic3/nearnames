@@ -1,11 +1,13 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {getBuyNowPrice, getCountdownTime, getCurrentPrice, renderName} from "../utils";
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import Countdown from "react-countdown";
 import AccessTimeFilledIcon from '@mui/icons-material/AccessTimeFilled';
-import { BrowserView, MobileView, isBrowser, isMobile } from 'react-device-detect';
+import { isBrowser, isMobile } from 'react-device-detect';
 
 function Lot(props) {
+
+  const [lotNameExpanded, setLotNameExpanded] = useState(false);
 
   const lot = props.lot;
   const accountId = props.signedAccount;
@@ -52,7 +54,7 @@ function Lot(props) {
   return (
     <li className='lot_item'>
       <div className="lot_info">
-        <span className="lot_name">{renderName(lot.lot_id)}</span>
+        <span className={'lot_name' + (lotNameExpanded ? ' expand' : '')} onClick={() => setLotNameExpanded(!lotNameExpanded)}>{renderName(lot.lot_id)}</span>
         <span className="seller_name"><AccountCircleIcon className="icon"/>{renderName(lot.seller_id)}</span>
         {lot.status === 'OnSale' && getCountdownTime(lot) > Date.now() && isMobile && <span className="countdown"><AccessTimeFilledIcon className="icon"/><Countdown date={getCountdownTime(lot)}/></span>}
       </div>

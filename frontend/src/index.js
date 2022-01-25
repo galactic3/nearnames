@@ -10,6 +10,8 @@ async function initContract() {
   // based on the network ID we pass to getConfig()
   const nearConfig = getConfig(process.env.NODE_ENV || 'testnet');
 
+  console.log('contractName ' + nearConfig.contractName);
+
   // create a keyStore for signing transactions using the user's key
   // which is located in the browser local storage after user logs in
   const keyStore = new nearAPI.keyStores.BrowserLocalStorageKeyStore();

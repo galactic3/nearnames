@@ -21,6 +21,7 @@ function ModalBid (props) {
   const [value, setValue] = useState('');
   const [defaultValue, setDefaultValue] = useState('');
   const [showBidList, setShowBidList] = useState(false);
+  const [lotNameExpanded, setLotNameExpanded] = useState(false);
   const [bidButtonDisabled, setBidButtonDisabled] = useState(false);
   const [bidPriceError, setBidPriceError] = useState(false);
   const [showLoader, setShowLoader] = useState(true);
@@ -37,6 +38,7 @@ function ModalBid (props) {
   useEffect(() => {
     setShowBidList(false);
     setBidPriceError(false);
+    setLotNameExpanded(false);
     setBidButtonDisabled(false);
     setDefaultValue(lot && getNextBidAmount(lot));
     setValue(lot && getNextBidAmount(lot));
@@ -98,7 +100,7 @@ function ModalBid (props) {
         { showLoader ? <Loader/> : lot ?
           <div>
             <div className="bid_info">
-              <span className="lot_name">{renderName(lot.lot_id)}</span>
+              <span className={'lot_name' + (lotNameExpanded ? ' expand' : '')} onClick={() => setLotNameExpanded(!lotNameExpanded)}>{renderName(lot.lot_id)}</span>
               <span className="seller_name"><AccountCircle className="icon"/>{renderName(lot.seller_id)}</span>
               {lot.status === 'OnSale' && <span className="countdown"><AccessTimeFilledIcon className="icon"/><Countdown date={getCountdownTime(lot)}/></span>}
             </div>
