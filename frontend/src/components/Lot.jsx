@@ -59,7 +59,7 @@ function Lot(props) {
         <span className="seller_name"><AccountCircleIcon className="icon"/>{renderName(lot.seller_id)}</span>
         {lot.status === 'OnSale' && getCountdownTime(lot) > Date.now() && isMobile && <span className="countdown"><AccessTimeFilledIcon className="icon"/><Countdown date={getCountdownTime(lot)}/></span>}
       </div>
-      {props.showStatus && <div className="lot_status">
+      {props.showStatus && !lot.notSafe && <div className="lot_status">
         <span className={'badge ' + lot.status}>{LOT_STATUS[lot.status]}</span>
       </div>}
       {lot.notSafe && <div className="lot_status">

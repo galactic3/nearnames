@@ -8,6 +8,8 @@ function Lots(props) {
 
   const contract = props.contract;
 
+  const initStatus = ['OnSale', 'SaleSuccess'];
+
   const getLots = async () => {
 
     let result = [];
@@ -18,7 +20,7 @@ function Lots(props) {
 
     await loadListPaginated(args => contract.lot_list(args)).then(async (lots) => {
       result = lots.filter((lot) => {
-        return lot.status === 'OnSale' || lot.status === 'SaleSuccess';
+        return initStatus.includes(lot.status);
       });
       setCashLots(result);
       setLots(result);
@@ -62,24 +64,24 @@ function Lots(props) {
   const filterList = async (e) => {
     const value = e.target.value.toLowerCase();
     const updatedLots = cashLots.filter((lot) => {
-      return status.includes(lot.status) && lot.lot_id.toLowerCase().includes(value);
+      return (status.length ? status : initStatus).includes(lot.status) && lot.lot_id.toLowerCase().includes(value);
     })
     setLots(updatedLots);
     setFilter(value);
   }
 
-  const handleChangeStatus = (e, status) => {
-    setStatus(status);
+  const handleChangeStatus = (e, value) => {
     const updatedLots = cashLots.filter((lot) => {
-      return status.includes(lot.status) && lot.lot_id.toLowerCase().includes(filter);
+      return (value.length ? value : initStatus).includes(lot.status) && lot.lot_id.toLowerCase().includes(filter);
     })
     setLots(updatedLots);
+    setStatus(value);
   };
 
   const [lots, setLots] = useState([]);
   const [cashLots, setCashLots] = useState([]);
   const [filter, setFilter] = useState('');
-  const [status, setStatus] = useState(() => ['OnSale', 'SaleSuccess']);
+  const [status, setStatus] = useState([]);
   const [loader, setLoader] = useState(false);
 
   return (
