@@ -23,7 +23,6 @@ function Offer (props) {
   const [showLoader, setShowLoader] = useState(false);
   const [duration, setDuration] = useState(24);
   const {register, formState: { errors }, handleSubmit} = useForm();
-  const { isConfirmed } = useConfirm();
 
   const priceRef = useRef(null);
   const buyPriceRef = useRef(null);
@@ -66,25 +65,6 @@ function Offer (props) {
 
     fieldset.disabled = true;
 
-    console.log('lot check');
-
-    const account = await props.near.account(lot_id);
-
-    const balance = nearToFloor((await account.getAccountBalance()).total);
-
-    if (balance > 50 || balance > reserve_price.value) {
-      let msg = `You're about to sell account ${lot_id} with amount bigger than reserve price on it (${balance} NEAR)`;
-      if (balance > 50) {
-        msg = `You're about to sell account ${lot_id} with signification amount on it (${balance} NEAR)`;
-      }
-      const confirmed = await isConfirmed(msg + `You might want to withdraw balance before offer, leaving only amount required for storage (${MIN_RESERVE_PRICE} NEAR). Do you want to proceed anyway?`);
-      if (!confirmed) {
-        setOfferButtonDisabled(false);
-        fieldset.disabled = false;
-        return;
-      }
-    }
-
     let offerData = {
       lot_id: lot_id,
       reserve_price: toNear(reserve_price.value).toFixed(),
@@ -96,6 +76,7 @@ function Offer (props) {
     await props.contract.lot_reoffer(offerData);
     setShowLoader(false);
     setShowSuccess(true);
+    setOfferButtonDisabled(false);
 
   };
 
@@ -187,14 +168,6 @@ function Offer (props) {
               <div className='form-group confirmation'>
                 <label>
                   <p>The app takes 10% fee of all rewards paid to the seller. <a href="https://github.com/galactic3/nearnames/wiki/Money-flow" target="_blank">Read more</a></p>
-                  <p>To ensure that buyer will receive control over the account after the sale, we require lot account to give control over itself to the marketplace contract. After full access is given, UI:</p>
-                  <ul className="default">
-                    <li>deploys lock contract to lot account</li>
-                    <li>configures marketplace account as owner</li>
-                    <li>calls lot_offer to put account on sale</li>
-                    <li>removes all access keys from the account</li>
-                  </ul>
-                  <p>After that moment, lot can be only unlocked by call from marketplace account.</p>
                 </label>
                 <div className="input-checkbox">
                   <input
