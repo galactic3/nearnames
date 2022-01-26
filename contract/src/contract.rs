@@ -5,6 +5,7 @@ pub const ERR_PROFILE_INTERNAL_SAVE_ALREADY_EXISTS: &str =
 
 pub const LOT_OFFER_MIN_RESERVE_PRICE: Balance = 500 * 10u128.pow(21);
 pub const LOT_OFFER_MAX_DURATION: Duration = 90 * 24 * 60 * 60 * 10u64.pow(9);
+pub const LOT_REMOVE_UNSAFE_GRACE_DURATION: Duration = 2 * 60 * 60 * 10u64.pow(9);
 
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
@@ -40,6 +41,7 @@ pub struct ContractConfigView {
     pub prev_bidder_commission_share: FractionView,
     pub lot_offer_min_reserve_price: WrappedBalance,
     pub lot_offer_max_duration: WrappedDuration,
+    pub lot_remove_unsafe_grace_duration: WrappedDuration,
 }
 
 impl From<&Contract> for ContractConfigView {
@@ -50,6 +52,7 @@ impl From<&Contract> for ContractConfigView {
             prev_bidder_commission_share: (&contract.prev_bidder_commission_share).into(),
             lot_offer_min_reserve_price: LOT_OFFER_MIN_RESERVE_PRICE.into(),
             lot_offer_max_duration: LOT_OFFER_MAX_DURATION.into(),
+            lot_remove_unsafe_grace_duration: LOT_REMOVE_UNSAFE_GRACE_DURATION.into(),
         }
     }
 }
@@ -132,6 +135,21 @@ mod tests {
             config.prev_bidder_commission_share,
             FractionView { num: 4, denom: 5 },
             "wrong seller rewards commission",
+        );
+        assert_eq!(
+            config.lot_offer_min_reserve_price,
+            LOT_OFFER_MIN_RESERVE_PRICE.into(),
+            "wrong min reserve price",
+        );
+        assert_eq!(
+            config.lot_offer_max_duration,
+            LOT_OFFER_MAX_DURATION.into(),
+            "wrong max duration",
+        );
+        assert_eq!(
+            config.lot_remove_unsafe_grace_duration,
+            LOT_REMOVE_UNSAFE_GRACE_DURATION.into(),
+            "wrong grace_duration",
         );
     }
 }

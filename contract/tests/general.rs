@@ -1,20 +1,25 @@
 use near_sdk::serde_json::json;
 use near_sdk::{Balance, Timestamp};
-use near_sdk_sim::runtime::init_runtime;
 use near_sdk_sim::{
-    call, deploy, init_simulator, to_nanos, to_yocto, view, ContractAccount, UserAccount,
+    call, deploy, init_simulator, to_nanos, to_ts, to_yocto, view, ContractAccount, UserAccount,
     DEFAULT_GAS, STORAGE_AMOUNT,
 };
 
 use marketplace::{
     ContractConfigView, ContractContract, Fraction, FractionView, LotView, ProfileView,
+    LOT_REMOVE_UNSAFE_GRACE_DURATION,
 };
 
 // not using lazy static because it breaks my language server
 pub const CONTRACT_BYTES: &[u8] = include_bytes!("../res/marketplace.wasm");
 pub const LOCK_CONTRACT_BYTES: &[u8] =
     include_bytes!("../../lock_unlock_account_contract/res/lock_unlock_account_latest.wasm");
-const DEFAULT_PUBLIC_KEY: &str = "ed25519:Ga6C8S7jVG2inG88cos8UsdtGVWRFQasSdTdtHL7kBqL";
+
+const NEW_PUBLIC_KEY: &str = "ed25519:KEYKEYKEYKEYKEYKEYKEYKEYKEYKEYKEYKEYKEYKEYK";
+
+fn timestamp_after_grace() -> Timestamp {
+    to_ts(10) + LOT_REMOVE_UNSAFE_GRACE_DURATION
+}
 
 fn from_yocto(amount: Balance) -> String {
     let yocto_in_near: Balance = 10u128.pow(24);
@@ -69,7 +74,7 @@ fn create_user(root: &UserAccount, name: &str) -> UserAccount {
     root.create_user(name.parse().unwrap(), to_yocto("100"))
 }
 
-fn create_user_locked(root: &UserAccount, name: &str) -> UserAccount {
+fn create_user_locked_with_owner(root: &UserAccount, name: &str, owner_id: &str) -> UserAccount {
     let alice = root.deploy(
         &LOCK_CONTRACT_BYTES,
         name.parse().unwrap(),
@@ -78,7 +83,7 @@ fn create_user_locked(root: &UserAccount, name: &str) -> UserAccount {
     let result = alice.call(
         alice.account_id(),
         "lock",
-        &json!({ "owner_id": "marketplace".to_string() })
+        &json!({ "owner_id": owner_id.to_string() })
             .to_string()
             .into_bytes(),
         DEFAULT_GAS,
@@ -89,8 +94,40 @@ fn create_user_locked(root: &UserAccount, name: &str) -> UserAccount {
     alice
 }
 
+fn create_user_locked(root: &UserAccount, name: &str) -> UserAccount {
+    create_user_locked_with_owner(root, name, "marketplace")
+}
+
 fn subtract_seller_reward_commission(reward: Balance, commission: Fraction) -> Balance {
     reward - commission * reward
+}
+
+fn set_timestamp(root: &UserAccount, timestamp: Timestamp) {
+    root.borrow_runtime_mut().cur_block.block_timestamp = timestamp;
+}
+
+fn m_lot_offer(
+    contract: &ContractAccount<ContractContract>,
+    lot: &UserAccount,
+    seller: &UserAccount,
+) {
+    let reserve_price = to_yocto("3");
+    let buy_now_price = to_yocto("10");
+    let start_timestamp = to_ts(10);
+    set_timestamp(&lot, start_timestamp);
+    let finish_timestamp = start_timestamp + to_nanos(7);
+
+    let result = call!(
+        lot,
+        contract.lot_offer(
+            seller.account_id.clone(),
+            reserve_price.into(),
+            buy_now_price.into(),
+            Some(finish_timestamp.into()),
+            None
+        )
+    );
+    assert!(result.is_ok());
 }
 
 #[test]
@@ -108,21 +145,7 @@ fn simulate_lot_offer_buy_now() {
     root.transfer(bob.account_id(), balance_to_reserve); // storage and future gas
     bob.transfer(root.account_id(), to_yocto("100")); // storage and future gas
 
-    let (runtime, _, _) = init_runtime(None);
-    let time_now: Timestamp = runtime.current_block().block_timestamp;
-    let finish_timestamp = time_now + to_nanos(7);
-
-    let result = call!(
-        alice,
-        contract.lot_offer(
-            bob.account_id.clone(),
-            to_yocto("3").into(),
-            to_yocto("10").into(),
-            Some(finish_timestamp.into()),
-            None
-        )
-    );
-    assert!(result.is_ok());
+    m_lot_offer(&contract, &alice, &bob);
 
     let result = call!(
         carol,
@@ -150,7 +173,7 @@ fn simulate_lot_offer_buy_now() {
 
     let result = call!(
         carol,
-        contract.lot_claim(alice.account_id(), DEFAULT_PUBLIC_KEY.parse().unwrap())
+        contract.lot_claim(alice.account_id(), NEW_PUBLIC_KEY.parse().unwrap())
     );
     assert!(result.is_ok());
 
@@ -207,21 +230,7 @@ fn simulate_lot_offer_withdraw() {
     root.transfer(bob.account_id(), balance_to_reserve); // storage and future gas
     bob.transfer(root.account_id(), to_yocto("100")); // storage and future gas
 
-    let (runtime, _, _) = init_runtime(None);
-    let time_now: Timestamp = runtime.current_block().block_timestamp;
-    let finish_timestamp = time_now + to_nanos(7);
-
-    let result = call!(
-        alice,
-        contract.lot_offer(
-            bob.account_id.clone(),
-            to_yocto("3").into(),
-            to_yocto("10").into(),
-            Some(finish_timestamp.into()),
-            None
-        )
-    );
-    assert!(result.is_ok());
+    m_lot_offer(&contract, &alice, &bob);
 
     let balance_to_reserve = to_yocto("0.2");
     root.transfer(bob.account_id(), balance_to_reserve); // storage and future gas
@@ -242,7 +251,7 @@ fn simulate_lot_offer_withdraw() {
 
     let result = call!(
         bob,
-        contract.lot_claim(alice.account_id(), DEFAULT_PUBLIC_KEY.parse().unwrap())
+        contract.lot_claim(alice.account_id(), NEW_PUBLIC_KEY.parse().unwrap())
     );
     assert!(result.is_ok());
 
@@ -281,6 +290,72 @@ fn simulate_lot_offer_withdraw() {
 }
 
 #[test]
+fn simulate_lot_remove_unsafe_success_no_lock() {
+    let (root, contract) = init();
+    let alice: UserAccount = create_user(&root, "alice");
+    let bob: UserAccount = create_user(&root, "bob");
+    let carol: UserAccount = create_user(&root, "carol");
+
+    m_lot_offer(&contract, &alice, &bob);
+    set_timestamp(&root, timestamp_after_grace());
+
+    let result = call!(carol, contract.lot_remove_unsafe(alice.account_id.clone()));
+    let expected_message = "lot_after_remove_unsafe_remove: promise_unsuccessful";
+    assert!(result.logs().contains(&expected_message.to_string()));
+    assert!(result.is_ok());
+
+    let result = view!(contract.lot_list(None, None));
+    assert!(result.is_ok());
+
+    let result: Vec<LotView> = result.unwrap_json();
+    assert!(result.is_empty(), "expected lot list to be empty");
+
+    let result = view!(contract.lot_list_offering_by(bob.account_id, None, None));
+    assert!(result.is_ok());
+
+    let result: Vec<LotView> = result.unwrap_json();
+    assert!(result.is_empty(), "expected lot list to be empty");
+}
+
+#[test]
+fn simulate_lot_remove_unsafe_success_wrong_owner() {
+    let (root, contract) = init();
+    let alice: UserAccount = create_user_locked_with_owner(&root, "alice", "wrong_marketplace");
+    let bob: UserAccount = create_user(&root, "bob");
+    let carol: UserAccount = create_user(&root, "carol");
+
+    m_lot_offer(&contract, &alice, &bob);
+    set_timestamp(&root, timestamp_after_grace());
+
+    let result = call!(carol, contract.lot_remove_unsafe(alice.account_id.clone()));
+    let expected_message = "lot_after_remove_unsafe_remove: wrong owner_id";
+    assert!(result.logs().contains(&expected_message.to_string()));
+    assert!(result.is_ok());
+
+    let result = view!(contract.lot_list(None, None));
+    assert!(result.is_ok());
+
+    let result: Vec<LotView> = result.unwrap_json();
+    assert!(result.is_empty(), "expected lot list to be empty");
+}
+
+#[test]
+fn simulate_lot_remove_unsafe_fail_seems_safe() {
+    let (root, contract) = init();
+    let alice: UserAccount = create_user_locked(&root, "alice");
+    let bob: UserAccount = create_user(&root, "bob");
+    let carol: UserAccount = create_user(&root, "carol");
+
+    m_lot_offer(&contract, &alice, &bob);
+    set_timestamp(&root, timestamp_after_grace());
+
+    let result = call!(carol, contract.lot_remove_unsafe(alice.account_id.clone()));
+    let expected_message = "lot_after_remove_unsafe_remove: seems safe";
+    assert!(result.logs().contains(&expected_message.to_string()));
+    assert!(!result.is_ok());
+}
+
+#[test]
 fn simulate_lock_unlock() {
     let (root, contract, alice) = init_locked();
 
@@ -310,7 +385,7 @@ fn simulate_lock_unlock() {
         contract.account_id(),
         "unlock",
         &json!({
-            "public_key": DEFAULT_PUBLIC_KEY.to_string(),
+            "public_key": NEW_PUBLIC_KEY.to_string(),
         })
         .to_string()
         .into_bytes(),
@@ -318,6 +393,4 @@ fn simulate_lock_unlock() {
         0,
     );
     assert!(result.is_ok());
-
-    println!("{:?}", contract.account());
 }
