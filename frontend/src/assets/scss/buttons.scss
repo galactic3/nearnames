@@ -1,5 +1,4 @@
 
-
 button {
     height: 40px;
     min-width: 100px;
@@ -63,9 +62,45 @@ button {
     }
 }
 
+button.css-ueukts-MuiButtonBase-root-MuiToggleButton-root {
+    color: var(--primary);
+    background: transparent;
+    height: 34px;
+    line-height: 20px;
+    padding: 6px 18px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-weight: inherit;
+    font-size: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+    min-width: 100px;
+    border-color: var(--link);
+    border: 1px solid var(--link);
+    &:hover {
+        color: var(--main);
+        background: var(--link-hover);
+        border-color: var(--link-hover);
+    }
+}
+
+button.css-ueukts-MuiButtonBase-root-MuiToggleButton-root.Mui-selected {
+    background: var(--link);
+    color: var(--main);
+    &:hover {
+        background: var(--link-hover);
+        border-color: var(--link-hover);
+    }
+}
+
+.css-1gjgmky-MuiToggleButtonGroup-root button.MuiToggleButtonGroup-grouped:not(:first-of-type) {
+    margin-left: 0;
+    border-left: 0;
+}
+
 .badge {
-    font-size: 10px;
-    line-height: 10px;
+    font-size: 12px;
+    line-height: 12px;
     padding: 4px 10px;
     border-radius: 36px;
     white-space: nowrap;
