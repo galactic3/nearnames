@@ -64,7 +64,7 @@ function Lots(props) {
   const filterList = async (e) => {
     const value = e.target.value.toLowerCase();
     const updatedLots = cashLots.filter((lot) => {
-      return (status.length ? status : initStatus).includes(lot.status) && lot.lot_id.toLowerCase().includes(value);
+      return (status ? status : initStatus).includes(lot.status) && lot.lot_id.toLowerCase().includes(value);
     })
     setLots(updatedLots);
     setFilter(value);
@@ -72,7 +72,7 @@ function Lots(props) {
 
   const handleChangeStatus = (e, value) => {
     const updatedLots = cashLots.filter((lot) => {
-      return (value.length ? value : initStatus).includes(lot.status) && lot.lot_id.toLowerCase().includes(filter);
+      return (value ? value : initStatus).includes(lot.status) && lot.lot_id.toLowerCase().includes(filter);
     })
     setLots(updatedLots);
     setStatus(value);
@@ -81,7 +81,7 @@ function Lots(props) {
   const [lots, setLots] = useState([]);
   const [cashLots, setCashLots] = useState([]);
   const [filter, setFilter] = useState('');
-  const [status, setStatus] = useState([]);
+  const [status, setStatus] = useState('');
   const [loader, setLoader] = useState(false);
 
   return (
@@ -93,6 +93,7 @@ function Lots(props) {
       </div>
       <div className="status-wrapper">
         <ToggleButtonGroup
+          exclusive
           value={status}
           onChange={handleChangeStatus}
         >
