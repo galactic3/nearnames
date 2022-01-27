@@ -3,6 +3,7 @@ import LotsList from "./LotsList";
 import SearchIcon from '@mui/icons-material/Search';
 import {fetchBidSafety, loadListPaginated} from '../utils';
 import {ToggleButton, ToggleButtonGroup} from "@mui/material";
+import {isDesktop} from "react-device-detect";
 
 function Lots(props) {
 
@@ -89,7 +90,7 @@ function Lots(props) {
       <div className="search-wrapper">
         <SearchIcon className="search-icon"/>
         <input type="text" className="search" placeholder="Search lots for sale" onChange={(e) => filterList(e)} value={filter}/>
-        {filter && <span className="search-result">{lots.length} results <strong>"{filter}"</strong> found</span>}
+        {filter && <span className="search-result">{lots.length} results {isDesktop && <strong>"{filter}"</strong>} found</span>}
       </div>
       <div className="status-wrapper">
         <ToggleButtonGroup

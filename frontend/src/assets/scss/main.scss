@@ -302,7 +302,11 @@
     position: absolute;
     top: 100%;
     left: 20px;
+    right: 210px;
     margin-top: 24px;
+    overflow: hidden;
+    word-break: break-all;
+    height: 42px;
     strong {
       color: var(--link);
     }
