@@ -17,7 +17,6 @@ import ModalOffer from "./ReOffer";
 function LotsList(props) {
   const history = useHistory();
   const contract = props.contract;
-  const near = props.near;
   const config = props.nearConfig;
   const signedAccount = props.signedAccount;
   const { isConfirmed } = useConfirm();
@@ -91,11 +90,8 @@ function LotsList(props) {
     setSelectedLot(lot);
   }
 
-  const closeOffer = async (offerSuccess) => {
+  const closeOffer = async () => {
     setModalOfferShow(false);
-    if (offerSuccess) {
-      await getLot(selectedLot.lot_id);
-    }
     setSelectedLot('');
   }
 
@@ -182,9 +178,9 @@ function LotsList(props) {
       <ModalOffer
         lot={selectedLot}
         open={modalOfferShow}
-        near={near}
+        getLot={getLot}
         contract={contract}
-        onClose={(offerSuccess) => closeOffer(offerSuccess)}
+        onClose={() => closeOffer()}
       />
       <ModalAlert
         open={modalAlertShow}

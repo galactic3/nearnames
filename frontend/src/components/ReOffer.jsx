@@ -49,6 +49,7 @@ function Offer (props) {
     setPriceError(false);
     setBuyPriceError(false);
     setPriceCompareError(false);
+    setShowSuccess(false);
   }, [props]);
 
   const checkPrice = async () => {
@@ -74,6 +75,7 @@ function Offer (props) {
 
     setShowLoader(true);
     await props.contract.lot_reoffer(offerData);
+    await props.getLot(lot_id);
     setShowLoader(false);
     setShowSuccess(true);
     setOfferButtonDisabled(false);
@@ -84,8 +86,7 @@ function Offer (props) {
     if (showLoader) {
       return;
     }
-    props.onClose(showSuccess);
-    setShowSuccess(false);
+    props.onClose();
   }
 
   return (
@@ -105,7 +106,7 @@ function Offer (props) {
           <CloseIcon />
         </IconButton>
         <h3 className="title">Re-offer <strong>{renderName(lot_id)}</strong></h3>
-        { showLoader ? <Loader/> : showSuccess ? <Alert className="alert-container" severity="success">Success! Account ${lot_id} is now on sale.</Alert> :
+        { showLoader ? <Loader/> : showSuccess ? <Alert className="alert-container" severity="success">Success! Account <b>{lot_id}</b> is now on sale.</Alert> :
           <form className="form_offer" onSubmit={onSubmit}>
             <fieldset id="fieldset">
               <div className='form-group'>

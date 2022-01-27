@@ -59,6 +59,9 @@ button {
         border-color: var(--gray);
         background: var(--gray);
         color: var(--primary);
+        &:hover, &:focus {
+            color: var(--primary);
+        }
     }
 }
 
