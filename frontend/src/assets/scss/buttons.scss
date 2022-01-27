@@ -65,7 +65,7 @@ button {
     }
 }
 
-button.css-ueukts-MuiButtonBase-root-MuiToggleButton-root {
+button.MuiToggleButton-root {
     color: var(--primary);
     background: transparent;
     height: 34px;
@@ -87,7 +87,7 @@ button.css-ueukts-MuiButtonBase-root-MuiToggleButton-root {
     }
 }
 
-button.css-ueukts-MuiButtonBase-root-MuiToggleButton-root.Mui-selected {
+button.MuiToggleButton-root.Mui-selected {
     background: var(--link);
     color: var(--main);
     &:hover {
@@ -96,7 +96,7 @@ button.css-ueukts-MuiButtonBase-root-MuiToggleButton-root.Mui-selected {
     }
 }
 
-.css-1gjgmky-MuiToggleButtonGroup-root button.MuiToggleButtonGroup-grouped:not(:first-of-type) {
+.MuiToggleButtonGroup-root button.MuiToggleButtonGroup-grouped:not(:first-of-type) {
     margin-left: 0;
     border-left: 0;
 }
