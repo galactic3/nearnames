@@ -20,7 +20,6 @@ use near_sdk::{
     env, ext_contract, log, near_bindgen, AccountId, Balance, Duration, PanicOnDefault, Promise,
     PromiseResult, PublicKey, Timestamp,
 };
-use uint::construct_uint;
 
 pub use crate::api_lot::*;
 pub use crate::api_profile::*;
@@ -31,10 +30,15 @@ pub use crate::lot::*;
 pub use crate::profile::*;
 pub use crate::utils::*;
 
-construct_uint! {
-    /// 256-bit unsigned integer.
-    pub struct U256(4);
+#[allow(
+    clippy::assign_op_pattern,
+    clippy::ptr_offset_with_cast
+)]
+mod macro_wrap_construct_uint {
+    use uint::construct_uint;
+    construct_uint! { pub struct U256(4); }
 }
+pub use macro_wrap_construct_uint::U256;
 
 pub type LotId = AccountId;
 pub type ProfileId = AccountId;

@@ -48,7 +48,7 @@ impl Contract {
 
     pub fn profile_rewards_claim(&mut self) -> Promise {
         let profile_id: ProfileId = env::predecessor_account_id();
-        let mut profile = self.internal_profile_extract(&profile_id.clone());
+        let mut profile = self.internal_profile_extract(&profile_id);
 
         let rewards = profile.rewards_claim();
         assert!(

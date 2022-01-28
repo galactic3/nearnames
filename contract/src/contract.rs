@@ -88,14 +88,14 @@ impl Contract {
 impl Contract {
     pub(crate) fn internal_profile_extract(&mut self, profile_id: &ProfileId) -> Profile {
         self.profiles
-            .remove(&profile_id)
-            .unwrap_or_else(|| Profile::new(&profile_id))
+            .remove(profile_id)
+            .unwrap_or_else(|| Profile::new(profile_id))
     }
 
     pub(crate) fn internal_profile_get(&self, profile_id: &ProfileId) -> Profile {
         self.profiles
-            .get(&profile_id)
-            .unwrap_or_else(|| Profile::new(&profile_id))
+            .get(profile_id)
+            .unwrap_or_else(|| Profile::new(profile_id))
     }
 
     pub(crate) fn internal_profile_save(&mut self, profile: &Profile) {

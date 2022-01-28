@@ -48,7 +48,7 @@ impl From<(&Lot, Timestamp, &Contract)> for LotView {
             finish_timestamp: lot.finish_timestamp.into(),
             last_bid_amount: last_bid.as_ref().map(|x| x.amount.into()),
             next_bid_amount: lot
-                .next_bid_amount(now, contract.bid_step.clone())
+                .next_bid_amount(now, contract.bid_step)
                 .map(|x| x.into()),
             is_active: lot.is_active(now),
             is_withdrawn: lot.is_withdrawn,
@@ -78,7 +78,7 @@ impl From<&Bid> for BidView {
 impl Contract {
     pub(crate) fn internal_lot_extract(&mut self, lot_id: &LotId) -> Lot {
         self.lots
-            .remove(&lot_id)
+            .remove(lot_id)
             .expect(ERR_INTERNAL_LOT_EXTRACT_NOT_EXIST)
     }
 
@@ -90,6 +90,19 @@ impl Contract {
         );
     }
 
+    fn calc_finish_timestamp(
+        start_timestamp: Timestamp,
+        finish_timestamp: Option<Timestamp>,
+        duration: Option<Duration>,
+    ) -> Timestamp {
+        if let Some(finish_timestamp) = finish_timestamp {
+            finish_timestamp
+        } else {
+            let duration: Duration = duration.unwrap();
+            start_timestamp + duration
+        }
+    }
+
     fn internal_lot_offer(
         &mut self,
         lot_id: &LotId,
@@ -97,16 +110,8 @@ impl Contract {
         reserve_price: Balance,
         buy_now_price: Balance,
         start_timestamp: Timestamp,
-        finish_timestamp: Option<Timestamp>,
-        duration: Option<Duration>,
+        finish_timestamp: Timestamp,
     ) {
-        let finish_timestamp: Timestamp = if let Some(finish_timestamp) = finish_timestamp {
-            finish_timestamp.into()
-        } else {
-            let duration: Duration = duration.unwrap().into();
-            start_timestamp + duration
-        };
-
         let lot = Lot::new(
             lot_id.clone(),
             seller_id.clone(),
@@ -119,8 +124,8 @@ impl Contract {
 
         // update associations
         {
-            let mut profile = self.internal_profile_extract(&seller_id);
-            profile.lots_offering.insert(&lot_id);
+            let mut profile = self.internal_profile_extract(seller_id);
+            profile.lots_offering.insert(lot_id);
             self.internal_profile_save(&profile);
         }
     }
@@ -212,13 +217,15 @@ impl Contract {
         duration: Option<WrappedDuration>,
     ) -> bool {
         let lot_id: LotId = env::predecessor_account_id();
-        let seller_id: ProfileId = seller_id.into();
         let reserve_price: Balance = reserve_price.into();
         let buy_now_price: Balance = buy_now_price.into();
         let start_timestamp: Timestamp = env::block_timestamp();
 
-        let duration: Option<Duration> = duration.map(|x| x.0);
-        let finish_timestamp: Option<Timestamp> = finish_timestamp.map(|x| x.0);
+        let finish_timestamp = Self::calc_finish_timestamp(
+            start_timestamp,
+            finish_timestamp.map(|x| x.into()),
+            duration.map(|x| x.0),
+        );
 
         self.internal_lot_offer(
             &lot_id,
@@ -227,7 +234,6 @@ impl Contract {
             buy_now_price,
             start_timestamp,
             finish_timestamp,
-            duration,
         );
 
         true
@@ -285,7 +291,7 @@ impl Contract {
             GAS_EXT_CALL_UNLOCK.into(),
         )
         .then(ext_self_contract::lot_after_claim_clean_up(
-            lot_id.clone(),
+            lot_id,
             env::current_account_id(),
             NO_DEPOSIT,
             GAS_EXT_CALL_CLEAN_UP.into(),
@@ -307,12 +313,12 @@ impl Contract {
         let bidder_ids_unique: HashSet<ProfileId> = lot
             .bids()
             .into_iter()
-            .map(|x| x.bidder_id.clone())
+            .map(|x| x.bidder_id)
             .collect();
 
         bidder_ids_unique.iter().for_each(|bidder_id| {
             // TODO: validate bid exists
-            let mut profile = self.internal_profile_extract(&bidder_id);
+            let mut profile = self.internal_profile_extract(bidder_id);
             profile.lots_bidding.remove(&lot_id);
             self.internal_profile_save(&profile);
         });
@@ -330,7 +336,6 @@ impl Contract {
     }
 
     pub fn lot_withdraw(&mut self, lot_id: LotId) -> bool {
-        let lot_id: ProfileId = lot_id.into();
         let withdrawer_id: ProfileId = env::predecessor_account_id();
         let mut lot = self.internal_lot_extract(&lot_id);
         lot.withdraw(&withdrawer_id);
@@ -349,13 +354,16 @@ impl Contract {
     ) -> bool {
         let lot = self.internal_lot_extract(&lot_id);
         let caller_id: ProfileId = env::predecessor_account_id();
-        let time_now: Timestamp = env::block_timestamp();
         lot.validate_reoffer(&caller_id);
 
         let reserve_price: Balance = reserve_price.into();
         let buy_now_price: Balance = buy_now_price.into();
-        let duration: Option<Duration> = duration.map(|x| x.0);
-        let finish_timestamp: Option<Timestamp> = finish_timestamp.map(|x| x.0);
+        let start_timestamp: Timestamp = env::block_timestamp();
+        let finish_timestamp = Self::calc_finish_timestamp(
+            start_timestamp,
+            finish_timestamp.map(|x| x.into()),
+            duration.map(|x| x.0),
+        );
 
         // lot removed, internal_lot_offer will insert updated lot back
         // skipping seller.lots_offering update
@@ -365,9 +373,8 @@ impl Contract {
             &lot.seller_id,
             reserve_price,
             buy_now_price,
-            time_now,
+            start_timestamp,
             finish_timestamp,
-            duration,
         );
 
         true
@@ -391,7 +398,7 @@ impl Contract {
 
         ext_lock_contract::get_owner(lot_id.clone(), NO_DEPOSIT, GAS_EXT_CALL_GET_OWNER.into())
             .then(ext_self_contract::lot_after_remove_unsafe_remove(
-                lot_id.clone(),
+                lot_id,
                 env::current_account_id(),
                 NO_DEPOSIT,
                 GAS_EXT_CALL_AFTER_REMOVE_UNSAFE.into(),
