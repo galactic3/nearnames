@@ -247,16 +247,11 @@ impl Lot {
 
     pub fn validate_reoffer(&self, caller_id: &ProfileId) {
         assert_eq!(
-            caller_id,
-            &self.seller_id,
+            caller_id, &self.seller_id,
             "{}",
             ERR_LOT_REOFFER_WRONG_CALLER,
         );
-        assert!(
-            self.last_bid.is_none(),
-            "{}",
-            ERR_LOT_REOFFER_BIDS_EXIST,
-        );
+        assert!(self.last_bid.is_none(), "{}", ERR_LOT_REOFFER_BIDS_EXIST,);
     }
 }
 
