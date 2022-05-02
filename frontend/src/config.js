@@ -8,7 +8,7 @@ function getConfig(env) {
     return {
       networkId: 'mainnet',
       suffix: 'near',
-      nodeUrl: 'https://internal.galactic3.com',
+      nodeUrl: 'https://rpc.mainnet.near.org',
       contractName: CONTRACT_NAME,
       walletUrl: 'https://wallet.near.org',
       helperUrl: 'https://helper.mainnet.near.org',
